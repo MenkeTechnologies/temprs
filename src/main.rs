@@ -14,7 +14,6 @@ fn main() -> std::io::Result<()>{
 
     simple_logger::init().unwrap();
 
-
     let mut system_temp_dir = env::temp_dir();
     system_temp_dir.push("temp-rs");
 
@@ -33,51 +32,58 @@ fn main() -> std::io::Result<()>{
 
 
     if !our_temp_dir.exists() {
+        debug!("creating {}", our_temp_dir.display());
         fs::create_dir(our_temp_dir);
     }
 
-    //stdin pipe
     if atty::isnt(Stream::Stdin) {
-        debug!("stdin pipe");
-
-        let mut buffer = String::new();
-        io::stdin().read_to_string(&mut buffer);
-
-        let temp_file_path = Path::new(current_temp_dir.as_path());
-
-
-        append_temp_file_list(master_temp_file, temp_file_path);
-
-
-        fs::write(temp_file_path, &buffer)?;
-
-        //pipe stdout
-        if atty::isnt(Stream::Stdout) {
-            debug!("writing to stdout {}", buffer);
-
-        }
-
-
+        stdinPipe(current_temp_dir, master_temp_file)
     } else {
-
-        if atty::isnt(Stream::Stdout) {
-            debug!("no stdin pipe");
-            debug!("stdout pipe");
-
-        }  else {
-            debug!("no stdin pipe");
-
-        }
-
+        stdinTerminal()
     }
 
     Ok(())
 
+}
 
+fn stdinTerminal() -> () {
+
+    if atty::isnt(Stream::Stdout) {
+        stdoutPipe();
+    } else {
+        stdoutTerminal();
+    }
+}
+
+fn stdoutTerminal() {
+    debug!("no stdin pipe");
+}
+
+fn stdoutPipe() {
+    debug!("no stdin pipe");
+    debug!("stdout pipe");
+}
+
+fn stdinPipe(mut current_temp_dir: PathBuf, mut master_temp_file: PathBuf) -> () {
+    debug!("stdin pipe");
+    let mut buffer = String::new();
+    io::stdin().read_to_string(&mut buffer);
+    let temp_file_path = Path::new(current_temp_dir.as_path());
+    append_temp_file_list(master_temp_file, temp_file_path);
+    fs::write(temp_file_path, &buffer)?;
+
+    //pipe stdout
+
+    if atty::isnt(Stream::Stdout) {
+        debug!("writing to stdout {}", buffer);
+        stdoutPipe();
+    } else {
+        stdoutTerminal();
+    }
 }
 
 fn append_temp_file_list(mut master_temp_file: PathBuf, temp_file_path: &Path) {
-//    debug!("writing to {}", temp_file_path.display());
+    debug!("writing to {}", temp_file_path.display());
 
 //    writeln!(file, "{}", temp_file_path.display());
 
