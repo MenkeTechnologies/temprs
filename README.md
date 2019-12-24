@@ -30,9 +30,11 @@ writes contents of <file> to nl.  Stdin ignored
 - choose ouput tempfile and write to stdout
 ```temp -o 1 | nl```
 
-
 - list all temp files on the stack to stdout
 ```temp -l```
+
+- list all temp files with contents on the stack to stdout
+```temp -L```
 
 
 # created by MenkeTechnologies
