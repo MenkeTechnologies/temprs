@@ -3,6 +3,8 @@
 Tempfile files are named with increasing numbers are their filenames The highest numbered temp file is on the top of the
 stack
 
+## [temp on Crates.io](https://crates.io/crates/temp)
+
 ## Usage
 
 - send stdin into temp, create temp file on top of stack and write that tempfile to stdout

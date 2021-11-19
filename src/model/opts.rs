@@ -1,10 +1,12 @@
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, Arg};
+
+use crate::util::consts::{DESC, VERSION};
 
 pub fn parse_opts() -> App<'static, 'static> {
     App::new("Temp")
-        .version("1.0")
+        .version(VERSION)
         .author("Jacob Menke. <linux.dev25@gmail.com>")
-        .about("A temporary file manager with stack mechanism")
+        .about(DESC)
         .arg(Arg::with_name("input")
             .short("i")
             .long("input")
@@ -29,6 +31,10 @@ pub fn parse_opts() -> App<'static, 'static> {
             .short("L")
             .long("list-contents")
             .help("list all temp files with contents on the stack to stdout"))
+        .arg(Arg::with_name("silent")
+            .short("s")
+            .long("silent")
+            .help("no output"))
         .arg(Arg::with_name("clear")
             .short("c")
             .long("clear")

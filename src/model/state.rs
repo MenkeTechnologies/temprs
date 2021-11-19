@@ -10,6 +10,19 @@ pub struct TempState {
     output_buffer: String,
     input_temp_file: Option<String>,
     output_temp_file: Option<String>,
+    silent: bool,
+}
+
+impl TempState {
+    pub fn silent(&self) -> bool {
+        self.silent
+    }
+}
+
+impl TempState {
+    pub fn set_silent(&mut self, silent: bool) {
+        self.silent = silent;
+    }
 }
 
 impl TempState {
@@ -60,13 +73,26 @@ impl TempState {
     }
 }
 
-
 impl TempState {
-    pub fn new(out_file: PathBuf, master_record_file: PathBuf, temp_file_stack: Vec<PathBuf>, arg_file: Option<PathBuf>, output_buffer: String) -> Self {
-        TempState { new_temp_file: out_file, master_record_file, temp_file_stack, arg_file, output_buffer, input_temp_file: None, output_temp_file: None }
+    pub fn new(
+        out_file: PathBuf,
+        master_record_file: PathBuf,
+        temp_file_stack: Vec<PathBuf>,
+        arg_file: Option<PathBuf>,
+        output_buffer: String,
+    ) -> Self {
+        TempState {
+            new_temp_file: out_file,
+            master_record_file,
+            temp_file_stack,
+            arg_file,
+            output_buffer,
+            input_temp_file: None,
+            output_temp_file: None,
+            silent: false,
+        }
     }
 }
-
 
 impl TempState {
     pub fn out_file_path_str(&self) -> String {

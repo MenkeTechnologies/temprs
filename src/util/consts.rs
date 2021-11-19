@@ -8,4 +8,5 @@ pub const ERR_NO_FILE: &'static str = "no such file";
 pub const ERR_PARSE: &'static str = "Could not parse line";
 pub const ERR_INVALID_OUTFILE: &'static str = "Could not read from specified temporary file";
 pub const ERR_INVALID_INFILE: &'static str = "Could not write to specified temporary file";
-
+pub const VERSION: &'static str = "0.1.0";
+pub const DESC: &'static str = "A temporary file manager with stack mechanism";
