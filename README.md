@@ -14,14 +14,16 @@ stack
 - read stdin into chosen input tempfile 1 and write to stdout
   ```ls | temp -i 1```
 
-- choose ouput tempfile and write to stdout
+- choose output tempfile and write to stdout
   ```temp -o 1 | nl```
 
-- read from file and create temp file on top of stack with contents of file writes contents of <file> to nl. Stdin
-  ignored
+- read from file and create temp file on top of stack with contents of file writes contents of <file> to nl.
   ```temp <file> | nl```
 
-- reads from stdin to temp file 1 then writes to stdout
+- write contents of file to temp file 1 then write to stdout 
+  ```temp -i 1 <file> | nl```
+
+- read from stdin to temp file 1 then write to stdout
   ```ls | temp -i 1 | nl```
 
 - choose input tempfile and write to temp file 2 and stdout

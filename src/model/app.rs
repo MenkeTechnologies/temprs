@@ -6,17 +6,17 @@ use std::fs::File;
 use std::io;
 use std::io::Read;
 use std::path::{Path, PathBuf};
-use std::process::exit;
+use std::process::{exit, id};
 
 use atty::Stream;
 use clap::ArgMatches;
-use log::{debug, error};
+use log::{debug, error, warn};
 
 use model::opts::parse_opts;
 
 use crate::model;
 use crate::model::state::TempState;
-use crate::util::consts::{FILE_LIST_FILE, TEMP_DIR, TEMP_LOG_LEVEL};
+use crate::util::consts::{ERR_INVALID_OUTFILE, FILE_LIST_FILE, TEMP_DIR, TEMP_LOG_LEVEL};
 use crate::util::consts::TEMPFILE_PREFIX;
 use crate::util::utils::{append_file, path_as_string, paths_from_file};
 use crate::util::utils::{file_contents, get_ms};
@@ -146,16 +146,26 @@ impl TempApp {
         self.print_buffer_or_stack_file();
     }
 
-    fn stack_file_from_idx(&mut self, f: &String) -> Option<&PathBuf> {
+    fn stack_file_from_idx(&mut self, f: String) -> Option<&PathBuf> {
         let idx = f.parse::<usize>().unwrap();
-        self.state().temp_file_stack().get(idx)
+        if idx < 1 {
+            return None
+        }
+        self.state().temp_file_stack().get(idx - 1)
     }
 
     fn print_buffer_or_stack_file(&mut self) {
-        match self.state().output_temp_file() {
-            Some(path) => {
-                // self.stack_file_from_idx(path);
-                print!("{}", self.state().buffer());
+        match self.state().output_temp_file().clone() {
+            Some(stk_idx) => {
+                match self.stack_file_from_idx(stk_idx.clone()) {
+                    Some(f) => {
+                        print!("{}", file_contents(f.as_path()));
+                    }
+                    None => {
+                        error!("{} at idx: {}", ERR_INVALID_OUTFILE, stk_idx);
+                        exit(1)
+                    }
+                }
             }
             None => {
                 print!("{}", self.state().buffer());
