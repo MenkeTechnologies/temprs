@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 use atty::Stream;
 use log::debug;
 
-use model::temp_app::TempApp;
+use model::app::TempApp;
 use util::consts::{FILE_LIST_FILE, TEMP_DIR, TEMP_LOG_LEVEL};
 use util::consts::TEMPFILE_PREFIX;
 use util::utils::{append_file, paths_from_file};
@@ -18,6 +18,7 @@ use util::utils::{get_ms, string_from_file};
 
 mod util;
 mod model;
+
 
 fn main() {
     let mut app = TempApp::new();

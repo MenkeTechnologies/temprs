@@ -6,17 +6,22 @@ use std::fs::File;
 use std::io;
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use std::process::exit;
 
 use atty::Stream;
+use clap::ArgMatches;
 use log::debug;
 
-use crate::model::temp_state::TempState;
+use model::opts::parse_opts;
+
+use crate::model;
+use crate::model::state::TempState;
 use crate::util::consts::{FILE_LIST_FILE, TEMP_DIR, TEMP_LOG_LEVEL};
 use crate::util::consts::TEMPFILE_PREFIX;
-use crate::util::utils::{append_file, paths_from_file};
+use crate::util::utils::{append_file, path_to_string, paths_from_file};
 use crate::util::utils::{get_ms, string_from_file};
 
-pub(crate) struct TempApp {
+pub struct TempApp {
     state: TempState,
 }
 
@@ -144,9 +149,46 @@ impl TempApp {
         );
 
         let mut buffer = String::new();
-        buffer.push_str(self.state().out_file_string().as_str());
+        buffer.push_str(self.state().out_file_contents().as_str());
         buffer.push_str("\n");
         append_file(self.state().temp_list_file(), &buffer);
     }
-    fn parse_opts(&self) {}
+    fn parse_opts(&mut self) {
+        let matches = parse_opts().get_matches();
+        match matches.value_of("FILE") {
+            Some(f) => { self.state().set_arg_file(String::from(f)) }
+            None => {}
+        }
+        match matches.value_of("input") {
+            Some(f) => { self.state().set_input_temp_file(String::from(f)) }
+            None => {}
+        }
+        match matches.value_of("output") {
+            Some(f) => { self.state().set_output_temp_file(String::from(f)) }
+            None => {}
+        }
+
+        if matches.is_present("list_files") {
+            self.list_files();
+        }
+
+        if matches.is_present("list_contents") {
+            self.list_contents();
+        }
+    }
+    fn list_contents(&mut self) {
+        debug!("list contents");
+        for p in self.state().temp_file_stack() {
+            println!("{}:", path_to_string(p));
+            println!("{}\n", string_from_file(p.as_path()));
+        }
+        exit(0)
+    }
+    fn list_files(&mut self) {
+        debug!("list files");
+        for p in self.state().temp_file_stack() {
+            println!("{}", path_to_string(p));
+        }
+        exit(0)
+    }
 }
