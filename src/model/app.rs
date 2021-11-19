@@ -16,9 +16,9 @@ use model::opts::parse_opts;
 
 use crate::model;
 use crate::model::state::TempState;
-use crate::util::consts::{ERR_INVALID_OUTFILE, FILE_LIST_FILE, TEMP_DIR, TEMP_LOG_LEVEL};
+use crate::util::consts::{ERR_INVALID_INFILE, ERR_INVALID_OUTFILE, FILE_LIST_FILE, TEMP_DIR, TEMP_LOG_LEVEL};
 use crate::util::consts::TEMPFILE_PREFIX;
-use crate::util::utils::{append_file, path_as_string, paths_from_file};
+use crate::util::utils::{append_file, path_as_string, paths_from_file, write_file};
 use crate::util::utils::{file_contents, get_ms};
 
 pub struct TempApp {
@@ -108,11 +108,27 @@ impl TempApp {
         match self.state().arg_file() {
             Some(arg_file) => {
                 let str = file_contents(arg_file.as_path());
-
                 self.state().set_buffer(str.clone());
 
-                self.append_temp_file_list();
-                append_file(self.state().new_temp_file(), &str);
+                match self.state().input_temp_file().clone() {
+                    Some(stk_idx) => {
+                        match self.stack_file_from_idx(stk_idx.clone()) {
+                            Some(f) => {
+                                write_file(f, &str.clone());
+                            }
+                            None => {
+                                error!("{} at idx: {}", ERR_INVALID_INFILE, stk_idx);
+                                exit(1)
+                            }
+                        }
+                    }
+                    None => {
+                        self.append_temp_file_list();
+                        append_file(self.state().new_temp_file(), &str);
+
+                    }
+                }
+
             }
             None => {
                 let _buffer = String::new();
@@ -176,11 +192,32 @@ impl TempApp {
     fn if_stdin_pipe(&mut self) {
         debug!("stdin pipe");
         self.append_temp_file_list();
-        let mut buffer = String::new();
-        stdin().read_to_string(&mut buffer);
-        append_file(self.state().new_temp_file(), &buffer);
+        let mut str = String::new();
+        stdin().read_to_string(&mut str);
 
-        self.state().set_buffer(buffer.clone());
+        // append_file(self.state().new_temp_file(), &buffer);
+        // let str = file_contents(arg_file.as_path());
+        self.state().set_buffer(str.clone());
+
+        match self.state().input_temp_file().clone() {
+            Some(stk_idx) => {
+                match self.stack_file_from_idx(stk_idx.clone()) {
+                    Some(f) => {
+                        write_file(f, &str.clone());
+                    }
+                    None => {
+                        error!("{} at idx: {}", ERR_INVALID_INFILE, stk_idx);
+                        exit(1)
+                    }
+                }
+            }
+            None => {
+                self.append_temp_file_list();
+                append_file(self.state().new_temp_file(), &str);
+
+            }
+        }
+
     }
 
     fn append_temp_file_list(&mut self) {
