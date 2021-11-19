@@ -2,15 +2,19 @@ use fs::write;
 use io::stdin;
 use std::env;
 use std::fs;
+use std::fs::OpenOptions;
 use std::io;
-use std::io::{Read, Result};
+use std::io::{Read, Result, Write};
 use std::path::{Path, PathBuf};
+use std::time::SystemTime;
 
 use atty::Stream;
 use log::debug;
-use log::Level;
 
-const TEMP_LOG_LEVEL: Level = Level::Debug;
+use util::consts::{FILE_LIST_FILE, TEMP_DIR, TEMP_LOG_LEVEL};
+use util::consts::TEMPFILE_PREFIX;
+
+mod util;
 
 struct TempState {
     out_file: PathBuf,
@@ -49,10 +53,22 @@ struct TempApp {
     state: TempState,
 }
 
+
 impl TempApp {
+    fn run(&self) {
+        if atty::isnt(Stream::Stdin) {
+            self.stdin_pipe()
+        } else {
+            self.stdin_terminal()
+        }
+        self.append_temp_file_list();
+    }
+
     pub fn new() -> Self {
+        simple_logger::init_with_level(TEMP_LOG_LEVEL).unwrap();
+
         let mut system_temp_dir = env::temp_dir();
-        system_temp_dir.push("temp-rs");
+        system_temp_dir.push(TEMP_DIR);
 
         let our_temp_dir = Path::new(system_temp_dir.as_path());
 
@@ -62,11 +78,16 @@ impl TempApp {
         out_file.push(system_temp_dir.as_path());
         file_list.push(system_temp_dir.as_path());
 
-        out_file.push("tempfile");
-        file_list.push("temp-rs-master");
+        let ms = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_millis()
+            .to_string();
+        out_file.push(format!("{}{}", TEMPFILE_PREFIX, ms));
+        file_list.push(FILE_LIST_FILE);
 
-        debug!("current temp dir {}", out_file.display());
-        debug!("master temp file {}", file_list.display());
+        debug!("out file {}", out_file.display());
+        debug!("file stack {}", file_list.display());
 
         let subcommand = String::new();
 
@@ -77,7 +98,7 @@ impl TempApp {
         };
 
         if !our_temp_dir.exists() {
-            debug!("creating {}", our_temp_dir.display());
+            debug!("create temp dir {}", our_temp_dir.display());
             fs::create_dir(our_temp_dir);
         }
 
@@ -88,7 +109,8 @@ impl TempApp {
         &self.state
     }
 
-    pub fn stdin_terminal(&self) -> () {
+    pub fn stdin_terminal(&self) {
+        debug!("stdin term");
         if atty::isnt(Stream::Stdout) {
             self.stdout_pipe();
         } else {
@@ -97,21 +119,18 @@ impl TempApp {
     }
 
     pub fn stdout_terminal(&self) {
-        debug!("no stdin pipe");
+        debug!("stdout term");
     }
 
     pub fn stdout_pipe(&self) {
-        debug!("no stdin pipe");
         debug!("stdout pipe");
     }
 
-    pub fn stdin_pipe(&self) -> () {
+    pub fn stdin_pipe(&self) {
         debug!("stdin pipe");
         let mut buffer = String::new();
         stdin().read_to_string(&mut buffer);
         write(self.state().out_file(), &buffer).unwrap();
-
-        self.append_temp_file_list();
 
         if atty::isnt(Stream::Stdout) {
             debug!("writing to stdout {}", buffer);
@@ -122,24 +141,23 @@ impl TempApp {
     }
 
     pub fn append_temp_file_list(&self) {
-        debug!("writing to {}", self.state().out_file().display());
+        debug!("append out file to file list {}", self.state().out_file().display());
 
         let mut buffer = String::new();
         buffer.push_str(self.state().out_file_string().as_str());
-        write(self.state().temp_list_file(), &buffer).unwrap();
+        buffer.push_str("\n");
+        let mut file = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(self.state().temp_list_file())
+            .unwrap();
+        file.write(buffer.as_bytes());
     }
 }
 
-fn main() -> Result<()> {
-    simple_logger::init_with_level(TEMP_LOG_LEVEL).unwrap();
+fn main() {
 
     let app = TempApp::new();
 
-    if atty::isnt(Stream::Stdin) {
-        app.stdin_pipe()
-    } else {
-        app.stdin_terminal()
-    }
-
-    Ok(())
+    app.run();
 }
