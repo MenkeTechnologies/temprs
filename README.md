@@ -36,4 +36,7 @@ stack
 - list all temp files with contents on the stack to stdout
   ```temp -L```
 
+- remove all temp files
+  ```temp -c```
+ 
 # created by MenkeTechnologies

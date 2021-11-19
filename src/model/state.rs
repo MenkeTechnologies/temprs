@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use crate::util::utils::path_as_string;
 
 pub struct TempState {
-    out_file: PathBuf,
+    new_temp_file: PathBuf,
     master_record_file: PathBuf,
     temp_file_stack: Vec<PathBuf>,
     arg_file: Option<PathBuf>,
@@ -13,8 +13,8 @@ pub struct TempState {
 }
 
 impl TempState {
-    pub fn set_out_file(&mut self, out_file: PathBuf) {
-        self.out_file = out_file;
+    pub fn set_new_temp_file(&mut self, out_file: PathBuf) {
+        self.new_temp_file = out_file;
     }
     pub fn set_master_file(&mut self, master_file: PathBuf) {
         self.master_record_file = master_file;
@@ -37,10 +37,10 @@ impl TempState {
 }
 
 impl TempState {
-    pub fn out_file(&self) -> &PathBuf {
-        &self.out_file
+    pub fn new_temp_file(&self) -> &PathBuf {
+        &self.new_temp_file
     }
-    pub fn master_file(&self) -> &PathBuf {
+    pub fn master_record_file(&self) -> &PathBuf {
         &self.master_record_file
     }
     pub fn temp_file_stack(&self) -> &Vec<PathBuf> {
@@ -63,21 +63,17 @@ impl TempState {
 
 impl TempState {
     pub fn new(out_file: PathBuf, master_record_file: PathBuf, temp_file_stack: Vec<PathBuf>, arg_file: Option<PathBuf>, output_buffer: String) -> Self {
-        TempState { out_file, master_record_file, temp_file_stack, arg_file, output_buffer, input_temp_file: None, output_temp_file: None }
+        TempState { new_temp_file: out_file, master_record_file, temp_file_stack, arg_file, output_buffer, input_temp_file: None, output_temp_file: None }
     }
 }
 
 
 impl TempState {
     pub fn out_file_path_str(&self) -> String {
-        path_as_string(self.out_file())
-    }
-
-    pub fn temp_list_file(&self) -> &PathBuf {
-        &self.master_record_file
+        path_as_string(self.new_temp_file())
     }
 
     pub fn master_file_path_str(&self) -> String {
-        path_as_string(self.master_file())
+        path_as_string(self.master_record_file())
     }
 }
