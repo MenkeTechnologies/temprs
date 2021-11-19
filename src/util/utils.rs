@@ -19,7 +19,7 @@ pub fn lines_from_file(path: &Path) -> Vec<String> {
     buf.lines().map(|l| l.expect(ERR_PARSE)).collect()
 }
 
-pub fn path_to_string(path: &PathBuf) -> String {
+pub fn path_as_string(path: &PathBuf) -> String {
     path
         .clone()
         .into_os_string()
@@ -27,7 +27,7 @@ pub fn path_to_string(path: &PathBuf) -> String {
         .unwrap()
 }
 
-pub fn string_from_file(filename: &Path) -> String {
+pub fn file_contents(filename: &Path) -> String {
     read_to_string(filename).unwrap()
 }
 

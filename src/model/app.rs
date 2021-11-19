@@ -18,8 +18,8 @@ use crate::model;
 use crate::model::state::TempState;
 use crate::util::consts::{FILE_LIST_FILE, TEMP_DIR, TEMP_LOG_LEVEL};
 use crate::util::consts::TEMPFILE_PREFIX;
-use crate::util::utils::{append_file, path_to_string, paths_from_file};
-use crate::util::utils::{get_ms, string_from_file};
+use crate::util::utils::{append_file, path_as_string, paths_from_file};
+use crate::util::utils::{file_contents, get_ms};
 
 pub struct TempApp {
     state: TempState,
@@ -29,14 +29,14 @@ impl TempApp {
     pub fn run(&mut self) {
         self.parse_opts();
         self.input();
-        self.ouput()
+        self.output()
     }
 
     fn input(&mut self) {
         if atty::isnt(Stream::Stdin) {
-            self.stdin_pipe()
+            self.if_stdin_pipe()
         } else {
-            self.stdin_terminal()
+            self.if_stdin_terminal();
         }
     }
 
@@ -92,7 +92,7 @@ impl TempApp {
             out_file,
             master_file,
             temp_file_stack,
-            subcommand,
+            None,
             String::new());
 
         Self { state }
@@ -102,38 +102,48 @@ impl TempApp {
         &mut self.state
     }
 
-    fn stdin_terminal(&mut self) {
+    fn if_stdin_terminal(&mut self) {
         debug!("stdin term");
 
-        let _buffer = String::new();
-        match self.state().temp_file_stack().last() {
-            Some(f) => {
-                let string = string_from_file(f.as_path());
-                self.state().set_buffer(string);
+        match self.state().arg_file() {
+            Some(arg_file) => {
+                let str = file_contents(arg_file.as_path());
+                self.state().set_buffer(str.clone());
+                self.append_temp_file_list();
+                append_file(self.state().out_file(), &str);
             }
-            _ => {}
+            None => {
+                let _buffer = String::new();
+                match self.state().temp_file_stack().last() {
+                    Some(f) => {
+                        let string = file_contents(f.as_path());
+                        self.state().set_buffer(string);
+                    }
+                    _ => {}
+                }
+            }
         }
     }
 
-    fn ouput(&mut self) {
+    fn output(&mut self) {
         if atty::isnt(Stream::Stdout) {
-            self.stdout_pipe();
+            self.if_stdout_pipe();
         } else {
-            self.stdout_terminal();
+            self.if_stdout_terminal();
         }
     }
 
-    fn stdout_terminal(&mut self) {
+    fn if_stdout_terminal(&mut self) {
         print!("{}", self.state().buffer());
         debug!("stdout term");
     }
 
-    fn stdout_pipe(&mut self) {
+    fn if_stdout_pipe(&mut self) {
         print!("{}", self.state().buffer());
         debug!("stdout pipe");
     }
 
-    fn stdin_pipe(&mut self) {
+    fn if_stdin_pipe(&mut self) {
         debug!("stdin pipe");
         self.append_temp_file_list();
         let mut buffer = String::new();
@@ -149,22 +159,22 @@ impl TempApp {
         );
 
         let mut buffer = String::new();
-        buffer.push_str(self.state().out_file_contents().as_str());
+        buffer.push_str(self.state().out_file_path_str().as_str());
         buffer.push_str("\n");
         append_file(self.state().temp_list_file(), &buffer);
     }
     fn parse_opts(&mut self) {
         let matches = parse_opts().get_matches();
         match matches.value_of("FILE") {
-            Some(f) => { self.state().set_arg_file(String::from(f)) }
+            Some(f) => { self.state().set_arg_file(Some(PathBuf::from(f))) }
             None => {}
         }
         match matches.value_of("input") {
-            Some(f) => { self.state().set_input_temp_file(String::from(f)) }
+            Some(f) => { self.state().set_input_temp_file(Some(String::from(f))) }
             None => {}
         }
         match matches.value_of("output") {
-            Some(f) => { self.state().set_output_temp_file(String::from(f)) }
+            Some(f) => { self.state().set_output_temp_file(Some(String::from(f))) }
             None => {}
         }
 
@@ -179,15 +189,15 @@ impl TempApp {
     fn list_contents(&mut self) {
         debug!("list contents");
         for p in self.state().temp_file_stack() {
-            println!("{}:", path_to_string(p));
-            println!("{}\n", string_from_file(p.as_path()));
+            println!("{}:", path_as_string(p));
+            println!("{}\n", file_contents(p.as_path()));
         }
         exit(0)
     }
     fn list_files(&mut self) {
         debug!("list files");
         for p in self.state().temp_file_stack() {
-            println!("{}", path_to_string(p));
+            println!("{}", path_as_string(p));
         }
         exit(0)
     }
