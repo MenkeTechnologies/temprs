@@ -106,14 +106,14 @@ impl TempApp {
 
         match self.state().arg_file() {
             Some(arg_file) => {
-                let str = util_file_contents_to_string(arg_file.as_path());
+                let str = util_file_contents_to_string(arg_file.as_path()).unwrap();
                 self.state().set_output_buffer(str.clone());
 
                 self.overwrite_idx_or_write_new_tempfile();
             }
             None => match self.state().temp_file_stack().last() {
                 Some(f) => {
-                    let string = util_file_contents_to_string(f.as_path());
+                    let string = util_file_contents_to_string(f.as_path()).unwrap();
 
                     self.state().set_output_buffer(string);
                 }
@@ -172,7 +172,7 @@ impl TempApp {
         match self.state().output_temp_file().clone() {
             Some(stk_idx) => match self.idx_in_stack_tempfile(stk_idx.clone()) {
                 Some(f) => {
-                    print!("{}", util_file_contents_to_string(f.as_path()));
+                    print!("{}", util_file_contents_to_string(f.as_path()).unwrap())
                 }
                 None => {}
             },
@@ -288,7 +288,7 @@ impl TempApp {
         }
         for (i, p) in stk.iter().enumerate() {
             println!("{}: {}", i + 1, util_path_to_string(p));
-            let string = util_file_contents_to_string(p.as_path());
+            let string = util_file_contents_to_string(p.as_path()).unwrap();
             println!("{}", string.trim_end());
             util_horiz_rule();
         }

@@ -73,9 +73,7 @@ pub fn util_remove_file(f: &PathBuf) {
         Ok(_success) => {
             debug!("removed file '{}'", util_path_to_string(f));
         }
-        Err(error) => {
-            error!("_____________'e' = '{}'_____________", error);
-        }
+        Err(_error) => util_terminate_error(ERR_INVALID_RM),
     }
 }
 
@@ -83,17 +81,23 @@ pub fn util_path_to_string(path: &PathBuf) -> String {
     path.clone().into_os_string().into_string().unwrap()
 }
 
-pub fn util_file_contents_to_string(filename: &Path) -> String {
-    read_to_string(filename).unwrap()
+pub fn util_file_contents_to_string(filename: &Path) -> Option<String> {
+    match read_to_string(filename) {
+        Ok(str) => Some(str),
+        Err(_error) => {
+            util_terminate_error(ERR_INVALID_FILE);
+            None
+        }
+    }
 }
 
 pub fn util_append_file(path: &PathBuf, buffer: &String) {
-    let mut file = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(path)
-        .unwrap();
-    file.write(buffer.as_bytes());
+    match OpenOptions::new().create(true).append(true).open(path) {
+        Ok(mut file) => {
+            file.write(buffer.as_bytes());
+        }
+        Err(_error) => util_terminate_error(ERR_INVALID_FILE),
+    }
 }
 
 pub fn util_horiz_rule() {
@@ -101,18 +105,26 @@ pub fn util_horiz_rule() {
 }
 
 pub fn util_overwrite_file(path: &PathBuf, buffer: &String) {
-    let mut file = OpenOptions::new()
+    match OpenOptions::new()
         .create(true)
         .write(true)
         .truncate(true)
         .open(path)
-        .unwrap();
-    file.write(buffer.as_bytes());
+    {
+        Ok(mut file) => {
+            file.write(buffer.as_bytes());
+        }
+        Err(_error) => util_terminate_error(ERR_INVALID_FILE),
+    }
 }
 
 pub fn util_write_file(path: &PathBuf, buffer: &String) {
-    let mut file = OpenOptions::new().create(true).open(path).unwrap();
-    file.write(buffer.as_bytes());
+    match OpenOptions::new().create(true).open(path) {
+        Ok(mut file) => {
+            file.write(buffer.as_bytes());
+        }
+        Err(_error) => util_terminate_error(ERR_INVALID_FILE),
+    }
 }
 
 pub fn util_time_ms() -> String {
