@@ -3,7 +3,7 @@ use io::stdin;
 use std::env;
 
 use std::fs;
-use std::fs::{File};
+use std::fs::File;
 use std::io;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -244,6 +244,9 @@ impl TempApp {
         }
         if matches.is_present("clear") {
             self.clear_all();
+        }
+        if matches.is_present("shift") {
+            self.remove_at_idx(format!("{}", 1))
         }
         if matches.is_present("pop") {
             let top = self.state().temp_file_stack().len();
