@@ -69,6 +69,7 @@ pub fn util_append_file(path: &PathBuf, buffer: &String) {
 
 pub fn util_overwrite_file(path: &PathBuf, buffer: &String) {
     let mut file = OpenOptions::new()
+        .create(true)
         .write(true)
         .truncate(true)
         .open(path)

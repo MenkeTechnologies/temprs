@@ -2,56 +2,62 @@
 
 ## [temprs on Crates.io](https://crates.io/crates/temprs)
 
-Temporary files are numbered with ascending order. The highest numbered tempfile is the top of the stack and tempfile 1
-is at the bottom of the stack.
+## Install
+
+cargo install temprs
 
 ## Usage
 
-- send stdin into temprs, create temprs file on top of stack and write that tempfile to stdout
-  ```cmd | temprs```
+- read stdin into new tempfile on top of stack and contents to stdout
+  ```cmd | tp```
 
-- read from temprs file on top of stack and write to stdout
-  ```temprs | nl```
+- contents of tempfile on top of stack to stdout
+  ```tp | nl```
 
-- read stdin into chosen input tempfile 1 and write to stdout
-  ```ls | temprs -i 1```
+- read stdin into tempfile at index 1 and write to stdout
+  ```ls | tp -i 1```
+
+- output tempfile at index 1 to stdout
+  ```tp -o 1 | nl```
+
+- read from file and create tempfile on top of stack with contents of file.  write contents of <file> to nl.
+  ```tp <file> | nl```
+
+- write contents of file to tempfile 1 then write to stdout
+  ```tp -i 1 <file> | nl```
+
+- read from stdin to tempfile 1 then write to stdout
+  ```ls | tp -i 1 | nl```
+
+- choose input tempfile and write to tempfile at index 2 and stdout
+  ```ls | tp -i 2```
 
 - choose output tempfile and write to stdout
-  ```temprs -o 1 | nl```
+  ```tp -o 1 | nl```
 
-- read from file and create temprs file on top of stack with contents of file writes contents of <file> to nl.
-  ```temprs <file> | nl```
+- list all tempfiles on the stack to stdout
+  ```tp -l```
 
-- write contents of file to temprs file 1 then write to stdout
-  ```temprs -i 1 <file> | nl```
+- list all tempfiles with contents on the stack to stdout
+  ```tp -L```
 
-- read from stdin to temprs file 1 then write to stdout
-  ```ls | temprs -i 1 | nl```
-
-- choose input tempfile and write to temprs file 2 and stdout
-  ```ls | temprs -i 2```
-
-- choose ouput tempfile and write to stdout
-  ```temprs -o 1 | nl```
-
-- list all temprs files on the stack to stdout
-  ```temprs -l```
-
-- list all temprs files with contents on the stack to stdout
-  ```temprs -L```
-
-- remove all temprs files
-  ```temprs -c```
+- remove all tempfiles
+  ```tp -c```
 
 - remove tempfile at INDEX
-  ```temprs -r INDEX```
+  ```tp -r INDEX```
 
 - remove tempfile at top of stack
-  ```temprs -p```
+  ```tp -p```
 
 - remove tempfile at bottom of stack
-  ```temprs -s```
+  ```tp -s```
 
-### (tp is shorthand binary for temprs)
+### Notes
+
+Temporary files are numbered with ascending order. The highest numbered tempfile is the top of the stack and tempfile 1
+is at the bottom of the stack.
+
+tp and temprs binaries are installed.
 
 # created by MenkeTechnologies

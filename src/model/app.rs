@@ -1,7 +1,6 @@
 use fs::create_dir;
 use io::stdin;
 use std::env;
-
 use std::fs;
 use std::fs::File;
 use std::io;
@@ -16,16 +15,8 @@ use model::opts::parse_opts;
 
 use crate::model;
 use crate::model::state::TempState;
-use crate::util::consts::TEMPFILE_PREFIX;
-use crate::util::consts::{
-    ERR_INVALID_INFILE, ERR_INVALID_OUTFILE, ERR_INVALID_RM, FILE_LIST_FILE, TEMP_DIR,
-    TEMP_LOG_LEVEL,
-};
-use crate::util::utils::{
-    util_append_file, util_overwrite_file, util_path_as_string, util_paths_from_file,
-    util_paths_to_file, util_remove_file,
-};
-use crate::util::utils::{util_file_contents, util_get_ms};
+use crate::util::consts::*;
+use crate::util::utils::*;
 
 pub struct TempApp {
     state: TempState,
@@ -115,21 +106,7 @@ impl TempApp {
                 let str = util_file_contents(arg_file.as_path());
                 self.state().set_buffer(str.clone());
 
-                match self.state().input_temp_file().clone() {
-                    Some(stk_idx) => match self.stack_file_from_idx(stk_idx.clone()) {
-                        Some(f) => {
-                            util_overwrite_file(f, &str);
-                        }
-                        None => {
-                            error!("{} at idx: {}", ERR_INVALID_INFILE, stk_idx);
-                            exit(1)
-                        }
-                    },
-                    None => {
-                        self.append_temp_file_list();
-                        util_append_file(self.state().new_temp_file(), &str);
-                    }
-                }
+                self.overwrite_idx_or_write_new_tempfile();
             }
             None => {
                 let _buffer = String::new();
@@ -204,6 +181,11 @@ impl TempApp {
 
         self.state().set_buffer(str.clone());
 
+        self.overwrite_idx_or_write_new_tempfile()
+    }
+
+    fn overwrite_idx_or_write_new_tempfile(&mut self) {
+        let str = String::from(self.state().buffer());
         match self.state().input_temp_file().clone() {
             Some(stk_idx) => match self.stack_file_from_idx(stk_idx.clone()) {
                 Some(f) => {
@@ -216,7 +198,7 @@ impl TempApp {
             },
             None => {
                 self.append_temp_file_list();
-                util_append_file(self.state().new_temp_file(), &str);
+                util_overwrite_file(self.state().new_temp_file(), &str);
             }
         }
     }

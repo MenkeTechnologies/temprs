@@ -1,6 +1,6 @@
 use log::Level;
 
-pub const VERSION: &'static str = "0.2.6";
+pub const VERSION: &'static str = "0.2.7";
 pub const TEMP_LOG_LEVEL: Level = Level::Info;
 pub const TEMP_DIR: &'static str = "temprs";
 pub const FILE_LIST_FILE: &'static str = "temprs-stack";
@@ -11,4 +11,4 @@ pub const ERR_INVALID_OUTFILE: &'static str = "Could not read from specified tem
 pub const ERR_INVALID_INFILE: &'static str = "Could not write to specified temporary file";
 pub const ERR_INVALID_RM: &'static str = "Could not remove specified temporary file";
 pub const DESC: &'static str = "A temporary file manager with stack mechanism";
-pub const NAME: &'static str = "Temprs";
+pub const NAME: &'static str = "temprs";
