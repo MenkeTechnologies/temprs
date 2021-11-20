@@ -63,6 +63,8 @@ cargo install temprs
 Temporary files are numbered with ascending order. The highest numbered tempfile is the top of the stack and tempfile 1
 is at the bottom of the stack.
 
+Negative indices are allowed at any INDEX argument position.  Indices go from 1 .. stack size and -1 .. -stack size.  INDEX of 0 is always invalid.
+
 tp and temprs binaries are installed.
 
 # created by MenkeTechnologies

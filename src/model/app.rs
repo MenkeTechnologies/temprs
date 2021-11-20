@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 use std::process::exit;
 
 use atty::Stream;
-use log::{debug, error, Level};
+use log::{debug, Level};
 
 use model::opts::parse_opts;
 
@@ -141,14 +141,11 @@ impl TempApp {
     }
 
     fn add_idx_in_stack(&mut self, f: String) {
-        match f.parse::<usize>() {
+        match f.parse::<i32>() {
             Ok(idx) => {
-                if idx < 1 {
-                    util_terminate_error(ERR_INVALID_INSERT);
-                }
                 let mut cur_files = self.state().temp_file_stack().clone();
                 cur_files.insert(
-                    util_transform_idx(idx),
+                    util_transform_idx(idx, cur_files.len()),
                     self.state().new_temp_file().clone(),
                 );
                 util_paths_to_file(cur_files, self.state().master_record_file());
@@ -159,15 +156,13 @@ impl TempApp {
         }
     }
     fn idx_in_stack_tempfile(&mut self, f: String) -> Option<&PathBuf> {
-        match f.parse::<usize>() {
+        match f.parse::<i32>() {
             Ok(idx) => {
-                if idx < 1 {
-                    return None;
-                }
-                self.state().temp_file_stack().get(util_transform_idx(idx))
+                let stk = self.state().temp_file_stack();
+                stk.get(util_transform_idx(idx, stk.len()))
             }
-            Err(error) => {
-                error!("{}", error);
+            Err(_error) => {
+                util_terminate_error(ERR_INVALID_IDX);
                 None
             }
         }
@@ -179,10 +174,7 @@ impl TempApp {
                 Some(f) => {
                     print!("{}", util_file_contents_to_string(f.as_path()));
                 }
-                None => {
-                    error!("{} at idx: {}", ERR_INVALID_OUTFILE, stk_idx);
-                    exit(1)
-                }
+                None => {}
             },
             None => {
                 if !self.state().silent() {
@@ -209,10 +201,7 @@ impl TempApp {
                 Some(f) => {
                     util_overwrite_file(f, &file_contents);
                 }
-                None => {
-                    error!("{} at idx: {}", ERR_INVALID_INFILE, stk_idx);
-                    exit(1)
-                }
+                None => {}
             },
             None => {
                 let insert_idx = self.state().insert_idx().clone();
@@ -337,10 +326,7 @@ impl TempApp {
                 util_paths_to_file(col, self.state().master_record_file());
                 exit(0)
             }
-            None => {
-                error!("{} at idx: {}", ERR_INVALID_RM, stk_idx);
-                exit(1)
-            }
+            None => util_terminate_error(ERR_INVALID_IDX),
         }
     }
 }
