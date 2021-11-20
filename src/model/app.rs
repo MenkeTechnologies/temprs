@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 use std::process::exit;
 
 use atty::Stream;
-use log::{debug, error};
+use log::{debug, error, Level};
 
 use model::opts::parse_opts;
 
@@ -246,6 +246,9 @@ impl TempApp {
 
         if matches.is_present("list_files") {
             self.list_tempfiles();
+        }
+        if matches.is_present("verbose") {
+            simple_logger::init_with_level(Level::Debug);
         }
 
         if matches.is_present("list_contents") {

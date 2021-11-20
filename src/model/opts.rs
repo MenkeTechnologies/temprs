@@ -59,8 +59,8 @@ pub fn parse_opts() -> App<'static, 'static> {
             .short("c")
             .long("clear")
             .help("Remove all tempfiles"))
-        .arg(Arg::with_name("v")
+        .arg(Arg::with_name("verbose")
             .short("v")
-            .multiple(true)
+            .long("verbose")
             .help("Set the level of verbosity"))
 }
