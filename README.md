@@ -20,11 +20,11 @@ cargo install temprs
 - output tempfile at index 1 to stdout
   ```tp -o 1 | nl```
 
-- read from file and create tempfile on top of stack with contents of file.  write contents of <file> to nl.
-  ```tp <file> | nl```
+- read from FILE and create tempfile on top of stack with contents of file.  write contents of FILE to nl.
+  ```tp FILE | nl```
 
-- write contents of file to tempfile 1 then write to stdout
-  ```tp -i 1 <file> | nl```
+- write contents of FILE to tempfile 1 then write to stdout
+  ```tp -i 1 FILE | nl```
 
 - read from stdin to tempfile 1 then write to stdout
   ```ls | tp -i 1 | nl```
@@ -47,6 +47,11 @@ cargo install temprs
 - remove tempfile at INDEX
   ```tp -r INDEX```
 
+- insert tempfile at INDEX
+  ```id | tp -a INDEX```
+ 
+- insert FILE at INDEX
+  ```tp -a INDEX FILE```
 - remove tempfile at top of stack
   ```tp -p```
 

@@ -3,7 +3,9 @@
 
 use std::fs::{read_to_string, remove_file, File, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
+use std::iter::repeat;
 use std::path::{Path, PathBuf};
+use std::process::exit;
 use std::time::SystemTime;
 
 use log::{debug, error};
@@ -25,6 +27,15 @@ pub fn util_paths_to_file(paths: Vec<PathBuf>, out: &PathBuf) {
         util_remove_file(out);
     }
     util_lines_to_file(out, lines)
+}
+
+pub fn util_terminate_error(msg: &str) {
+    error!("{}", msg);
+    exit(1)
+}
+
+pub fn util_transform_idx(idx: usize) -> usize {
+    idx - 1
 }
 
 pub fn util_lines_to_file(out: &PathBuf, lines: Vec<String>) {
@@ -68,6 +79,9 @@ pub fn util_append_file(path: &PathBuf, buffer: &String) {
         .open(path)
         .unwrap();
     file.write(buffer.as_bytes());
+}
+pub fn util_horiz_rule() {
+    println!("{}", repeat("-").take(80).collect::<String>())
 }
 
 pub fn util_overwrite_file(path: &PathBuf, buffer: &String) {
