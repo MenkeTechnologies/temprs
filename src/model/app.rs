@@ -290,8 +290,11 @@ impl TempApp {
     }
     fn list_tempfiles_contents(&mut self) {
         debug!("list contents");
-        util_horiz_rule();
-        for (i, p) in self.state().temp_file_stack().iter().enumerate() {
+        let stk = self.state().temp_file_stack();
+        if stk.len() > 0 {
+            util_horiz_rule();
+        }
+        for (i, p) in stk.iter().enumerate() {
             println!("{}: {}", i + 1, util_path_to_string(p));
             println!("{}", util_file_contents_to_string(p.as_path()));
             util_horiz_rule();
@@ -300,8 +303,11 @@ impl TempApp {
     }
     fn list_tempfiles(&mut self) {
         debug!("list files");
-        util_horiz_rule();
-        for (i, p) in self.state().temp_file_stack().iter().enumerate() {
+        let stk = self.state().temp_file_stack();
+        if stk.len() > 0 {
+            util_horiz_rule();
+        }
+        for (i, p) in stk.iter().enumerate() {
             println!("{}: {}", i + 1, util_path_to_string(p));
             util_horiz_rule();
         }
