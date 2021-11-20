@@ -34,8 +34,23 @@ pub fn util_terminate_error(msg: &str) {
     exit(1)
 }
 
-pub fn util_transform_idx(idx: usize) -> usize {
-    idx - 1
+pub fn util_transform_idx(idx: i32, len: usize) -> usize {
+    if idx < 0 {
+        let bnd = idx + len as i32;
+        if bnd < 0 {
+            util_terminate_error(ERR_INVALID_IDX)
+        }
+        bnd as usize
+    } else {
+        let bnd = idx - 1;
+        if bnd < 0 {
+            util_terminate_error(ERR_INVALID_IDX)
+        }
+        if bnd >= len as i32 {
+            util_terminate_error(ERR_INVALID_IDX)
+        }
+        bnd as usize
+    }
 }
 
 pub fn util_lines_to_file(out: &PathBuf, lines: Vec<String>) {
