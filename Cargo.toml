@@ -1,13 +1,20 @@
 [package]
-name = "temp"
-version = "0.2.0"
+name = "temprs"
+version = "0.2.1"
 authors = ["Jacob Menke <linux.dev25@gmail.com>"]
 edition = "2018"
 description = "A temporary file manager with stack mechanism"
 license = "MIT"
-repository = "https://github.com/MenkeTechnologies/temp"
-homepage = "https://github.com/MenkeTechnologies/temp"
+repository = "https://github.com/MenkeTechnologies/temprs"
+homepage = "https://github.com/MenkeTechnologies/temprs"
 
+[[bin]]
+name = "temprs"
+path = "src/main.rs"
+
+[[bin]]
+name = "tp"
+path = "src/main.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
