@@ -299,7 +299,8 @@ impl TempApp {
         }
         for (i, p) in stk.iter().enumerate() {
             println!("{}: {}", i + 1, util_path_to_string(p));
-            println!("{}", util_file_contents_to_string(p.as_path()));
+            let string = util_file_contents_to_string(p.as_path());
+            println!("{}", string.trim_end());
             util_horiz_rule();
         }
         exit(0)
