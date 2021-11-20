@@ -1,6 +1,9 @@
+#![allow(dead_code)]
+#![allow(unused_must_use)]
+
 use std::path::PathBuf;
 
-use crate::util::utils::util_path_as_string;
+use crate::util::utils::util_path_to_string;
 
 pub struct TempState {
     new_temp_file: PathBuf,
@@ -96,10 +99,10 @@ impl TempState {
 
 impl TempState {
     pub fn out_file_path_str(&self) -> String {
-        util_path_as_string(self.new_temp_file())
+        util_path_to_string(self.new_temp_file())
     }
 
     pub fn master_file_path_str(&self) -> String {
-        util_path_as_string(self.master_record_file())
+        util_path_to_string(self.master_record_file())
     }
 }
