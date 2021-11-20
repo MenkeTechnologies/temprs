@@ -1,8 +1,9 @@
 use fs::create_dir;
 use io::stdin;
 use std::env;
+
 use std::fs;
-use std::fs::{File, remove_file};
+use std::fs::{File};
 use std::io;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -15,9 +16,15 @@ use model::opts::parse_opts;
 
 use crate::model;
 use crate::model::state::TempState;
-use crate::util::consts::{ERR_INVALID_INFILE, ERR_INVALID_OUTFILE, ERR_INVALID_RM, FILE_LIST_FILE, TEMP_DIR, TEMP_LOG_LEVEL};
 use crate::util::consts::TEMPFILE_PREFIX;
-use crate::util::utils::{util_append_file, util_overwrite_file, util_path_as_string, util_paths_from_file, util_paths_to_file, util_remove_file};
+use crate::util::consts::{
+    ERR_INVALID_INFILE, ERR_INVALID_OUTFILE, ERR_INVALID_RM, FILE_LIST_FILE, TEMP_DIR,
+    TEMP_LOG_LEVEL,
+};
+use crate::util::utils::{
+    util_append_file, util_overwrite_file, util_path_as_string, util_paths_from_file,
+    util_paths_to_file, util_remove_file,
+};
 use crate::util::utils::{util_file_contents, util_get_ms};
 
 pub struct TempApp {
@@ -238,12 +245,16 @@ impl TempApp {
         if matches.is_present("clear") {
             self.clear_all();
         }
+        if matches.is_present("pop") {
+            let top = self.state().temp_file_stack().len();
+            self.remove_at_idx(format!("{}", top))
+        }
 
         if matches.is_present("silent") {
             self.state().set_silent(true);
         }
         match matches.value_of("remove") {
-            Some(f) => { self.remove_at_idx(String::from(f)) }
+            Some(f) => self.remove_at_idx(String::from(f)),
             None => {}
         }
 

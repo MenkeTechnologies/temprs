@@ -1,4 +1,4 @@
-use std::fs::{File, OpenOptions, read_to_string, remove_file};
+use std::fs::{read_to_string, remove_file, File, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
@@ -41,7 +41,7 @@ pub fn util_lines_from_file(path: &Path) -> Vec<String> {
 
 pub fn util_remove_file(f: &PathBuf) {
     match remove_file(f.as_path()) {
-        Ok(success) => {
+        Ok(_success) => {
             debug!("removed file '{}'", util_path_as_string(f));
         }
         Err(error) => {
