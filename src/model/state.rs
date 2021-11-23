@@ -8,6 +8,7 @@ use crate::util::utils::util_path_to_string;
 pub struct TempState {
     new_temp_file: PathBuf,
     master_record_file: PathBuf,
+    temprs_dir: PathBuf,
     temp_file_stack: Vec<PathBuf>,
     arg_file: Option<PathBuf>,
     insert_idx: Option<String>,
@@ -23,6 +24,9 @@ impl TempState {
     }
     pub fn set_master_record_file(&mut self, master_record_file: PathBuf) {
         self.master_record_file = master_record_file;
+    }
+    pub fn set_temprs_dir(&mut self, temprs_dir: PathBuf) {
+        self.temprs_dir = temprs_dir;
     }
     pub fn set_temp_file_stack(&mut self, temp_file_stack: Vec<PathBuf>) {
         self.temp_file_stack = temp_file_stack;
@@ -54,6 +58,9 @@ impl TempState {
     pub fn master_record_file(&self) -> &PathBuf {
         &self.master_record_file
     }
+    pub fn temprs_dir(&self) -> &PathBuf {
+        &self.temprs_dir
+    }
     pub fn temp_file_stack(&self) -> &Vec<PathBuf> {
         &self.temp_file_stack
     }
@@ -81,6 +88,7 @@ impl TempState {
     pub fn new(
         out_file: PathBuf,
         master_record_file: PathBuf,
+        home_dir: PathBuf,
         temp_file_stack: Vec<PathBuf>,
         arg_file: Option<PathBuf>,
         output_buffer: String,
@@ -88,6 +96,7 @@ impl TempState {
         TempState {
             new_temp_file: out_file,
             master_record_file,
+            temprs_dir: home_dir,
             temp_file_stack,
             arg_file,
             insert_idx: None,

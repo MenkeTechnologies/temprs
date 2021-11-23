@@ -8,7 +8,7 @@ use std::fs;
 use std::fs::File;
 use std::io;
 use std::io::Read;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::exit;
 
 use atty::{isnt, Stream};
@@ -46,7 +46,8 @@ impl TempApp {
         let mut system_temp_dir = temp_dir();
         system_temp_dir.push(TEMP_DIR);
 
-        let our_temp_dir = Path::new(system_temp_dir.as_path());
+        let mut temprs_dir = PathBuf::new();
+        temprs_dir.push(system_temp_dir.as_path());
 
         let mut out_file = PathBuf::new();
         let mut master_file = PathBuf::new();
@@ -55,14 +56,14 @@ impl TempApp {
         master_file.push(system_temp_dir.as_path());
 
         out_file.push(format!("{}{}", TEMPFILE_PREFIX, util_time_ms()));
-        master_file.push(FILE_LIST_FILE);
+        master_file.push(MASTER_RECORD_FILENAME);
 
         let _subcommand = String::new();
 
-        if !our_temp_dir.exists() {
-            match create_dir(our_temp_dir) {
+        if !temprs_dir.exists() {
+            match create_dir(temprs_dir.as_path()) {
                 Ok(_success) => {
-                    debug!("create temp dir {}", our_temp_dir.display());
+                    debug!("create temp dir {}", temprs_dir.display());
                 }
                 Err(error) => {
                     panic!("_____________'e' = '{}'_____________", error);
@@ -92,7 +93,14 @@ impl TempApp {
         let temp_file_stack = util_file_to_paths(&master_file);
         debug!("found '{}' temp files on stack", temp_file_stack.len());
 
-        let state = TempState::new(out_file, master_file, temp_file_stack, None, String::new());
+        let state = TempState::new(
+            out_file,
+            master_file,
+            temprs_dir,
+            temp_file_stack,
+            None,
+            String::new(),
+        );
 
         Self { state }
     }
@@ -236,6 +244,13 @@ impl TempApp {
         if matches.is_present("list_files") {
             self.list_tempfiles();
         }
+
+        if matches.is_present("directory") {
+            self.list_home();
+        }
+        if matches.is_present("master") {
+            self.list_master();
+        }
         if matches.is_present("verbose") {
             simple_logger::init_with_level(Level::Debug);
         }
@@ -292,6 +307,18 @@ impl TempApp {
             println!("{}", string.trim_end());
             util_horiz_rule();
         }
+        exit(0)
+    }
+    fn list_home(&mut self) {
+        let dir = self.state().temprs_dir();
+
+        println!("{}", util_path_to_string(dir));
+        exit(0)
+    }
+    fn list_master(&mut self) {
+        let master = self.state().master_record_file();
+
+        println!("{}", util_path_to_string(master));
         exit(0)
     }
     fn list_tempfiles(&mut self) {

@@ -3,10 +3,10 @@
 
 use log::Level;
 
-pub const VERSION: &'static str = "0.3.4";
+pub const VERSION: &'static str = "0.3.5";
 pub const TEMP_LOG_LEVEL: Level = Level::Info;
 pub const TEMP_DIR: &'static str = "temprs";
-pub const FILE_LIST_FILE: &'static str = "temprs-stack";
+pub const MASTER_RECORD_FILENAME: &'static str = "temprs-stack";
 pub const TEMPFILE_PREFIX: &'static str = "tempfile";
 pub const ERR_NO_FILE: &'static str = "no such file";
 pub const ERR_PARSE: &'static str = "Could not parse line";
