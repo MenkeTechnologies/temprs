@@ -3,7 +3,7 @@
 
 use log::Level;
 
-pub const VERSION: &'static str = "0.3.3";
+pub const VERSION: &'static str = "0.3.4";
 pub const TEMP_LOG_LEVEL: Level = Level::Info;
 pub const TEMP_DIR: &'static str = "temprs";
 pub const FILE_LIST_FILE: &'static str = "temprs-stack";

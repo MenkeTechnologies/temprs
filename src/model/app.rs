@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 #![allow(unused_must_use)]
 
-use fs::create_dir;
+use fs::{create_dir, remove_dir_all};
 use io::stdin;
-use std::env;
+use std::env::temp_dir;
 use std::fs;
 use std::fs::File;
 use std::io;
@@ -11,7 +11,7 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 
-use atty::Stream;
+use atty::{isnt, Stream};
 use log::{debug, Level};
 
 use model::opts::parse_opts;
@@ -33,7 +33,7 @@ impl TempApp {
     }
 
     fn input(&mut self) {
-        if atty::isnt(Stream::Stdin) {
+        if isnt(Stream::Stdin) {
             self.read_stdin_pipe()
         } else {
             self.read_stdin_terminal();
@@ -43,7 +43,7 @@ impl TempApp {
     pub fn new() -> Self {
         simple_logger::init_with_level(TEMP_LOG_LEVEL).unwrap();
 
-        let mut system_temp_dir = env::temp_dir();
+        let mut system_temp_dir = temp_dir();
         system_temp_dir.push(TEMP_DIR);
 
         let our_temp_dir = Path::new(system_temp_dir.as_path());
@@ -123,7 +123,7 @@ impl TempApp {
     }
 
     fn output(&mut self) {
-        if atty::isnt(Stream::Stdout) {
+        if isnt(Stream::Stdout) {
             self.write_stdout_pipe();
         } else {
             self.write_stdout_terminal();
@@ -307,7 +307,7 @@ impl TempApp {
         exit(0)
     }
     fn clear_all(&mut self) {
-        fs::remove_dir_all(
+        remove_dir_all(
             self.state()
                 .master_record_file()
                 .as_path()
