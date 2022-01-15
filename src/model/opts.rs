@@ -73,5 +73,6 @@ pub fn parse_opts() -> App<'static, 'static> {
         .arg(Arg::with_name("verbose")
             .short("v")
             .long("verbose")
+            .multiple(true)
             .help("Set the level of verbosity"))
 }

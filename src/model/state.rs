@@ -13,9 +13,11 @@ pub struct TempState {
     arg_file: Option<PathBuf>,
     insert_idx: Option<String>,
     output_buffer: String,
+    holding_buffer: String,
     input_temp_file: Option<String>,
     output_temp_file: Option<String>,
     silent: bool,
+    verbose: u32,
 }
 
 impl TempState {
@@ -37,6 +39,9 @@ impl TempState {
     pub fn set_insert_idx(&mut self, insert_idx: Option<String>) {
         self.insert_idx = insert_idx;
     }
+    pub fn set_holding_buffer(&mut self, holding_buffer: String) {
+        self.holding_buffer = holding_buffer;
+    }
     pub fn set_output_buffer(&mut self, output_buffer: String) {
         self.output_buffer = output_buffer;
     }
@@ -48,6 +53,10 @@ impl TempState {
     }
     pub fn set_silent(&mut self, silent: bool) {
         self.silent = silent;
+    }
+
+    pub fn set_verbose(&mut self, verbose: u32) {
+        self.verbose = verbose;
     }
 }
 
@@ -70,6 +79,9 @@ impl TempState {
     pub fn insert_idx(&self) -> &Option<String> {
         &self.insert_idx
     }
+    pub fn holding_buffer(&self) -> &str {
+        &self.holding_buffer
+    }
     pub fn output_buffer(&self) -> &str {
         &self.output_buffer
     }
@@ -81,6 +93,9 @@ impl TempState {
     }
     pub fn silent(&self) -> bool {
         self.silent
+    }
+    pub fn verbose(&self) -> u32 {
+        self.verbose
     }
 }
 
@@ -101,9 +116,11 @@ impl TempState {
             arg_file,
             insert_idx: None,
             output_buffer,
+            holding_buffer: String::new(),
             input_temp_file: None,
             output_temp_file: None,
             silent: false,
+            verbose: 0
         }
     }
 }

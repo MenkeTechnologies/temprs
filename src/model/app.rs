@@ -115,7 +115,10 @@ impl TempApp {
         match self.state().arg_file() {
             Some(arg_file) => {
                 let str = util_file_contents_to_string(arg_file.as_path()).unwrap();
-                self.state().set_output_buffer(str.clone());
+                self.state().set_holding_buffer(str.clone());
+                if self.state.verbose() > 0 {
+                    self.state().set_output_buffer(str.clone());
+                }
 
                 self.overwrite_idx_or_write_new_tempfile();
             }
@@ -185,7 +188,7 @@ impl TempApp {
                 None => {}
             },
             None => {
-                if !self.state().silent() {
+                if !self.state().output_buffer().is_empty() {
                     print!("{}", self.state().output_buffer());
                 }
             }
@@ -197,13 +200,16 @@ impl TempApp {
         let mut str = String::new();
         stdin().read_to_string(&mut str);
 
-        self.state().set_output_buffer(str.clone());
+        self.state().set_holding_buffer(str.clone());
+        if self.state.verbose() > 0 {
+            self.state().set_output_buffer(str.clone());
+        }
 
         self.overwrite_idx_or_write_new_tempfile()
     }
 
     fn overwrite_idx_or_write_new_tempfile(&mut self) {
-        let file_contents = String::from(self.state().output_buffer());
+        let file_contents = String::from(self.state().holding_buffer());
         match self.state().input_temp_file().clone() {
             Some(stk_idx) => match self.idx_in_stack_tempfile(stk_idx.clone()) {
                 Some(f) => {
@@ -253,6 +259,7 @@ impl TempApp {
         }
         if matches.is_present("verbose") {
             simple_logger::init_with_level(Level::Debug);
+            self.state().set_verbose(1);
         }
 
         if matches.is_present("list_contents") {
