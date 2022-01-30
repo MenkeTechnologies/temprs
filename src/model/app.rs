@@ -26,12 +26,14 @@ pub struct TempApp {
 }
 
 impl TempApp {
+    #[inline(always)]
     pub fn run(&mut self) {
         self.parse_opts();
         self.input();
         self.output()
     }
 
+    #[inline(always)]
     fn input(&mut self) {
         if isnt(Stream::Stdin) {
             self.read_stdin_pipe()
@@ -40,6 +42,7 @@ impl TempApp {
         }
     }
 
+    #[inline(always)]
     pub fn new() -> Self {
         simple_logger::init_with_level(TEMP_LOG_LEVEL).unwrap();
 
@@ -105,10 +108,12 @@ impl TempApp {
         Self { state }
     }
 
+    #[inline(always)]
     pub fn state(&mut self) -> &mut TempState {
         &mut self.state
     }
 
+    #[inline(always)]
     fn read_stdin_terminal(&mut self) {
         debug!("stdin term");
 
@@ -133,6 +138,7 @@ impl TempApp {
         }
     }
 
+    #[inline(always)]
     fn output(&mut self) {
         if isnt(Stream::Stdout) {
             self.write_stdout_pipe();
@@ -141,16 +147,19 @@ impl TempApp {
         }
     }
 
+    #[inline(always)]
     fn write_stdout_terminal(&mut self) {
         debug!("stdout term");
         self.print_buffer_or_stack_file();
     }
 
+    #[inline(always)]
     fn write_stdout_pipe(&mut self) {
         debug!("stdout pipe");
         self.print_buffer_or_stack_file();
     }
 
+    #[inline(always)]
     fn add_idx_in_stack(&mut self, f: String) {
         match f.parse::<i32>() {
             Ok(idx) => {
@@ -166,6 +175,7 @@ impl TempApp {
             }
         }
     }
+    #[inline(always)]
     fn idx_in_stack_tempfile(&mut self, f: String) -> Option<&PathBuf> {
         match f.parse::<i32>() {
             Ok(idx) => {
@@ -179,6 +189,7 @@ impl TempApp {
         }
     }
 
+    #[inline(always)]
     fn print_buffer_or_stack_file(&mut self) {
         match self.state().output_temp_file().clone() {
             Some(stk_idx) => match self.idx_in_stack_tempfile(stk_idx.clone()) {
@@ -195,6 +206,7 @@ impl TempApp {
         }
     }
 
+    #[inline(always)]
     fn read_stdin_pipe(&mut self) {
         debug!("stdin pipe");
         let mut str = String::new();
@@ -208,6 +220,7 @@ impl TempApp {
         self.overwrite_idx_or_write_new_tempfile()
     }
 
+    #[inline(always)]
     fn overwrite_idx_or_write_new_tempfile(&mut self) {
         let file_contents = String::from(self.state().holding_buffer());
         match self.state().input_temp_file().clone() {
@@ -233,6 +246,7 @@ impl TempApp {
         }
     }
 
+    #[inline(always)]
     fn append_to_master_list(&mut self) {
         debug!(
             "append file {} to master",
@@ -244,6 +258,7 @@ impl TempApp {
         buffer.push_str("\n");
         util_append_file(self.state().master_record_file(), &buffer);
     }
+    #[inline(always)]
     fn parse_opts(&mut self) {
         let matches = parse_opts().get_matches();
 
@@ -302,6 +317,7 @@ impl TempApp {
             None => {}
         }
     }
+    #[inline(always)]
     fn list_tempfiles_contents(&mut self) {
         debug!("list contents");
         let stk = self.state().temp_file_stack();
@@ -316,18 +332,21 @@ impl TempApp {
         }
         exit(0)
     }
+    #[inline(always)]
     fn list_home(&mut self) {
         let dir = self.state().temprs_dir();
 
         println!("{}", util_path_to_string(dir));
         exit(0)
     }
+    #[inline(always)]
     fn list_master(&mut self) {
         let master = self.state().master_record_file();
 
         println!("{}", util_path_to_string(master));
         exit(0)
     }
+    #[inline(always)]
     fn list_tempfiles(&mut self) {
         debug!("list files");
         let stk = self.state().temp_file_stack();
@@ -340,6 +359,7 @@ impl TempApp {
         }
         exit(0)
     }
+    #[inline(always)]
     fn clear_all(&mut self) {
         remove_dir_all(
             self.state()
@@ -350,6 +370,7 @@ impl TempApp {
         );
         exit(0)
     }
+    #[inline(always)]
     fn remove_at_idx(&mut self, stk_idx: String) {
         let cur = self.state().temp_file_stack().clone();
         match self.idx_in_stack_tempfile(stk_idx.clone()) {

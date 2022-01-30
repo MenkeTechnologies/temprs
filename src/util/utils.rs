@@ -12,6 +12,7 @@ use log::{debug, error};
 
 use crate::util::consts::*;
 
+#[inline(always)]
 pub fn util_file_to_paths(path: &Path) -> Vec<PathBuf> {
     let file = File::open(path).expect(ERR_NO_FILE);
     let buf = BufReader::new(file);
@@ -20,6 +21,7 @@ pub fn util_file_to_paths(path: &Path) -> Vec<PathBuf> {
         .collect()
 }
 
+#[inline(always)]
 pub fn util_paths_to_file(paths: Vec<PathBuf>, out: &PathBuf) {
     let lines: Vec<String> = paths.iter().map(|p| util_path_to_string(p)).collect();
     if out.as_path().exists() {
@@ -29,11 +31,13 @@ pub fn util_paths_to_file(paths: Vec<PathBuf>, out: &PathBuf) {
     util_lines_to_file(out, lines)
 }
 
+#[inline(always)]
 pub fn util_terminate_error(msg: &str) {
     error!("{}", msg);
     exit(1)
 }
 
+#[inline(always)]
 pub fn util_transform_idx(idx: i32, len: usize) -> usize {
     if idx < 0 {
         let bnd = idx + len as i32;
@@ -53,6 +57,7 @@ pub fn util_transform_idx(idx: i32, len: usize) -> usize {
     }
 }
 
+#[inline(always)]
 pub fn util_lines_to_file(out: &PathBuf, lines: Vec<String>) {
     let mut buf: String = lines.join("\n");
     if !buf.is_empty() {
@@ -62,12 +67,14 @@ pub fn util_lines_to_file(out: &PathBuf, lines: Vec<String>) {
     util_append_file(out, &buf);
 }
 
+#[inline(always)]
 pub fn util_file_to_lines(path: &Path) -> Vec<String> {
     let file = File::open(path).expect(ERR_NO_FILE);
     let buf = BufReader::new(file);
     buf.lines().map(|l| l.expect(ERR_PARSE)).collect()
 }
 
+#[inline(always)]
 pub fn util_remove_file(f: &PathBuf) {
     match remove_file(f.as_path()) {
         Ok(_success) => {
@@ -77,10 +84,12 @@ pub fn util_remove_file(f: &PathBuf) {
     }
 }
 
+#[inline(always)]
 pub fn util_path_to_string(path: &PathBuf) -> String {
     path.clone().into_os_string().into_string().unwrap()
 }
 
+#[inline(always)]
 pub fn util_file_contents_to_string(filename: &Path) -> Option<String> {
     match read_to_string(filename) {
         Ok(str) => Some(str),
@@ -91,6 +100,7 @@ pub fn util_file_contents_to_string(filename: &Path) -> Option<String> {
     }
 }
 
+#[inline(always)]
 pub fn util_append_file(path: &PathBuf, buffer: &String) {
     match OpenOptions::new().create(true).append(true).open(path) {
         Ok(mut file) => {
@@ -100,10 +110,12 @@ pub fn util_append_file(path: &PathBuf, buffer: &String) {
     }
 }
 
+#[inline(always)]
 pub fn util_horiz_rule() {
     println!("{}", repeat(HR_CHAR).take(80).collect::<String>())
 }
 
+#[inline(always)]
 pub fn util_overwrite_file(path: &PathBuf, buffer: &String) {
     match OpenOptions::new()
         .create(true)
@@ -118,6 +130,7 @@ pub fn util_overwrite_file(path: &PathBuf, buffer: &String) {
     }
 }
 
+#[inline(always)]
 pub fn util_write_file(path: &PathBuf, buffer: &String) {
     match OpenOptions::new().create(true).open(path) {
         Ok(mut file) => {
@@ -127,6 +140,7 @@ pub fn util_write_file(path: &PathBuf, buffer: &String) {
     }
 }
 
+#[inline(always)]
 pub fn util_time_ms() -> String {
     SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
