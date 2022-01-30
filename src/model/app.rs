@@ -286,6 +286,11 @@ impl TempApp {
         if matches.is_present("shift") {
             self.remove_at_idx(format!("{}", 1))
         }
+
+        if matches.is_present("unshift") {
+            self.state().set_insert_idx(Some(String::from("1")));
+        }
+
         if matches.is_present("pop") {
             let top = self.state().temp_file_stack().len();
             self.remove_at_idx(format!("{}", top))
@@ -298,9 +303,8 @@ impl TempApp {
             Some(f) => self.remove_at_idx(String::from(f)),
             None => {}
         }
-
         match matches.value_of("add") {
-            Some(f) => self.state().set_insert_idx(Some(String::from(f))),
+            Some(i) => self.state().set_insert_idx(Some(String::from(i))),
             None => {}
         }
 
@@ -309,11 +313,11 @@ impl TempApp {
             None => {}
         }
         match matches.value_of("input") {
-            Some(f) => self.state().set_input_temp_file(Some(String::from(f))),
+            Some(i) => self.state().set_input_temp_file(Some(String::from(i))),
             None => {}
         }
         match matches.value_of("output") {
-            Some(f) => self.state().set_output_temp_file(Some(String::from(f))),
+            Some(i) => self.state().set_output_temp_file(Some(String::from(i))),
             None => {}
         }
     }

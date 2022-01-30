@@ -52,8 +52,15 @@ cargo install temprs
  
 - insert FILE at INDEX
   ```tp -a INDEX FILE```
+
 - remove tempfile at top of stack
   ```tp -p```
+
+- add tempfile at bottom of stack
+  ```id | tp -u```
+
+- add tempfile at bottom of stack
+  ```id | tp -a 1```
 
 - remove tempfile at bottom of stack
   ```tp -s```
