@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_must_use)]
 
-use std::fs::{read_to_string, remove_file, File, OpenOptions};
+use std::fs::{File, OpenOptions, read_to_string, remove_file};
 use std::io::{BufRead, BufReader, Write};
 use std::iter::repeat;
 use std::path::{Path, PathBuf};

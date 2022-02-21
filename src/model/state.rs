@@ -144,7 +144,7 @@ impl TempState {
             input_temp_file: None,
             output_temp_file: None,
             silent: false,
-            verbose: 0
+            verbose: 0,
         }
     }
 }

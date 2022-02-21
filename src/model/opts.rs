@@ -1,12 +1,12 @@
-use clap::{App, Arg};
+use clap::{App, Arg, crate_authors, crate_description, crate_version};
 
-use crate::util::consts::{DESC, NAME, VERSION};
+use crate::util::consts::NAME;
 
 pub fn parse_opts() -> App<'static, 'static> {
     App::new(NAME)
-        .version(VERSION)
-        .author("Jacob Menke. <linux.dev25@gmail.com>")
-        .about(DESC)
+        .version(crate_version!())
+        .author(crate_authors!())
+        .about(crate_description!())
         .arg(Arg::with_name("input")
             .short("i")
             .long("input")

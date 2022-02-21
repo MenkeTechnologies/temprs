@@ -62,7 +62,7 @@ cargo install temprs
 
 - insert tempfile at INDEX
   ```CMD | tp -a INDEX```
- 
+
 - insert FILE at INDEX
   ```tp -a INDEX FILE```
 
