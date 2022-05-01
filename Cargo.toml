@@ -1,6 +1,6 @@
 [package]
 name = "temprs"
-version = "0.4.4"
+version = "0.4.5"
 authors = ["Jacob Menke <linux.dev25@gmail.com>"]
 edition = "2018"
 description = "A temporary file manager with stack mechanism"
@@ -13,6 +13,13 @@ categories = ["command-line-utilities"]
 [[bin]]
 name = "temprs"
 path = "src/main.rs"
+
+[profile.release]
+lto = true
+panic = "abort"
+strip = true
+codegen-units = 1
+opt-level = 3
 
 [[bin]]
 name = "tp"

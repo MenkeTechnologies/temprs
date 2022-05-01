@@ -132,7 +132,7 @@ impl TempState {
         arg_file: Option<PathBuf>,
         output_buffer: String,
     ) -> Self {
-        TempState {
+        Self {
             new_temp_file: out_file,
             master_record_file,
             temprs_dir: home_dir,
