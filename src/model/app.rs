@@ -262,61 +262,61 @@ impl TempApp {
     fn parse_opts(&mut self) {
         let matches = parse_opts().get_matches();
 
-        if matches.is_present("list_files") {
+        if matches.is_present(LIST_FILES) {
             self.list_tempfiles();
         }
 
-        if matches.is_present("directory") {
+        if matches.is_present(DIRECTORY) {
             self.list_home();
         }
-        if matches.is_present("master") {
+        if matches.is_present(MASTER) {
             self.list_master();
         }
-        if matches.is_present("verbose") {
+        if matches.is_present(VERBOSE) {
             simple_logger::init_with_level(Level::Debug);
             self.state().set_verbose(1);
         }
 
-        if matches.is_present("list_contents") {
+        if matches.is_present(LIST_CONTENTS) {
             self.list_tempfiles_contents();
         }
-        if matches.is_present("clear") {
+        if matches.is_present(CLEAR) {
             self.clear_all();
         }
-        if matches.is_present("shift") {
+        if matches.is_present(SHIFT) {
             self.remove_at_idx(format!("{}", 1))
         }
 
-        if matches.is_present("unshift") {
+        if matches.is_present(UNSHIFT) {
             self.state().set_insert_idx(Some(String::from("1")));
         }
 
-        if matches.is_present("pop") {
+        if matches.is_present(POP) {
             let top = self.state().temp_file_stack().len();
             self.remove_at_idx(format!("{}", top))
         }
 
-        if matches.is_present("silent") {
+        if matches.is_present(SILENT) {
             self.state().set_silent(true);
         }
-        match matches.value_of("remove") {
+        match matches.value_of(REMOVE) {
             Some(f) => self.remove_at_idx(String::from(f)),
             None => {}
         }
-        match matches.value_of("add") {
+        match matches.value_of(ADD) {
             Some(i) => self.state().set_insert_idx(Some(String::from(i))),
             None => {}
         }
 
-        match matches.value_of("argfile") {
+        match matches.value_of(ARGFILE) {
             Some(f) => self.state().set_arg_file(Some(PathBuf::from(f))),
             None => {}
         }
-        match matches.value_of("input") {
+        match matches.value_of(INPUT) {
             Some(i) => self.state().set_input_temp_file(Some(String::from(i))),
             None => {}
         }
-        match matches.value_of("output") {
+        match matches.value_of(OUTPUT) {
             Some(i) => self.state().set_output_temp_file(Some(String::from(i))),
             None => {}
         }
