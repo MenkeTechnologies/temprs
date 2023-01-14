@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_must_use)]
 
-use std::fs::{File, OpenOptions, read_to_string, remove_file};
+use std::fs::{read_to_string, remove_file, File, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
 use std::iter::repeat;
 use std::path::{Path, PathBuf};
@@ -86,7 +86,10 @@ pub fn util_remove_file(f: &PathBuf) {
 
 #[inline(always)]
 pub fn util_path_to_string(path: &PathBuf) -> String {
-    path.clone().into_os_string().into_string().unwrap()
+    path.clone()
+        .into_os_string()
+        .into_string()
+        .expect(ERR_NO_FILE)
 }
 
 #[inline(always)]
@@ -144,7 +147,7 @@ pub fn util_write_file(path: &PathBuf, buffer: &String) {
 pub fn util_time_ms() -> String {
     SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap()
+        .expect(ERR_CLOCK)
         .as_millis()
         .to_string()
 }

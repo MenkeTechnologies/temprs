@@ -1,7 +1,6 @@
-use clap::{App, Arg, crate_authors, crate_description, crate_version};
+use clap::{crate_authors, crate_description, crate_version, App, Arg};
 
 use crate::util::consts::*;
-
 
 pub fn parse_opts() -> App<'static, 'static> {
     App::new(NAME)

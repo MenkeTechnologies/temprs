@@ -44,7 +44,7 @@ impl TempApp {
 
     #[inline(always)]
     pub fn new() -> Self {
-        simple_logger::init_with_level(TEMP_LOG_LEVEL).unwrap();
+        simple_logger::init_with_level(TEMP_LOG_LEVEL).expect(ERR_LOGGER);
 
         let mut system_temp_dir = temp_dir();
         system_temp_dir.push(TEMP_DIR);
@@ -119,7 +119,7 @@ impl TempApp {
 
         match self.state().arg_file() {
             Some(arg_file) => {
-                let str = util_file_contents_to_string(arg_file.as_path()).unwrap();
+                let str = util_file_contents_to_string(arg_file.as_path()).expect(ERR_FILE_READ);
                 self.state().set_holding_buffer(str.clone());
                 if self.state.verbose() > 0 {
                     self.state().set_output_buffer(str.clone());
@@ -129,7 +129,7 @@ impl TempApp {
             }
             None => match self.state().temp_file_stack().last() {
                 Some(f) => {
-                    let string = util_file_contents_to_string(f.as_path()).unwrap();
+                    let string = util_file_contents_to_string(f.as_path()).expect(ERR_FILE_READ);
 
                     self.state().set_output_buffer(string);
                 }
@@ -194,7 +194,10 @@ impl TempApp {
         match self.state().output_temp_file().clone() {
             Some(stk_idx) => match self.idx_in_stack_tempfile(stk_idx.clone()) {
                 Some(f) => {
-                    print!("{}", util_file_contents_to_string(f.as_path()).unwrap())
+                    print!(
+                        "{}",
+                        util_file_contents_to_string(f.as_path()).expect(ERR_FILE_READ)
+                    )
                 }
                 None => {}
             },
@@ -330,7 +333,7 @@ impl TempApp {
         }
         for (i, p) in stk.iter().enumerate() {
             println!("{}: {}", i + 1, util_path_to_string(p));
-            let string = util_file_contents_to_string(p.as_path()).unwrap();
+            let string = util_file_contents_to_string(p.as_path()).expect(ERR_FILE_READ);
             println!("{}", string.trim_end());
             util_horiz_rule();
         }
@@ -370,7 +373,7 @@ impl TempApp {
                 .master_record_file()
                 .as_path()
                 .parent()
-                .unwrap(),
+                .expect(ERR_NO_FILE),
         );
         exit(0)
     }
