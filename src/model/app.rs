@@ -268,6 +268,9 @@ impl TempApp {
         if matches.is_present(LIST_FILES) {
             self.list_tempfiles();
         }
+        if matches.is_present(LIST_FILES_NUMBERED) {
+            self.list_tempfiles_numbered();
+        }
 
         if matches.is_present(DIRECTORY) {
             self.list_home();
@@ -282,6 +285,9 @@ impl TempApp {
 
         if matches.is_present(LIST_CONTENTS) {
             self.list_tempfiles_contents();
+        }
+        if matches.is_present(LIST_CONTENTS_NUMBERED) {
+            self.list_tempfiles_contents_numbered();
         }
         if matches.is_present(CLEAR) {
             self.clear_all();
@@ -328,6 +334,16 @@ impl TempApp {
     fn list_tempfiles_contents(&mut self) {
         debug!("list contents");
         let stk = self.state().temp_file_stack();
+        for (_i, p) in stk.iter().enumerate() {
+            let string = util_file_contents_to_string(p.as_path()).expect(ERR_FILE_READ);
+            println!("{}", string.trim_end());
+        }
+        exit(0)
+    }
+    #[inline(always)]
+    fn list_tempfiles_contents_numbered(&mut self) {
+        debug!("list contents");
+        let stk = self.state().temp_file_stack();
         if stk.len() > 0 {
             util_horiz_rule();
         }
@@ -355,6 +371,15 @@ impl TempApp {
     }
     #[inline(always)]
     fn list_tempfiles(&mut self) {
+        debug!("list files");
+        let stk = self.state().temp_file_stack();
+        for (_i, p) in stk.iter().enumerate() {
+            println!("{}", util_path_to_string(p));
+        }
+        exit(0)
+    }
+    #[inline(always)]
+    fn list_tempfiles_numbered(&mut self) {
         debug!("list files");
         let stk = self.state().temp_file_stack();
         if stk.len() > 0 {
