@@ -53,6 +53,12 @@ cargo install temprs
 
 - list all tempfiles with contents on the stack to stdout
   ```tp -L```
+ 
+- list all tempfiles numbered on the stack to stdout
+  ```tp -n```
+
+- list all tempfiles numbered with contents on the stack to stdout
+  ```tp -N```
 
 - remove all tempfiles
   ```tp -c```
