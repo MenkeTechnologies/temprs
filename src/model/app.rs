@@ -14,9 +14,7 @@ use std::process::exit;
 use atty::{isnt, Stream};
 use log::{debug, Level};
 
-use model::opts::parse_opts;
-
-use crate::model;
+use crate::model::opts::parse_opts;
 use crate::model::state::TempState;
 use crate::util::consts::*;
 use crate::util::utils::*;
