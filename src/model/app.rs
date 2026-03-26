@@ -44,8 +44,14 @@ impl TempApp {
     pub fn new() -> Self {
         simple_logger::init_with_level(TEMP_LOG_LEVEL).expect(ERR_LOGGER);
 
-        let mut system_temp_dir = temp_dir();
-        system_temp_dir.push(TEMP_DIR);
+        let mut system_temp_dir = match std::env::var("TEMPRS_DIR") {
+            Ok(dir) => PathBuf::from(dir),
+            Err(_) => {
+                let mut d = temp_dir();
+                d.push(TEMP_DIR);
+                d
+            }
+        };
 
         let mut temprs_dir = PathBuf::new();
         temprs_dir.push(system_temp_dir.as_path());

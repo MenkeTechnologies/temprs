@@ -1,6 +1,9 @@
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
+use std::sync::atomic::{AtomicU64, Ordering};
+
+static TEST_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 /// Helper: path to the built binary
 fn bin() -> PathBuf {
@@ -11,17 +14,23 @@ fn bin() -> PathBuf {
     path
 }
 
-/// Helper: create an isolated temprs dir so tests don't collide with real data.
-/// We clear and recreate on each call.
-fn setup_clean_env() {
-    let dir = std::env::temp_dir().join("temprs");
+/// Create a unique isolated directory for each test, returning its path.
+fn setup_clean_env() -> PathBuf {
+    let id = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+    let dir = std::env::temp_dir().join(format!(
+        "temprs_test_{}_{}",
+        std::process::id(),
+        id,
+    ));
     if dir.exists() {
         let _ = fs::remove_dir_all(&dir);
     }
+    dir
 }
 
-fn run_tp(args: &[&str]) -> std::process::Output {
+fn run_tp(dir: &PathBuf, args: &[&str]) -> std::process::Output {
     Command::new(bin())
+        .env("TEMPRS_DIR", dir)
         .args(args)
         .stdin(std::process::Stdio::null())
         .output()
@@ -33,9 +42,10 @@ fn tick() {
     std::thread::sleep(std::time::Duration::from_millis(10));
 }
 
-fn run_tp_stdin(args: &[&str], input: &str) -> std::process::Output {
+fn run_tp_stdin(dir: &PathBuf, args: &[&str], input: &str) -> std::process::Output {
     use std::io::Write;
     let mut child = Command::new(bin())
+        .env("TEMPRS_DIR", dir)
         .args(args)
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
