@@ -143,7 +143,16 @@ tp -s
 
 ---
 
-## [0x04] STACK ARCHITECTURE
+## [0x04] ENVIRONMENT
+
+```sh
+# override the default temp directory (default: $TMPDIR/temprs)
+export TEMPRS_DIR=/path/to/custom/dir
+```
+
+---
+
+## [0x05] STACK ARCHITECTURE
 
 ```
  ┌─────────────────────────────────────┐

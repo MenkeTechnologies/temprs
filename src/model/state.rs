@@ -1313,4 +1313,398 @@ mod tests {
         assert!(s.input_temp_file().is_none());
         assert!(s.output_temp_file().is_none());
     }
+
+    // ── constructor with various stack sizes ────────────
+
+    #[test]
+    fn new_with_single_item_stack() {
+        let s = TempState::new(
+            PathBuf::from("/tmp/out"),
+            PathBuf::from("/tmp/master"),
+            PathBuf::from("/tmp"),
+            vec![PathBuf::from("/tmp/f1")],
+            None,
+            String::new(),
+        );
+        assert_eq!(s.temp_file_stack().len(), 1);
+        assert_eq!(s.temp_file_stack()[0], PathBuf::from("/tmp/f1"));
+    }
+
+    #[test]
+    fn new_with_hundred_item_stack() {
+        let stack: Vec<PathBuf> = (0..100)
+            .map(|i| PathBuf::from(format!("/tmp/f{}", i)))
+            .collect();
+        let s = TempState::new(
+            PathBuf::from("/tmp/out"),
+            PathBuf::from("/tmp/master"),
+            PathBuf::from("/tmp"),
+            stack.clone(),
+            None,
+            String::new(),
+        );
+        assert_eq!(s.temp_file_stack().len(), 100);
+        assert_eq!(s.temp_file_stack()[99], PathBuf::from("/tmp/f99"));
+    }
+
+    // ── holding_buffer and output_buffer interactions ────
+
+    #[test]
+    fn holding_and_output_buffer_independent() {
+        let mut s = make_state();
+        s.set_holding_buffer("hold".to_string());
+        s.set_output_buffer("out".to_string());
+        assert_eq!(s.holding_buffer(), "hold");
+        assert_eq!(s.output_buffer(), "out");
+    }
+
+    #[test]
+    fn buffers_can_hold_same_content() {
+        let mut s = make_state();
+        s.set_holding_buffer("same".to_string());
+        s.set_output_buffer("same".to_string());
+        assert_eq!(s.holding_buffer(), s.output_buffer());
+    }
+
+    #[test]
+    fn holding_buffer_whitespace_only() {
+        let mut s = make_state();
+        s.set_holding_buffer("   \t\n  ".to_string());
+        assert_eq!(s.holding_buffer(), "   \t\n  ");
+        assert!(!s.holding_buffer().is_empty());
+    }
+
+    #[test]
+    fn output_buffer_null_bytes() {
+        let mut s = make_state();
+        s.set_output_buffer("hello\0world".to_string());
+        assert_eq!(s.output_buffer(), "hello\0world");
+    }
+
+    // ── input/output_temp_file independence ──────────────
+
+    #[test]
+    fn input_and_output_temp_file_independent() {
+        let mut s = make_state();
+        s.set_input_temp_file(Some("1".to_string()));
+        s.set_output_temp_file(Some("2".to_string()));
+        assert_eq!(s.input_temp_file(), &Some("1".to_string()));
+        assert_eq!(s.output_temp_file(), &Some("2".to_string()));
+    }
+
+    #[test]
+    fn input_and_output_temp_file_same_value() {
+        let mut s = make_state();
+        s.set_input_temp_file(Some("5".to_string()));
+        s.set_output_temp_file(Some("5".to_string()));
+        assert_eq!(s.input_temp_file(), s.output_temp_file());
+    }
+
+    // ── setter idempotency ──────────────────────────────
+
+    #[test]
+    fn set_verbose_same_value_twice() {
+        let mut s = make_state();
+        s.set_verbose(3);
+        s.set_verbose(3);
+        assert_eq!(s.verbose(), 3);
+    }
+
+    #[test]
+    fn set_silent_same_value_twice() {
+        let mut s = make_state();
+        s.set_silent(true);
+        s.set_silent(true);
+        assert!(s.silent());
+    }
+
+    #[test]
+    fn set_holding_buffer_same_value_twice() {
+        let mut s = make_state();
+        s.set_holding_buffer("data".to_string());
+        s.set_holding_buffer("data".to_string());
+        assert_eq!(s.holding_buffer(), "data");
+    }
+
+    // ── new_temp_file and master_record_file with unicode paths ──
+
+    #[test]
+    fn new_temp_file_unicode_path() {
+        let mut s = make_state();
+        s.set_new_temp_file(PathBuf::from("/tmp/日本語/tempfile"));
+        assert_eq!(s.new_temp_file(), &PathBuf::from("/tmp/日本語/tempfile"));
+    }
+
+    #[test]
+    fn master_record_file_unicode_path() {
+        let mut s = make_state();
+        s.set_master_record_file(PathBuf::from("/tmp/日本語/master"));
+        assert_eq!(s.master_record_file(), &PathBuf::from("/tmp/日本語/master"));
+    }
+
+    #[test]
+    fn temprs_dir_unicode_path() {
+        let mut s = make_state();
+        s.set_temprs_dir(PathBuf::from("/tmp/日本語"));
+        assert_eq!(s.temprs_dir(), &PathBuf::from("/tmp/日本語"));
+    }
+
+    // ── path str helpers with unicode ───────────────────
+
+    #[test]
+    fn out_file_path_str_unicode() {
+        let s = TempState::new(
+            PathBuf::from("/tmp/日本語/tempfile"),
+            PathBuf::from("/tmp/master"),
+            PathBuf::from("/tmp"),
+            vec![],
+            None,
+            String::new(),
+        );
+        assert_eq!(s.out_file_path_str(), "/tmp/日本語/tempfile");
+    }
+
+    #[test]
+    fn master_file_path_str_unicode() {
+        let s = TempState::new(
+            PathBuf::from("/tmp/out"),
+            PathBuf::from("/tmp/日本語/master"),
+            PathBuf::from("/tmp"),
+            vec![],
+            None,
+            String::new(),
+        );
+        assert_eq!(s.master_file_path_str(), "/tmp/日本語/master");
+    }
+
+    // ── temp_file_stack manipulations ───────────────────
+
+    #[test]
+    fn set_temp_file_stack_preserves_order() {
+        let mut s = make_state();
+        let stack: Vec<PathBuf> = (0..5)
+            .map(|i| PathBuf::from(format!("/f{}", i)))
+            .collect();
+        s.set_temp_file_stack(stack.clone());
+        for (i, p) in s.temp_file_stack().iter().enumerate() {
+            assert_eq!(p, &stack[i]);
+        }
+    }
+
+    #[test]
+    fn set_temp_file_stack_unicode_paths() {
+        let mut s = make_state();
+        let stack = vec![
+            PathBuf::from("/tmp/日本語"),
+            PathBuf::from("/tmp/café"),
+            PathBuf::from("/tmp/🚀"),
+        ];
+        s.set_temp_file_stack(stack.clone());
+        assert_eq!(s.temp_file_stack(), &stack);
+    }
+
+    #[test]
+    fn set_temp_file_stack_replace_multiple_times() {
+        let mut s = make_state();
+        for size in [0usize, 5, 1, 10, 3] {
+            let stack: Vec<PathBuf> = (0..size)
+                .map(|i| PathBuf::from(format!("/f{}", i)))
+                .collect();
+            s.set_temp_file_stack(stack.clone());
+            assert_eq!(s.temp_file_stack().len(), size);
+        }
+    }
+
+    // ── insert_idx with special values ──────────────────
+
+    #[test]
+    fn insert_idx_zero() {
+        let mut s = make_state();
+        s.set_insert_idx(Some("0".to_string()));
+        assert_eq!(s.insert_idx(), &Some("0".to_string()));
+    }
+
+    #[test]
+    fn insert_idx_empty_string() {
+        let mut s = make_state();
+        s.set_insert_idx(Some(String::new()));
+        assert_eq!(s.insert_idx(), &Some(String::new()));
+    }
+
+    // ── arg_file with unicode paths ─────────────────────
+
+    #[test]
+    fn arg_file_unicode_path() {
+        let mut s = make_state();
+        s.set_arg_file(Some(PathBuf::from("/tmp/日本語/data.txt")));
+        assert_eq!(s.arg_file(), &Some(PathBuf::from("/tmp/日本語/data.txt")));
+    }
+
+    #[test]
+    fn arg_file_with_emoji_path() {
+        let mut s = make_state();
+        s.set_arg_file(Some(PathBuf::from("/tmp/🚀/launch.txt")));
+        assert_eq!(s.arg_file(), &Some(PathBuf::from("/tmp/🚀/launch.txt")));
+    }
+
+    // ── verbose boundary values additional ───────────────
+
+    #[test]
+    fn verbose_two() {
+        let mut s = make_state();
+        s.set_verbose(2);
+        assert_eq!(s.verbose(), 2);
+    }
+
+    #[test]
+    fn verbose_ten() {
+        let mut s = make_state();
+        s.set_verbose(10);
+        assert_eq!(s.verbose(), 10);
+    }
+
+    #[test]
+    fn verbose_hundred() {
+        let mut s = make_state();
+        s.set_verbose(100);
+        assert_eq!(s.verbose(), 100);
+    }
+
+    // ── buffers with very large content ─────────────────
+
+    #[test]
+    fn holding_buffer_100k() {
+        let mut s = make_state();
+        let large = "z".repeat(100_000);
+        s.set_holding_buffer(large.clone());
+        assert_eq!(s.holding_buffer().len(), 100_000);
+    }
+
+    #[test]
+    fn output_buffer_100k() {
+        let mut s = make_state();
+        let large = "w".repeat(100_000);
+        s.set_output_buffer(large.clone());
+        assert_eq!(s.output_buffer().len(), 100_000);
+    }
+
+    // ── multiple field modifications in sequence ────────
+
+    #[test]
+    fn full_state_modification_cycle() {
+        let mut s = make_state();
+        s.set_verbose(2);
+        s.set_silent(true);
+        s.set_holding_buffer("hold".to_string());
+        s.set_output_buffer("out".to_string());
+        s.set_input_temp_file(Some("1".to_string()));
+        s.set_output_temp_file(Some("2".to_string()));
+        s.set_insert_idx(Some("3".to_string()));
+        s.set_arg_file(Some(PathBuf::from("/tmp/f")));
+        s.set_new_temp_file(PathBuf::from("/tmp/new"));
+        s.set_master_record_file(PathBuf::from("/tmp/master2"));
+        s.set_temprs_dir(PathBuf::from("/tmp/dir2"));
+        s.set_temp_file_stack(vec![PathBuf::from("/x")]);
+
+        assert_eq!(s.verbose(), 2);
+        assert!(s.silent());
+        assert_eq!(s.holding_buffer(), "hold");
+        assert_eq!(s.output_buffer(), "out");
+        assert_eq!(s.input_temp_file(), &Some("1".to_string()));
+        assert_eq!(s.output_temp_file(), &Some("2".to_string()));
+        assert_eq!(s.insert_idx(), &Some("3".to_string()));
+        assert_eq!(s.arg_file(), &Some(PathBuf::from("/tmp/f")));
+        assert_eq!(s.new_temp_file(), &PathBuf::from("/tmp/new"));
+        assert_eq!(s.master_record_file(), &PathBuf::from("/tmp/master2"));
+        assert_eq!(s.temprs_dir(), &PathBuf::from("/tmp/dir2"));
+        assert_eq!(s.temp_file_stack().len(), 1);
+    }
+
+    #[test]
+    fn reset_all_optionals_to_none() {
+        let mut s = make_state();
+        s.set_input_temp_file(Some("1".to_string()));
+        s.set_output_temp_file(Some("2".to_string()));
+        s.set_insert_idx(Some("3".to_string()));
+        s.set_arg_file(Some(PathBuf::from("/tmp/f")));
+
+        s.set_input_temp_file(None);
+        s.set_output_temp_file(None);
+        s.set_insert_idx(None);
+        s.set_arg_file(None);
+
+        assert!(s.input_temp_file().is_none());
+        assert!(s.output_temp_file().is_none());
+        assert!(s.insert_idx().is_none());
+        assert!(s.arg_file().is_none());
+    }
+
+    // ── constructor preserves all passed values ─────────
+
+    #[test]
+    fn constructor_preserves_all_fields() {
+        let out = PathBuf::from("/custom/out");
+        let master = PathBuf::from("/custom/master");
+        let dir = PathBuf::from("/custom");
+        let stack = vec![PathBuf::from("/custom/f1"), PathBuf::from("/custom/f2")];
+        let arg = Some(PathBuf::from("/custom/arg"));
+        let buf = String::from("initial buffer");
+
+        let s = TempState::new(
+            out.clone(),
+            master.clone(),
+            dir.clone(),
+            stack.clone(),
+            arg.clone(),
+            buf.clone(),
+        );
+
+        assert_eq!(s.new_temp_file(), &out);
+        assert_eq!(s.master_record_file(), &master);
+        assert_eq!(s.temprs_dir(), &dir);
+        assert_eq!(s.temp_file_stack(), &stack);
+        assert_eq!(s.arg_file(), &arg);
+        assert_eq!(s.output_buffer(), buf);
+    }
+
+    // ── path str for paths with special characters ──────
+
+    #[test]
+    fn out_file_path_str_with_dashes() {
+        let s = TempState::new(
+            PathBuf::from("/tmp/temp-file-123"),
+            PathBuf::from("/tmp/m"),
+            PathBuf::from("/tmp"),
+            vec![],
+            None,
+            String::new(),
+        );
+        assert_eq!(s.out_file_path_str(), "/tmp/temp-file-123");
+    }
+
+    #[test]
+    fn out_file_path_str_with_underscores() {
+        let s = TempState::new(
+            PathBuf::from("/tmp/temp_file_456"),
+            PathBuf::from("/tmp/m"),
+            PathBuf::from("/tmp"),
+            vec![],
+            None,
+            String::new(),
+        );
+        assert_eq!(s.out_file_path_str(), "/tmp/temp_file_456");
+    }
+
+    #[test]
+    fn out_file_path_str_with_dots() {
+        let s = TempState::new(
+            PathBuf::from("/tmp/file.txt.bak"),
+            PathBuf::from("/tmp/m"),
+            PathBuf::from("/tmp"),
+            vec![],
+            None,
+            String::new(),
+        );
+        assert_eq!(s.out_file_path_str(), "/tmp/file.txt.bak");
+    }
 }

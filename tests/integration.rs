@@ -1090,3 +1090,560 @@ fn out_of_bounds_shows_error_message() {
     let text = stdout(&out);
     assert!(text.contains("Invalid specified index"), "output should contain error message: {}", text);
 }
+
+// ── Remove with negative index ──────────────────────────
+
+#[test]
+fn remove_negative_index() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "aaa");
+    run_tp_stdin(&dir, &[], "bbb");
+    run_tp_stdin(&dir, &[], "ccc");
+    // -1 should remove last item (ccc)
+    run_tp(&dir, &["-r", "-1"]);
+    let list = run_tp(&dir, &["-l"]);
+    assert_eq!(stdout(&list).trim().lines().count(), 2);
+    let out = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out), "aaa");
+    let out = run_tp(&dir, &["-o", "2"]);
+    assert_eq!(stdout(&out), "bbb");
+}
+
+#[test]
+fn remove_negative_first() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "aaa");
+    run_tp_stdin(&dir, &[], "bbb");
+    // -2 should remove first item
+    run_tp(&dir, &["-r", "-2"]);
+    let list = run_tp(&dir, &["-l"]);
+    assert_eq!(stdout(&list).trim().lines().count(), 1);
+    let out = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out), "bbb");
+}
+
+// ── Add with negative index ─────────────────────────────
+
+#[test]
+fn add_negative_index() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "first");
+    run_tp_stdin(&dir, &[], "third");
+    // -1 should insert at last position
+    run_tp_stdin(&dir, &["-a", "-1"], "inserted");
+    let list = run_tp(&dir, &["-l"]);
+    assert_eq!(stdout(&list).trim().lines().count(), 3);
+}
+
+// ── Input overwrite with negative index ─────────────────
+
+#[test]
+fn input_overwrite_second_item() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "aaa");
+    run_tp_stdin(&dir, &[], "bbb");
+    run_tp_stdin(&dir, &["-i", "2"], "replaced_bbb");
+    let out = run_tp(&dir, &["-o", "2"]);
+    assert_eq!(stdout(&out), "replaced_bbb");
+    let out = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out), "aaa");
+}
+
+// ── Push and verify stack order preserved ───────────────
+
+#[test]
+fn push_ten_items_verify_order() {
+    let dir = setup_clean_env();
+    for i in 1..=10 {
+        run_tp_stdin(&dir, &[], &format!("item{}", i));
+    }
+    for i in 1..=10 {
+        let out = run_tp(&dir, &["-o", &i.to_string()]);
+        assert_eq!(stdout(&out), format!("item{}", i));
+    }
+}
+
+#[test]
+fn push_three_items_negative_index_last() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "first");
+    tick();
+    run_tp_stdin(&dir, &[], "middle");
+    tick();
+    run_tp_stdin(&dir, &[], "last");
+    // -1 should be last item
+    let out = run_tp(&dir, &["-o", "-1"]);
+    assert_eq!(stdout(&out), "last");
+}
+
+#[test]
+fn push_three_items_negative_index_first() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "first");
+    tick();
+    run_tp_stdin(&dir, &[], "middle");
+    tick();
+    run_tp_stdin(&dir, &[], "last");
+    // -3 should be first item
+    let out = run_tp(&dir, &["-o", "-3"]);
+    assert_eq!(stdout(&out), "first");
+}
+
+// ── Verbose does not affect data storage ────────────────
+
+#[test]
+fn verbose_does_not_affect_stored_data() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-v"], "data with verbose");
+    let out = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out), "data with verbose");
+}
+
+// ── Quiet does not affect list operations ───────────────
+
+#[test]
+fn quiet_flag_with_list() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-q"], "quiet_data");
+    let out = run_tp(&dir, &["-l"]);
+    let text = stdout(&out);
+    assert_eq!(text.trim().lines().count(), 1);
+}
+
+// ── Multiple sequential operations ──────────────────────
+
+#[test]
+fn push_pop_all() {
+    let dir = setup_clean_env();
+    for i in 0..5 {
+        run_tp_stdin(&dir, &[], &format!("item{}", i));
+    }
+    for _ in 0..5 {
+        run_tp(&dir, &["-p"]);
+    }
+    let out = run_tp(&dir, &["-l"]);
+    assert!(stdout(&out).trim().is_empty());
+}
+
+#[test]
+fn push_shift_all() {
+    let dir = setup_clean_env();
+    for i in 0..5 {
+        run_tp_stdin(&dir, &[], &format!("item{}", i));
+    }
+    for _ in 0..5 {
+        run_tp(&dir, &["-s"]);
+    }
+    let out = run_tp(&dir, &["-l"]);
+    assert!(stdout(&out).trim().is_empty());
+}
+
+// ── Content with line-only data ─────────────────────────
+
+#[test]
+fn push_single_newline() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "\n");
+    let out = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out), "\n");
+}
+
+#[test]
+fn push_single_space() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], " ");
+    let out = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out), " ");
+}
+
+#[test]
+fn push_tab_character() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "\t");
+    let out = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out), "\t");
+}
+
+// ── Content integrity after operations ──────────────────
+
+#[test]
+fn pop_does_not_corrupt_remaining() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "item1_data_here");
+    run_tp_stdin(&dir, &[], "item2_data_here");
+    run_tp_stdin(&dir, &[], "item3_data_here");
+    run_tp(&dir, &["-p"]); // remove item3
+    let out1 = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out1), "item1_data_here");
+    let out2 = run_tp(&dir, &["-o", "2"]);
+    assert_eq!(stdout(&out2), "item2_data_here");
+}
+
+#[test]
+fn shift_does_not_corrupt_remaining() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "item1_data_here");
+    run_tp_stdin(&dir, &[], "item2_data_here");
+    run_tp_stdin(&dir, &[], "item3_data_here");
+    run_tp(&dir, &["-s"]); // remove item1
+    let out1 = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out1), "item2_data_here");
+    let out2 = run_tp(&dir, &["-o", "2"]);
+    assert_eq!(stdout(&out2), "item3_data_here");
+}
+
+#[test]
+fn remove_middle_does_not_corrupt() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "aaa");
+    run_tp_stdin(&dir, &[], "bbb");
+    run_tp_stdin(&dir, &[], "ccc");
+    run_tp_stdin(&dir, &[], "ddd");
+    run_tp_stdin(&dir, &[], "eee");
+    run_tp(&dir, &["-r", "3"]); // remove ccc
+    let out = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out), "aaa");
+    let out = run_tp(&dir, &["-o", "2"]);
+    assert_eq!(stdout(&out), "bbb");
+    let out = run_tp(&dir, &["-o", "3"]);
+    assert_eq!(stdout(&out), "ddd");
+    let out = run_tp(&dir, &["-o", "4"]);
+    assert_eq!(stdout(&out), "eee");
+}
+
+// ── List operations after modifications ─────────────────
+
+#[test]
+fn list_contents_after_overwrite() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "original");
+    run_tp_stdin(&dir, &["-i", "1"], "modified");
+    let out = run_tp(&dir, &["-L"]);
+    let text = stdout(&out);
+    assert!(text.contains("modified"));
+    assert!(!text.contains("original"));
+}
+
+#[test]
+fn list_files_numbered_after_pop() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a");
+    run_tp_stdin(&dir, &[], "b");
+    run_tp_stdin(&dir, &[], "c");
+    run_tp(&dir, &["-p"]); // remove c
+    let out = run_tp(&dir, &["-n"]);
+    let text = stdout(&out);
+    assert!(text.contains("1:"));
+    assert!(text.contains("2:"));
+    assert!(!text.contains("3:"));
+}
+
+// ── Exit codes for all operations ───────────────────────
+
+#[test]
+fn pop_exits_success() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["-p"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn shift_exits_success() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["-s"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn remove_exits_success() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["-r", "1"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn dir_exits_success() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["-d"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn master_exits_success() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["-m"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn list_contents_exits_success() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["-L"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn list_contents_numbered_exits_success() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["-N"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn list_files_numbered_exits_success() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["-n"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn clear_exits_success() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["-c"]);
+    assert!(out.status.success());
+}
+
+// ── Unknown flags ───────────────────────────────────────
+
+#[test]
+fn unknown_flag_exits_failure() {
+    let dir = setup_clean_env();
+    let out = run_tp(&dir, &["--nonexistent"]);
+    assert!(!out.status.success());
+}
+
+#[test]
+fn unknown_short_flag_exits_failure() {
+    let dir = setup_clean_env();
+    let out = run_tp(&dir, &["-z"]);
+    assert!(!out.status.success());
+}
+
+// ── Content with very long lines ────────────────────────
+
+#[test]
+fn push_very_long_line() {
+    let dir = setup_clean_env();
+    let long = "a".repeat(50_000);
+    run_tp_stdin(&dir, &[], &long);
+    let out = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out).len(), 50_000);
+}
+
+// ── Content with many short lines ───────────────────────
+
+#[test]
+fn push_content_with_many_lines() {
+    let dir = setup_clean_env();
+    let content: String = (0..1000).map(|i| format!("line{}\n", i)).collect();
+    run_tp_stdin(&dir, &[], &content);
+    let out = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out), content);
+}
+
+// ── Multiple pushes then list contents ordered ──────────
+
+#[test]
+fn list_contents_numbered_preserves_order() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "alpha");
+    run_tp_stdin(&dir, &[], "bravo");
+    run_tp_stdin(&dir, &[], "charlie");
+    let out = run_tp(&dir, &["-N"]);
+    let text = stdout(&out);
+    let alpha_pos = text.find("alpha").unwrap();
+    let bravo_pos = text.find("bravo").unwrap();
+    let charlie_pos = text.find("charlie").unwrap();
+    assert!(alpha_pos < bravo_pos);
+    assert!(bravo_pos < charlie_pos);
+}
+
+// ── Remove invalid index errors ─────────────────────────
+
+#[test]
+fn remove_zero_index_errors() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["-r", "0"]);
+    assert!(!out.status.success());
+}
+
+#[test]
+fn remove_out_of_bounds_errors() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["-r", "5"]);
+    assert!(!out.status.success());
+}
+
+#[test]
+fn remove_negative_out_of_bounds_errors() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["-r", "-5"]);
+    assert!(!out.status.success());
+}
+
+// ── Input overwrite preserves other items ───────────────
+
+#[test]
+fn overwrite_first_preserves_rest() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "orig1");
+    run_tp_stdin(&dir, &[], "orig2");
+    run_tp_stdin(&dir, &[], "orig3");
+    run_tp_stdin(&dir, &["-i", "1"], "new1");
+    let out1 = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out1), "new1");
+    let out2 = run_tp(&dir, &["-o", "2"]);
+    assert_eq!(stdout(&out2), "orig2");
+    let out3 = run_tp(&dir, &["-o", "3"]);
+    assert_eq!(stdout(&out3), "orig3");
+}
+
+#[test]
+fn overwrite_last_preserves_rest() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "orig1");
+    run_tp_stdin(&dir, &[], "orig2");
+    run_tp_stdin(&dir, &[], "orig3");
+    run_tp_stdin(&dir, &["-i", "3"], "new3");
+    let out1 = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out1), "orig1");
+    let out2 = run_tp(&dir, &["-o", "2"]);
+    assert_eq!(stdout(&out2), "orig2");
+    let out3 = run_tp(&dir, &["-o", "3"]);
+    assert_eq!(stdout(&out3), "new3");
+}
+
+// ── Multiple overwrites on same index ───────────────────
+
+#[test]
+fn overwrite_same_index_multiple_times() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "original");
+    tick();
+    run_tp_stdin(&dir, &["-i", "1"], "first_edit");
+    tick();
+    run_tp_stdin(&dir, &["-i", "1"], "second_edit");
+    tick();
+    run_tp_stdin(&dir, &["-i", "1"], "final_edit");
+    let out = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out), "final_edit");
+}
+
+// ── Dir path contains TEMPRS_DIR env value ──────────────
+
+#[test]
+fn dir_path_matches_env() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "x");
+    let out = run_tp(&dir, &["-d"]);
+    let text = stdout(&out).trim().to_string();
+    assert!(text.starts_with(&dir.to_string_lossy().to_string()));
+}
+
+// ── Master path is under dir ────────────────────────────
+
+#[test]
+fn master_path_is_under_dir() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "x");
+    let dir_out = run_tp(&dir, &["-d"]);
+    let dir_text = stdout(&dir_out).trim().to_string();
+    let master_out = run_tp(&dir, &["-m"]);
+    let master_text = stdout(&master_out).trim().to_string();
+    assert!(master_text.starts_with(&dir_text));
+}
+
+// ── Quiet with verbose ──────────────────────────────────
+
+#[test]
+fn quiet_and_verbose_together() {
+    let dir = setup_clean_env();
+    let out = run_tp_stdin(&dir, &["-q", "-v"], "both flags");
+    // should succeed regardless of flag combination
+    assert!(out.status.success());
+    // data should still be stored
+    let read = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&read), "both flags");
+}
+
+// ── Content with null bytes ─────────────────────────────
+
+#[test]
+fn push_content_with_null_bytes() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "hello\0world");
+    let out = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out), "hello\0world");
+}
+
+// ── Content with carriage returns ───────────────────────
+
+#[test]
+fn push_content_with_carriage_returns() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "line1\r\nline2\r\n");
+    let out = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out), "line1\r\nline2\r\n");
+}
+
+// ── Multiple items list contents ────────────────────────
+
+#[test]
+fn list_contents_five_items() {
+    let dir = setup_clean_env();
+    for i in 1..=5 {
+        run_tp_stdin(&dir, &[], &format!("content_{}", i));
+    }
+    let out = run_tp(&dir, &["-L"]);
+    let text = stdout(&out);
+    for i in 1..=5 {
+        assert!(text.contains(&format!("content_{}", i)));
+    }
+}
+
+// ── Push after clear rebuilds correctly ─────────────────
+
+#[test]
+fn push_multiple_after_clear() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "old");
+    run_tp(&dir, &["-c"]);
+    run_tp_stdin(&dir, &[], "new1");
+    run_tp_stdin(&dir, &[], "new2");
+    run_tp_stdin(&dir, &[], "new3");
+    let list = run_tp(&dir, &["-l"]);
+    assert_eq!(stdout(&list).trim().lines().count(), 3);
+    let out = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out), "new1");
+}
+
+// ── Interleaved add and remove ──────────────────────────
+
+#[test]
+fn add_then_remove_same_position() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "first");
+    run_tp_stdin(&dir, &[], "second");
+    run_tp_stdin(&dir, &["-a", "2"], "inserted");
+    // stack: first, inserted, second
+    run_tp(&dir, &["-r", "2"]); // remove inserted
+    // stack: first, second
+    let list = run_tp(&dir, &["-l"]);
+    assert_eq!(stdout(&list).trim().lines().count(), 2);
+    let out1 = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out1), "first");
+    let out2 = run_tp(&dir, &["-o", "2"]);
+    assert_eq!(stdout(&out2), "second");
+}

@@ -482,4 +482,407 @@ mod tests {
         let m = parse_opts().get_matches_from(vec!["tp", "-r", "-1"]);
         assert_eq!(m.get_one::<String>(REMOVE).map(|s| s.as_str()), Some("-1"));
     }
+
+    // ── command metadata ────────────────────────────────
+
+    #[test]
+    fn command_has_version() {
+        let app = parse_opts();
+        assert!(app.get_version().is_some());
+    }
+
+    #[test]
+    fn command_version_matches_cargo() {
+        let app = parse_opts();
+        assert_eq!(app.get_version().unwrap(), env!("CARGO_PKG_VERSION"));
+    }
+
+    #[test]
+    fn command_has_about() {
+        let app = parse_opts();
+        assert!(app.get_about().is_some());
+    }
+
+    #[test]
+    fn command_has_author() {
+        let app = parse_opts();
+        assert!(app.get_author().is_some());
+    }
+
+    // ── all args present in command ─────────────────────
+
+    #[test]
+    fn command_has_all_expected_args() {
+        let app = parse_opts();
+        let arg_ids: Vec<&str> = app.get_arguments()
+            .map(|a| a.get_id().as_str())
+            .collect();
+        for expected in &[
+            INPUT, OUTPUT, ADD, REMOVE, POP, UNSHIFT, SHIFT,
+            ARGFILE, DIRECTORY, MASTER, LIST_FILES, LIST_FILES_NUMBERED,
+            LIST_CONTENTS, LIST_CONTENTS_NUMBERED, SILENT, CLEAR, VERBOSE,
+        ] {
+            assert!(arg_ids.contains(expected), "missing arg: {}", expected);
+        }
+    }
+
+    #[test]
+    fn command_has_17_custom_args() {
+        let app = parse_opts();
+        // clap adds --help and --version automatically
+        let custom_count = app.get_arguments()
+            .filter(|a| a.get_id() != "help" && a.get_id() != "version")
+            .count();
+        assert_eq!(custom_count, 17);
+    }
+
+    // ── flag mutual independence ────────────────────────
+
+    #[test]
+    fn all_boolean_flags_independent() {
+        let m = parse_opts().get_matches_from(vec![
+            "tp", "-p", "-u", "-s", "-d", "-m", "-l", "-n",
+            "-L", "-N", "-q", "-c", "-v",
+        ]);
+        assert!(m.get_flag(POP));
+        assert!(m.get_flag(UNSHIFT));
+        assert!(m.get_flag(SHIFT));
+        assert!(m.get_flag(DIRECTORY));
+        assert!(m.get_flag(MASTER));
+        assert!(m.get_flag(LIST_FILES));
+        assert!(m.get_flag(LIST_FILES_NUMBERED));
+        assert!(m.get_flag(LIST_CONTENTS));
+        assert!(m.get_flag(LIST_CONTENTS_NUMBERED));
+        assert!(m.get_flag(SILENT));
+        assert!(m.get_flag(CLEAR));
+        assert!(m.get_count(VERBOSE) > 0);
+    }
+
+    // ── value args with various strings ─────────────────
+
+    #[test]
+    fn input_accepts_zero() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-i", "0"]);
+        assert_eq!(m.get_one::<String>(INPUT).map(|s| s.as_str()), Some("0"));
+    }
+
+    #[test]
+    fn output_accepts_zero() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-o", "0"]);
+        assert_eq!(m.get_one::<String>(OUTPUT).map(|s| s.as_str()), Some("0"));
+    }
+
+    #[test]
+    fn add_accepts_zero() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-a", "0"]);
+        assert_eq!(m.get_one::<String>(ADD).map(|s| s.as_str()), Some("0"));
+    }
+
+    #[test]
+    fn remove_accepts_zero() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-r", "0"]);
+        assert_eq!(m.get_one::<String>(REMOVE).map(|s| s.as_str()), Some("0"));
+    }
+
+    #[test]
+    fn input_accepts_non_numeric() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-i", "abc"]);
+        assert_eq!(m.get_one::<String>(INPUT).map(|s| s.as_str()), Some("abc"));
+    }
+
+    #[test]
+    fn output_accepts_negative_large() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-o", "-999"]);
+        assert_eq!(m.get_one::<String>(OUTPUT).map(|s| s.as_str()), Some("-999"));
+    }
+
+    #[test]
+    fn add_accepts_negative_large() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-a", "-100"]);
+        assert_eq!(m.get_one::<String>(ADD).map(|s| s.as_str()), Some("-100"));
+    }
+
+    #[test]
+    fn remove_accepts_large_value() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-r", "99999"]);
+        assert_eq!(m.get_one::<String>(REMOVE).map(|s| s.as_str()), Some("99999"));
+    }
+
+    // ── positional with flags combined ──────────────────
+
+    #[test]
+    fn positional_with_pop() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-p", "somefile"]);
+        assert!(m.get_flag(POP));
+        assert_eq!(m.get_one::<String>(ARGFILE).map(|s| s.as_str()), Some("somefile"));
+    }
+
+    #[test]
+    fn positional_with_verbose() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-v", "myfile"]);
+        assert!(m.get_count(VERBOSE) > 0);
+        assert_eq!(m.get_one::<String>(ARGFILE).map(|s| s.as_str()), Some("myfile"));
+    }
+
+    #[test]
+    fn positional_with_quiet() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-q", "file.txt"]);
+        assert!(m.get_flag(SILENT));
+        assert_eq!(m.get_one::<String>(ARGFILE).map(|s| s.as_str()), Some("file.txt"));
+    }
+
+    // ── multiple verbose levels ─────────────────────────
+
+    #[test]
+    fn verbose_two_occurrences() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-vv"]);
+        assert_eq!(m.get_count(VERBOSE), 2);
+    }
+
+    #[test]
+    fn verbose_four_occurrences() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-vvvv"]);
+        assert_eq!(m.get_count(VERBOSE), 4);
+    }
+
+    #[test]
+    fn verbose_five_occurrences() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-vvvvv"]);
+        assert_eq!(m.get_count(VERBOSE), 5);
+    }
+
+    #[test]
+    fn verbose_separate_flags() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-v", "-v", "-v"]);
+        assert_eq!(m.get_count(VERBOSE), 3);
+    }
+
+    #[test]
+    fn verbose_mixed_short_long() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-v", "--verbose"]);
+        assert_eq!(m.get_count(VERBOSE), 2);
+    }
+
+    // ── unknown and invalid combinations ────────────────
+
+    #[test]
+    fn unknown_short_flag_errors() {
+        let result = parse_opts().try_get_matches_from(vec!["tp", "-z"]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn unknown_long_flag_errors() {
+        let result = parse_opts().try_get_matches_from(vec!["tp", "--foobar"]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn double_dash_stops_parsing() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--", "--not-a-flag"]);
+        assert_eq!(m.get_one::<String>(ARGFILE).map(|s| s.as_str()), Some("--not-a-flag"));
+    }
+
+    // ── long form with equals sign ──────────────────────
+
+    #[test]
+    fn input_long_equals() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--input=3"]);
+        assert_eq!(m.get_one::<String>(INPUT).map(|s| s.as_str()), Some("3"));
+    }
+
+    #[test]
+    fn output_long_equals() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--output=5"]);
+        assert_eq!(m.get_one::<String>(OUTPUT).map(|s| s.as_str()), Some("5"));
+    }
+
+    #[test]
+    fn add_long_equals() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--add=2"]);
+        assert_eq!(m.get_one::<String>(ADD).map(|s| s.as_str()), Some("2"));
+    }
+
+    #[test]
+    fn remove_long_equals() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--remove=4"]);
+        assert_eq!(m.get_one::<String>(REMOVE).map(|s| s.as_str()), Some("4"));
+    }
+
+    // ── all value args combined ─────────────────────────
+
+    #[test]
+    fn all_value_args_together() {
+        let m = parse_opts().get_matches_from(vec![
+            "tp", "-i", "1", "-o", "2", "-a", "3", "-r", "4",
+        ]);
+        assert_eq!(m.get_one::<String>(INPUT).map(|s| s.as_str()), Some("1"));
+        assert_eq!(m.get_one::<String>(OUTPUT).map(|s| s.as_str()), Some("2"));
+        assert_eq!(m.get_one::<String>(ADD).map(|s| s.as_str()), Some("3"));
+        assert_eq!(m.get_one::<String>(REMOVE).map(|s| s.as_str()), Some("4"));
+    }
+
+    #[test]
+    fn value_args_with_boolean_flags() {
+        let m = parse_opts().get_matches_from(vec![
+            "tp", "-i", "1", "-q", "-v", "-d",
+        ]);
+        assert_eq!(m.get_one::<String>(INPUT).map(|s| s.as_str()), Some("1"));
+        assert!(m.get_flag(SILENT));
+        assert!(m.get_count(VERBOSE) > 0);
+        assert!(m.get_flag(DIRECTORY));
+    }
+
+    // ── boolean flags default to false ──────────────────
+
+    #[test]
+    fn pop_default_false() {
+        let m = parse_opts().get_matches_from(vec!["tp"]);
+        assert!(!m.get_flag(POP));
+    }
+
+    #[test]
+    fn unshift_default_false() {
+        let m = parse_opts().get_matches_from(vec!["tp"]);
+        assert!(!m.get_flag(UNSHIFT));
+    }
+
+    #[test]
+    fn shift_default_false() {
+        let m = parse_opts().get_matches_from(vec!["tp"]);
+        assert!(!m.get_flag(SHIFT));
+    }
+
+    #[test]
+    fn directory_default_false() {
+        let m = parse_opts().get_matches_from(vec!["tp"]);
+        assert!(!m.get_flag(DIRECTORY));
+    }
+
+    #[test]
+    fn master_default_false() {
+        let m = parse_opts().get_matches_from(vec!["tp"]);
+        assert!(!m.get_flag(MASTER));
+    }
+
+    #[test]
+    fn list_files_default_false() {
+        let m = parse_opts().get_matches_from(vec!["tp"]);
+        assert!(!m.get_flag(LIST_FILES));
+    }
+
+    #[test]
+    fn list_files_numbered_default_false() {
+        let m = parse_opts().get_matches_from(vec!["tp"]);
+        assert!(!m.get_flag(LIST_FILES_NUMBERED));
+    }
+
+    #[test]
+    fn list_contents_default_false() {
+        let m = parse_opts().get_matches_from(vec!["tp"]);
+        assert!(!m.get_flag(LIST_CONTENTS));
+    }
+
+    #[test]
+    fn list_contents_numbered_default_false() {
+        let m = parse_opts().get_matches_from(vec!["tp"]);
+        assert!(!m.get_flag(LIST_CONTENTS_NUMBERED));
+    }
+
+    #[test]
+    fn silent_default_false() {
+        let m = parse_opts().get_matches_from(vec!["tp"]);
+        assert!(!m.get_flag(SILENT));
+    }
+
+    #[test]
+    fn clear_default_false() {
+        let m = parse_opts().get_matches_from(vec!["tp"]);
+        assert!(!m.get_flag(CLEAR));
+    }
+
+    #[test]
+    fn verbose_default_zero() {
+        let m = parse_opts().get_matches_from(vec!["tp"]);
+        assert_eq!(m.get_count(VERBOSE), 0);
+    }
+
+    // ── positional edge cases ───────────────────────────
+
+    #[test]
+    fn positional_with_spaces_in_name() {
+        let m = parse_opts().get_matches_from(vec!["tp", "my file.txt"]);
+        assert_eq!(m.get_one::<String>(ARGFILE).map(|s| s.as_str()), Some("my file.txt"));
+    }
+
+    #[test]
+    fn positional_with_unicode() {
+        let m = parse_opts().get_matches_from(vec!["tp", "日本語.txt"]);
+        assert_eq!(m.get_one::<String>(ARGFILE).map(|s| s.as_str()), Some("日本語.txt"));
+    }
+
+    #[test]
+    fn positional_empty_string() {
+        let m = parse_opts().get_matches_from(vec!["tp", ""]);
+        assert_eq!(m.get_one::<String>(ARGFILE).map(|s| s.as_str()), Some(""));
+    }
+
+    #[test]
+    fn positional_dot() {
+        let m = parse_opts().get_matches_from(vec!["tp", "."]);
+        assert_eq!(m.get_one::<String>(ARGFILE).map(|s| s.as_str()), Some("."));
+    }
+
+    #[test]
+    fn positional_hidden_file() {
+        let m = parse_opts().get_matches_from(vec!["tp", ".hidden"]);
+        assert_eq!(m.get_one::<String>(ARGFILE).map(|s| s.as_str()), Some(".hidden"));
+    }
+
+    // ── negative index for output via long flag ─────────
+
+    #[test]
+    fn output_long_negative() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--output", "-5"]);
+        assert_eq!(m.get_one::<String>(OUTPUT).map(|s| s.as_str()), Some("-5"));
+    }
+
+    #[test]
+    fn add_long_negative() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--add", "-3"]);
+        assert_eq!(m.get_one::<String>(ADD).map(|s| s.as_str()), Some("-3"));
+    }
+
+    #[test]
+    fn remove_long_negative() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--remove", "-7"]);
+        assert_eq!(m.get_one::<String>(REMOVE).map(|s| s.as_str()), Some("-7"));
+    }
+
+    // ── help and version flags ──────────────────────────
+
+    #[test]
+    fn help_flag_recognized() {
+        let result = parse_opts().try_get_matches_from(vec!["tp", "--help"]);
+        // --help causes an early exit, which is an Err
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn version_flag_recognized() {
+        let result = parse_opts().try_get_matches_from(vec!["tp", "--version"]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn help_short_flag_recognized() {
+        let result = parse_opts().try_get_matches_from(vec!["tp", "-h"]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn version_short_flag_recognized() {
+        let result = parse_opts().try_get_matches_from(vec!["tp", "-V"]);
+        assert!(result.is_err());
+    }
 }
