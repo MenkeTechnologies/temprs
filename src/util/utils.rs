@@ -1,5 +1,5 @@
 use std::fs::{read_to_string, remove_file, File, OpenOptions};
-use std::io::{BufRead, BufReader, Write};
+use std::io::{self, BufRead, BufReader, IsTerminal, Write};
 use std::path::{Path, PathBuf};
 use std::process::exit;
 use std::time::SystemTime;
@@ -7,6 +7,92 @@ use std::time::SystemTime;
 use log::{debug, error};
 
 use crate::util::consts::*;
+
+
+// ── Cyberpunk terminal output helpers ────────────────
+
+fn is_tty() -> bool {
+    io::stdout().is_terminal()
+}
+
+pub fn cyber_hr() {
+    if is_tty() {
+        println!(
+            "\x1b[36m ░▒▓{}▓▒░\x1b[0m",
+            "█".repeat(50)
+        );
+    } else {
+        println!("{}", HR_CHAR.repeat(80));
+    }
+}
+
+pub fn cyber_path(path: &Path) {
+    let p = util_path_to_string(path);
+    if is_tty() {
+        println!("\x1b[32m //\x1b[0m \x1b[35m{}\x1b[0m", p);
+    } else {
+        println!("{}", p);
+    }
+}
+
+pub fn cyber_idx_path(i: usize, path: &Path) {
+    let p = util_path_to_string(path);
+    if is_tty() {
+        println!(
+            "\x1b[33m [{:02}]\x1b[0m \x1b[36m>\x1b[0m \x1b[35m{}\x1b[0m",
+            i, p
+        );
+    } else {
+        println!("{}: {}", i, p);
+    }
+}
+
+pub fn cyber_content(text: &str) {
+    if is_tty() {
+        println!("\x1b[32m{}\x1b[0m", text.trim_end());
+    } else {
+        println!("{}", text.trim_end());
+    }
+}
+
+pub fn cyber_idx_content(i: usize, path: &Path, text: &str) {
+    let p = util_path_to_string(path);
+    if is_tty() {
+        println!(
+            "\x1b[33m [{:02}]\x1b[0m \x1b[36m>\x1b[0m \x1b[35m{}\x1b[0m",
+            i, p
+        );
+        println!("\x1b[32m{}\x1b[0m", text.trim_end());
+    } else {
+        println!("{}: {}", i, p);
+        println!("{}", text.trim_end());
+    }
+}
+
+pub fn cyber_print_content(text: &str) {
+    if is_tty() {
+        println!(
+            "\x1b[36m ┌──────────────────────────────────────────────────────┐\x1b[0m"
+        );
+        for line in text.trim_end().lines() {
+            println!("\x1b[36m │\x1b[0m \x1b[32m{}\x1b[0m", line);
+        }
+        println!(
+            "\x1b[36m └──────────────────────────────────────────────────────┘\x1b[0m"
+        );
+    } else {
+        print!("{}", text);
+    }
+}
+
+pub fn cyber_single_path(path: &Path) {
+    let p = util_path_to_string(path);
+    if is_tty() {
+        println!("\x1b[36m >\x1b[0m \x1b[35m{}\x1b[0m", p);
+    } else {
+        println!("{}", p);
+    }
+}
 
 
 pub fn util_file_to_paths(path: &Path) -> Vec<PathBuf> {

@@ -147,7 +147,7 @@ impl TempApp {
 
     fn write_stdout_terminal(&mut self) {
         debug!("stdout term");
-        self.print_buffer_or_stack_file();
+        self.cyber_print_buffer_or_stack_file();
     }
 
 
@@ -200,6 +200,22 @@ impl TempApp {
             None => {
                 if !self.state().output_buffer().is_empty() {
                     print!("{}", self.state().output_buffer());
+                }
+            }
+        }
+    }
+
+    fn cyber_print_buffer_or_stack_file(&mut self) {
+        match self.state().output_temp_file().clone() {
+            Some(stk_idx) => {
+                if let Some(f) = self.idx_in_stack_tempfile(stk_idx) {
+                    let content = util_file_contents_to_string(f.as_path()).expect(ERR_FILE_READ);
+                    cyber_print_content(&content);
+                }
+            }
+            None => {
+                if !self.state().output_buffer().is_empty() {
+                    cyber_print_content(self.state().output_buffer());
                 }
             }
         }
@@ -327,7 +343,7 @@ impl TempApp {
         let stk = self.state().temp_file_stack();
         for p in stk.iter() {
             let string = util_file_contents_to_string(p.as_path()).expect(ERR_FILE_READ);
-            println!("{}", string.trim_end());
+            cyber_content(&string);
         }
         exit(0)
     }
@@ -336,28 +352,25 @@ impl TempApp {
         debug!("list contents");
         let stk = self.state().temp_file_stack();
         if !stk.is_empty() {
-            util_horiz_rule();
+            cyber_hr();
         }
         for (i, p) in stk.iter().enumerate() {
-            println!("{}: {}", i + 1, util_path_to_string(p));
             let string = util_file_contents_to_string(p.as_path()).expect(ERR_FILE_READ);
-            println!("{}", string.trim_end());
-            util_horiz_rule();
+            cyber_idx_content(i + 1, p, &string);
+            cyber_hr();
         }
         exit(0)
     }
 
     fn list_home(&mut self) {
         let dir = self.state().temprs_dir();
-
-        println!("{}", util_path_to_string(dir));
+        cyber_single_path(dir);
         exit(0)
     }
 
     fn list_master(&mut self) {
         let master = self.state().master_record_file();
-
-        println!("{}", util_path_to_string(master));
+        cyber_single_path(master);
         exit(0)
     }
 
@@ -365,7 +378,7 @@ impl TempApp {
         debug!("list files");
         let stk = self.state().temp_file_stack();
         for p in stk.iter() {
-            println!("{}", util_path_to_string(p));
+            cyber_path(p);
         }
         exit(0)
     }
@@ -374,11 +387,11 @@ impl TempApp {
         debug!("list files");
         let stk = self.state().temp_file_stack();
         if !stk.is_empty() {
-            util_horiz_rule();
+            cyber_hr();
         }
         for (i, p) in stk.iter().enumerate() {
-            println!("{}: {}", i + 1, util_path_to_string(p));
-            util_horiz_rule();
+            cyber_idx_path(i + 1, p);
+            cyber_hr();
         }
         exit(0)
     }

@@ -17,6 +17,25 @@
 
 ---
 
+## [0x00] SCREENSHOTS
+
+#### HELP // SYSTEM INTERFACE
+![help](img/help.png)
+
+#### LIST FILES // STACK ENUMERATION
+![list files](img/list-files.png)
+
+#### LIST NUMBERED // INDEXED STACK VIEW
+![list numbered](img/list-numbered.png)
+
+#### LIST CONTENTS // FULL DATA DUMP
+![list contents](img/list-contents.png)
+
+#### OUTPUT // DATA EXTRACTION
+![output](img/output.png)
+
+---
+
 ## [0x01] SYSTEM REQUIREMENTS
 
 - Rust toolchain // `rustc` + `cargo`
