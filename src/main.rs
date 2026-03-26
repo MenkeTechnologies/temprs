@@ -1,7 +1,4 @@
-use model::app::TempApp;
-
-mod model;
-mod util;
+use temprs::model::app::TempApp;
 
 fn main() {
     let mut app = TempApp::new();

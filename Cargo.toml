@@ -10,6 +10,10 @@ homepage = "https://github.com/MenkeTechnologies/temprs"
 keywords = ["cli", "temporary-file"]
 categories = ["command-line-utilities"]
 
+[lib]
+name = "temprs"
+path = "src/lib.rs"
+
 [[bin]]
 name = "temprs"
 path = "src/main.rs"
@@ -31,3 +35,10 @@ log = "0.4.14"
 env_logger = "0.10.0"
 simple_logger = "1.13.0"
 clap = "4.6.0"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "benchmarks"
+harness = false
