@@ -1,6 +1,3 @@
-#![allow(dead_code)]
-#![allow(unused_must_use)]
-
 use fs::{create_dir, remove_dir_all};
 use io::stdin;
 use std::env::temp_dir;
@@ -24,14 +21,14 @@ pub struct TempApp {
 }
 
 impl TempApp {
-    #[inline(always)]
+
     pub fn run(&mut self) {
         self.parse_opts();
         self.input();
         self.output()
     }
 
-    #[inline(always)]
+
     fn input(&mut self) {
         if isnt(Stream::Stdin) {
             self.read_stdin_pipe()
@@ -40,7 +37,7 @@ impl TempApp {
         }
     }
 
-    #[inline(always)]
+
     pub fn new() -> Self {
         simple_logger::init_with_level(TEMP_LOG_LEVEL).expect(ERR_LOGGER);
 
@@ -64,8 +61,6 @@ impl TempApp {
 
         out_file.push(format!("{}{}", TEMPFILE_PREFIX, util_time_ms()));
         master_file.push(MASTER_RECORD_FILENAME);
-
-        let _subcommand = String::new();
 
         if !temprs_dir.exists() {
             match create_dir(temprs_dir.as_path()) {
@@ -112,37 +107,35 @@ impl TempApp {
         Self { state }
     }
 
-    #[inline(always)]
+
     pub fn state(&mut self) -> &mut TempState {
         &mut self.state
     }
 
-    #[inline(always)]
+
     fn read_stdin_terminal(&mut self) {
         debug!("stdin term");
 
         match self.state().arg_file() {
             Some(arg_file) => {
                 let str = util_file_contents_to_string(arg_file.as_path()).expect(ERR_FILE_READ);
-                self.state().set_holding_buffer(str.clone());
                 if self.state.verbose() > 0 {
                     self.state().set_output_buffer(str.clone());
                 }
+                self.state().set_holding_buffer(str);
 
                 self.overwrite_idx_or_write_new_tempfile();
             }
-            None => match self.state().temp_file_stack().last() {
-                Some(f) => {
+            None => {
+                if let Some(f) = self.state().temp_file_stack().last() {
                     let string = util_file_contents_to_string(f.as_path()).expect(ERR_FILE_READ);
-
                     self.state().set_output_buffer(string);
                 }
-                _ => {}
-            },
+            }
         }
     }
 
-    #[inline(always)]
+
     fn output(&mut self) {
         if isnt(Stream::Stdout) {
             self.write_stdout_pipe();
@@ -151,19 +144,19 @@ impl TempApp {
         }
     }
 
-    #[inline(always)]
+
     fn write_stdout_terminal(&mut self) {
         debug!("stdout term");
         self.print_buffer_or_stack_file();
     }
 
-    #[inline(always)]
+
     fn write_stdout_pipe(&mut self) {
         debug!("stdout pipe");
         self.print_buffer_or_stack_file();
     }
 
-    #[inline(always)]
+
     fn add_idx_in_stack(&mut self, f: String) {
         match f.parse::<i32>() {
             Ok(idx) => {
@@ -179,7 +172,7 @@ impl TempApp {
             }
         }
     }
-    #[inline(always)]
+
     fn idx_in_stack_tempfile(&mut self, f: String) -> Option<&PathBuf> {
         match f.parse::<i32>() {
             Ok(idx) => {
@@ -193,18 +186,17 @@ impl TempApp {
         }
     }
 
-    #[inline(always)]
+
     fn print_buffer_or_stack_file(&mut self) {
         match self.state().output_temp_file().clone() {
-            Some(stk_idx) => match self.idx_in_stack_tempfile(stk_idx.clone()) {
-                Some(f) => {
+            Some(stk_idx) => {
+                if let Some(f) = self.idx_in_stack_tempfile(stk_idx) {
                     print!(
                         "{}",
                         util_file_contents_to_string(f.as_path()).expect(ERR_FILE_READ)
-                    )
+                    );
                 }
-                None => {}
-            },
+            }
             None => {
                 if !self.state().output_buffer().is_empty() {
                     print!("{}", self.state().output_buffer());
@@ -213,35 +205,36 @@ impl TempApp {
         }
     }
 
-    #[inline(always)]
+
     fn read_stdin_pipe(&mut self) {
         debug!("stdin pipe");
         let mut str = String::new();
-        stdin().read_to_string(&mut str);
+        if let Err(_e) = stdin().read_to_string(&mut str) {
+            util_terminate_error(ERR_FILE_READ);
+        }
 
-        self.state().set_holding_buffer(str.clone());
         if self.state.verbose() > 0 {
             self.state().set_output_buffer(str.clone());
         }
+        self.state().set_holding_buffer(str);
 
         self.overwrite_idx_or_write_new_tempfile()
     }
 
-    #[inline(always)]
+
     fn overwrite_idx_or_write_new_tempfile(&mut self) {
         let file_contents = String::from(self.state().holding_buffer());
         match self.state().input_temp_file().clone() {
-            Some(stk_idx) => match self.idx_in_stack_tempfile(stk_idx.clone()) {
-                Some(f) => {
+            Some(stk_idx) => {
+                if let Some(f) = self.idx_in_stack_tempfile(stk_idx) {
                     util_overwrite_file(f, &file_contents);
                 }
-                None => {}
-            },
+            }
             None => {
                 let insert_idx = self.state().insert_idx().clone();
                 match insert_idx {
                     Some(idx) => {
-                        self.add_idx_in_stack(idx.clone());
+                        self.add_idx_in_stack(idx);
                         util_overwrite_file(self.state().new_temp_file(), &file_contents);
                     }
                     None => {
@@ -253,7 +246,7 @@ impl TempApp {
         }
     }
 
-    #[inline(always)]
+
     fn append_to_master_list(&mut self) {
         debug!(
             "append file {} to master",
@@ -262,10 +255,10 @@ impl TempApp {
 
         let mut buffer = String::new();
         buffer.push_str(self.state().out_file_path_str().as_str());
-        buffer.push_str("\n");
+        buffer.push('\n');
         util_append_file(self.state().master_record_file(), &buffer);
     }
-    #[inline(always)]
+
     fn parse_opts(&mut self) {
         let matches = parse_opts().get_matches();
 
@@ -283,7 +276,7 @@ impl TempApp {
             self.list_master();
         }
         if matches.is_present(VERBOSE) {
-            simple_logger::init_with_level(Level::Debug);
+            let _ = simple_logger::init_with_level(Level::Debug);
             self.state().set_verbose(1);
         }
 
@@ -312,43 +305,37 @@ impl TempApp {
         if matches.is_present(SILENT) {
             self.state().set_silent(true);
         }
-        match matches.value_of(REMOVE) {
-            Some(f) => self.remove_at_idx(String::from(f)),
-            None => {}
+        if let Some(f) = matches.value_of(REMOVE) {
+            self.remove_at_idx(String::from(f));
         }
-        match matches.value_of(ADD) {
-            Some(i) => self.state().set_insert_idx(Some(String::from(i))),
-            None => {}
+        if let Some(i) = matches.value_of(ADD) {
+            self.state().set_insert_idx(Some(String::from(i)));
         }
-
-        match matches.value_of(ARGFILE) {
-            Some(f) => self.state().set_arg_file(Some(PathBuf::from(f))),
-            None => {}
+        if let Some(f) = matches.value_of(ARGFILE) {
+            self.state().set_arg_file(Some(PathBuf::from(f)));
         }
-        match matches.value_of(INPUT) {
-            Some(i) => self.state().set_input_temp_file(Some(String::from(i))),
-            None => {}
+        if let Some(i) = matches.value_of(INPUT) {
+            self.state().set_input_temp_file(Some(String::from(i)));
         }
-        match matches.value_of(OUTPUT) {
-            Some(i) => self.state().set_output_temp_file(Some(String::from(i))),
-            None => {}
+        if let Some(i) = matches.value_of(OUTPUT) {
+            self.state().set_output_temp_file(Some(String::from(i)));
         }
     }
-    #[inline(always)]
+
     fn list_tempfiles_contents(&mut self) {
         debug!("list contents");
         let stk = self.state().temp_file_stack();
-        for (_i, p) in stk.iter().enumerate() {
+        for p in stk.iter() {
             let string = util_file_contents_to_string(p.as_path()).expect(ERR_FILE_READ);
             println!("{}", string.trim_end());
         }
         exit(0)
     }
-    #[inline(always)]
+
     fn list_tempfiles_contents_numbered(&mut self) {
         debug!("list contents");
         let stk = self.state().temp_file_stack();
-        if stk.len() > 0 {
+        if !stk.is_empty() {
             util_horiz_rule();
         }
         for (i, p) in stk.iter().enumerate() {
@@ -359,34 +346,34 @@ impl TempApp {
         }
         exit(0)
     }
-    #[inline(always)]
+
     fn list_home(&mut self) {
         let dir = self.state().temprs_dir();
 
         println!("{}", util_path_to_string(dir));
         exit(0)
     }
-    #[inline(always)]
+
     fn list_master(&mut self) {
         let master = self.state().master_record_file();
 
         println!("{}", util_path_to_string(master));
         exit(0)
     }
-    #[inline(always)]
+
     fn list_tempfiles(&mut self) {
         debug!("list files");
         let stk = self.state().temp_file_stack();
-        for (_i, p) in stk.iter().enumerate() {
+        for p in stk.iter() {
             println!("{}", util_path_to_string(p));
         }
         exit(0)
     }
-    #[inline(always)]
+
     fn list_tempfiles_numbered(&mut self) {
         debug!("list files");
         let stk = self.state().temp_file_stack();
-        if stk.len() > 0 {
+        if !stk.is_empty() {
             util_horiz_rule();
         }
         for (i, p) in stk.iter().enumerate() {
@@ -395,21 +382,23 @@ impl TempApp {
         }
         exit(0)
     }
-    #[inline(always)]
+
     fn clear_all(&mut self) {
-        remove_dir_all(
+        if let Err(_e) = remove_dir_all(
             self.state()
                 .master_record_file()
                 .as_path()
                 .parent()
                 .expect(ERR_NO_FILE),
-        );
+        ) {
+            util_terminate_error(ERR_NO_FILE);
+        }
         exit(0)
     }
-    #[inline(always)]
+
     fn remove_at_idx(&mut self, stk_idx: String) {
         let cur = self.state().temp_file_stack().clone();
-        match self.idx_in_stack_tempfile(stk_idx.clone()) {
+        match self.idx_in_stack_tempfile(stk_idx) {
             Some(f) => {
                 util_remove_file(f);
                 let col: Vec<PathBuf> = cur.into_iter().filter(|p| p != f).collect();
