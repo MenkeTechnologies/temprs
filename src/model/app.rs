@@ -8,7 +8,7 @@ use std::io::Read;
 use std::path::PathBuf;
 use std::process::exit;
 
-use atty::{isnt, Stream};
+use std::io::IsTerminal;
 use log::{debug, Level};
 
 use crate::model::opts::parse_opts;
@@ -30,7 +30,7 @@ impl TempApp {
 
 
     fn input(&mut self) {
-        if isnt(Stream::Stdin) {
+        if !stdin().is_terminal() {
             self.read_stdin_pipe()
         } else {
             self.read_stdin_terminal();
@@ -137,7 +137,7 @@ impl TempApp {
 
 
     fn output(&mut self) {
-        if isnt(Stream::Stdout) {
+        if !io::stdout().is_terminal() {
             self.write_stdout_pipe();
         } else {
             self.write_stdout_terminal();

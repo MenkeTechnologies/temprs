@@ -1,6 +1,6 @@
 [package]
 name = "temprs"
-version = "0.6.0"
+version = "0.7.0"
 authors = ["Jacob Menke <linux.dev25@gmail.com>"]
 edition = "2018"
 description = "A temporary file manager with stack mechanism"
@@ -27,7 +27,6 @@ path = "src/main.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-atty = "0.2.14"
 log = "0.4.14"
 env_logger = "0.10.0"
 simple_logger = "1.13.0"
