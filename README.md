@@ -1,96 +1,180 @@
-# temprs - A temporary file stack manager in Rust
+```
+ ████████╗███████╗███╗   ███╗██████╗ ██████╗ ███████╗
+ ╚══██╔══╝██╔════╝████╗ ████║██╔══██╗██╔══██╗██╔════╝
+    ██║   █████╗  ██╔████╔██║██████╔╝██████╔╝███████╗
+    ██║   ██╔══╝  ██║╚██╔╝██║██╔═══╝ ██╔══██╗╚════██║
+    ██║   ███████╗██║ ╚═╝ ██║██║     ██║  ██║███████║
+    ╚═╝   ╚══════╝╚═╝     ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝
+```
 
-## [temprs on Crates.io](https://crates.io/crates/temprs)
+### `[TEMPORARY FILE STACK MANAGER // FULL SPECTRUM DATA CONTROL]`
 
-## Install
+ ┌──────────────────────────────────────────────────────────────┐
+ │ STATUS: ONLINE &nbsp;&nbsp; THREAT LEVEL: NEON &nbsp;&nbsp; SIGNAL: ████████░░ │
+ └──────────────────────────────────────────────────────────────┘
 
+> *"The stack is vast and infinite."*
+
+---
+
+## [0x01] SYSTEM REQUIREMENTS
+
+- Rust toolchain // `rustc` + `cargo`
+
+## [0x02] INSTALLATION
+
+#### DOWNLOADING PAYLOAD FROM CRATES.IO
+
+```sh
 cargo install temprs
+```
 
-## Usage
-#### Replace CMD with any command, FILE with any file and INDEX with any index
+#### COMPILING FROM SOURCE
 
-- read stdin into new tempfile on top of stack
-  ```CMD | tp```
+```sh
+git clone https://github.com/MenkeTechnologies/temprs
+cd temprs
+cargo build --release
+```
 
-- read stdin into new tempfile on top of stack and contents to stdout
-  ```CMD | tp -v```
+[temprs on Crates.io](https://crates.io/crates/temprs)
 
-- contents of tempfile on top of stack to stdout
-  ```tp | CMD```
+---
 
-- read stdin into tempfile at index 1
-  ```CMD | tp -i 1```
+## [0x03] USAGE
 
-- read stdin into tempfile at index 1 and write to stdout
-  ```CMD | tp -i 1 -v```
+> Replace `CMD` with any command, `FILE` with any file, `INDEX` with any index
 
-- output tempfile at index 1 to stdout
-  ```tp -o 1 | CMD```
+#### SCANNING DATA STREAMS // STDIN OPERATIONS
 
-- read from FILE and create tempfile on top of stack with contents of file.
-  ```tp FILE | CMD```
+```sh
+# jack data into a new tempfile on top of stack
+CMD | tp
 
-- read from FILE and create tempfile on top of stack with contents of file.  write contents of FILE to CMD.
-  ```tp -v FILE | CMD```
- 
-- write contents of FILE to tempfile 1
-  ```tp -i 1 FILE | CMD```
+# jack data in and echo contents to stdout
+CMD | tp -v
 
-- write contents of FILE to tempfile 1 then to stdout
-  ```tp -vi 1 FILE | CMD```
- 
-- read from stdin to tempfile 1 then write to stdout
-  ```CMD | tp -vi 1 | CMD```
+# read from top of stack to stdout
+tp | CMD
+```
 
-- choose input tempfile and write to tempfile at index 2 and stdout
-  ```CMD | tp -vi 2```
+#### TARGETING INDEXED TEMPFILES // PRECISION I/O
 
-- choose output tempfile and write to stdout
-  ```tp -o 1 | CMD```
+```sh
+# write stdin into tempfile at index 1
+CMD | tp -i 1
 
-- list all tempfiles on the stack to stdout
-  ```tp -l```
+# write stdin into tempfile at index 1 and echo to stdout
+CMD | tp -i 1 -v
 
-- list all tempfiles with contents on the stack to stdout
-  ```tp -L```
- 
-- list all tempfiles numbered on the stack to stdout
-  ```tp -n```
+# output tempfile at index 1 to stdout
+tp -o 1 | CMD
+```
 
-- list all tempfiles numbered with contents on the stack to stdout
-  ```tp -N```
+#### LOADING FILE PAYLOADS // FILE OPERATIONS
 
-- remove all tempfiles
-  ```tp -c```
+```sh
+# read FILE into new tempfile on top of stack
+tp FILE | CMD
 
-- remove tempfile at INDEX
-  ```tp -r INDEX```
+# read FILE into new tempfile and write contents to stdout
+tp -v FILE | CMD
 
-- insert tempfile at INDEX
-  ```CMD | tp -a INDEX```
+# write FILE contents to tempfile 1
+tp -i 1 FILE | CMD
 
-- insert FILE at INDEX
-  ```tp -a INDEX FILE```
+# write FILE contents to tempfile 1 then to stdout
+tp -vi 1 FILE | CMD
+```
 
-- remove tempfile at top of stack
-  ```tp -p```
+#### CHAINING DATA STREAMS // PIPELINE OPERATIONS
 
-- add tempfile at bottom of stack
-  ```CMD | tp -u```
+```sh
+# read stdin to tempfile 1 then write to stdout
+CMD | tp -vi 1 | CMD
 
-- add tempfile at bottom of stack
-  ```CMD | tp -a 1```
+# choose input tempfile and write to tempfile at index 2 and stdout
+CMD | tp -vi 2
+```
 
-- remove tempfile at bottom of stack
-  ```tp -s```
+#### ENUMERATING STACK CONTENTS // LISTING
 
-### Notes
+```sh
+# list all tempfiles on the stack
+tp -l
 
-Temporary files are numbered with ascending order. The highest numbered tempfile is the top of the stack and tempfile 1
-is at the bottom of the stack.
+# list all tempfiles with contents
+tp -L
 
-Negative indices are allowed at any INDEX argument position.  Indices go from 1 .. stack size and -1 .. -stack size.  INDEX of 0 is always invalid.
+# list all tempfiles numbered
+tp -n
 
-tp and temprs binaries are installed.
+# list all tempfiles numbered with contents
+tp -N
+```
 
-# created by MenkeTechnologies
+#### STACK MANIPULATION // PUSH / POP / SHIFT
+
+```sh
+# purge all tempfiles
+tp -c
+
+# remove tempfile at INDEX
+tp -r INDEX
+
+# insert tempfile at INDEX
+CMD | tp -a INDEX
+
+# insert FILE at INDEX
+tp -a INDEX FILE
+
+# pop from top of stack
+tp -p
+
+# push to bottom of stack
+CMD | tp -u
+
+# push to bottom of stack (equivalent)
+CMD | tp -a 1
+
+# shift from bottom of stack
+tp -s
+```
+
+---
+
+## [0x04] STACK ARCHITECTURE
+
+```
+ ┌─────────────────────────────────────┐
+ │  INDEX N   ▓▓  TOP OF STACK (newest)│
+ │  INDEX N-1 ▓▓  ...                  │
+ │  INDEX 2   ▓▓  ...                  │
+ │  INDEX 1   ▓▓  BOTTOM OF STACK      │
+ └─────────────────────────────────────┘
+```
+
+- Tempfiles are numbered in ascending order // highest index = top of stack
+- Negative indices are valid at any `INDEX` position // range: `-stack_size .. -1`
+- Positive indices range from `1 .. stack_size`
+- Index `0` is always **invalid**
+- Both `tp` and `temprs` binaries are installed
+
+---
+
+## [0xFF] LICENSE
+
+ ┌──────────────────────────────────────────────────────────┐
+ │ MIT LICENSE // UNAUTHORIZED REPRODUCTION WILL BE MET     │
+ │ WITH FULL ICE                                            │
+ └──────────────────────────────────────────────────────────┘
+
+---
+
+```
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+░░ >>> JACK IN. PUSH YOUR DATA. OWN YOUR TEMP FILES. <<<   ░░
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+```
+
+##### created by [MenkeTechnologies](https://github.com/MenkeTechnologies)
