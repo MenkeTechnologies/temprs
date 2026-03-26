@@ -1075,4 +1075,422 @@ mod tests {
         assert_eq!(loaded, paths);
         fs::remove_dir_all(&dir).unwrap();
     }
+
+    // ── util_transform_idx exhaustive equivalences and boundaries ──
+
+    #[test]
+    fn transform_idx_all_equivalences_for_ten() {
+        let len = 10;
+        for i in 1..=10i32 {
+            let pos = util_transform_idx(i, len);
+            let neg = util_transform_idx(-(10 - i + 1), len);
+            assert_eq!(pos, neg, "positive {} and negative {} should map to same index", i, -(10 - i + 1));
+        }
+    }
+
+    #[test]
+    fn transform_idx_positive_second() {
+        assert_eq!(util_transform_idx(2, 5), 1);
+    }
+
+    #[test]
+    fn transform_idx_negative_second_from_end() {
+        assert_eq!(util_transform_idx(-2, 5), 3);
+    }
+
+    #[test]
+    fn transform_idx_large_list_mid() {
+        assert_eq!(util_transform_idx(500, 1000), 499);
+    }
+
+    #[test]
+    fn transform_idx_large_list_negative_mid() {
+        assert_eq!(util_transform_idx(-500, 1000), 500);
+    }
+
+    #[test]
+    fn transform_idx_positive_equals_len() {
+        assert_eq!(util_transform_idx(10, 10), 9);
+    }
+
+    // ── util_path_to_string additional ──────────────────
+
+    #[test]
+    fn path_to_string_relative() {
+        assert_eq!(util_path_to_string(Path::new("foo/bar")), "foo/bar");
+    }
+
+    #[test]
+    fn path_to_string_dot_prefix() {
+        assert_eq!(util_path_to_string(Path::new("./foo")), "./foo");
+    }
+
+    #[test]
+    fn path_to_string_hidden_file() {
+        assert_eq!(util_path_to_string(Path::new("/tmp/.hidden")), "/tmp/.hidden");
+    }
+
+    #[test]
+    fn path_to_string_extension_chain() {
+        assert_eq!(util_path_to_string(Path::new("file.tar.gz")), "file.tar.gz");
+    }
+
+    #[test]
+    fn path_to_string_very_long() {
+        let long_path = "/".to_string() + &"a".repeat(499);
+        assert_eq!(util_path_to_string(Path::new(&long_path)), long_path);
+    }
+
+    // ── util_time_ms additional ─────────────────────────
+
+    #[test]
+    fn time_ms_different_across_sleep() {
+        let first = util_time_ms();
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        let second = util_time_ms();
+        let a: u128 = first.parse().unwrap();
+        let b: u128 = second.parse().unwrap();
+        assert!(b > a, "second call {} should be strictly greater than first {}", b, a);
+    }
+
+    #[test]
+    fn time_ms_length_is_13_digits() {
+        let ms = util_time_ms();
+        assert_eq!(ms.len(), 13, "expected 13-digit epoch ms, got '{}'", ms);
+    }
+
+    // ── util_overwrite_file additional ──────────────────
+
+    #[test]
+    fn overwrite_file_binary_like_content() {
+        let dir = tmp_dir();
+        let file = dir.join("binary.txt");
+        let content = "hello\0world\0";
+        util_overwrite_file(&file, content);
+        let read_back = fs::read_to_string(&file).unwrap();
+        assert_eq!(read_back, content);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn overwrite_file_single_char() {
+        let dir = tmp_dir();
+        let file = dir.join("single.txt");
+        util_overwrite_file(&file, "x");
+        assert_eq!(fs::read_to_string(&file).unwrap(), "x");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn overwrite_file_only_whitespace() {
+        let dir = tmp_dir();
+        let file = dir.join("ws.txt");
+        let content = "   \t\n  ";
+        util_overwrite_file(&file, content);
+        assert_eq!(fs::read_to_string(&file).unwrap(), content);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn overwrite_file_repeated_same_content() {
+        let dir = tmp_dir();
+        let file = dir.join("repeat.txt");
+        let content = "same content here";
+        for _ in 0..5 {
+            util_overwrite_file(&file, content);
+        }
+        assert_eq!(fs::read_to_string(&file).unwrap(), content);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // ── util_append_file additional ─────────────────────
+
+    #[test]
+    fn append_file_alternating_content() {
+        let dir = tmp_dir();
+        let file = dir.join("alt.txt");
+        for _ in 0..5 {
+            util_append_file(&file, "A\n");
+            util_append_file(&file, "B\n");
+        }
+        let content = fs::read_to_string(&file).unwrap();
+        assert_eq!(content, "A\nB\nA\nB\nA\nB\nA\nB\nA\nB\n");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn append_file_single_bytes() {
+        let dir = tmp_dir();
+        let file = dir.join("bytes.txt");
+        for ch in ["h", "e", "l", "l", "o"] {
+            util_append_file(&file, ch);
+        }
+        assert_eq!(fs::read_to_string(&file).unwrap(), "hello");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // ── util_file_contents_to_string additional ─────────
+
+    #[test]
+    fn file_contents_to_string_preserves_whitespace() {
+        let dir = tmp_dir();
+        let file = dir.join("ws.txt");
+        let content = "  hello  \n  world  ";
+        fs::write(&file, content).unwrap();
+        assert_eq!(util_file_contents_to_string(&file).unwrap(), content);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn file_contents_to_string_carriage_return() {
+        let dir = tmp_dir();
+        let file = dir.join("cr.txt");
+        let content = "a\r\nb\r\n";
+        fs::write(&file, content).unwrap();
+        assert_eq!(util_file_contents_to_string(&file).unwrap(), content);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn file_contents_to_string_only_newlines() {
+        let dir = tmp_dir();
+        let file = dir.join("nls.txt");
+        let content = "\n\n\n";
+        fs::write(&file, content).unwrap();
+        assert_eq!(util_file_contents_to_string(&file).unwrap(), content);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // ── util_file_to_lines additional ───────────────────
+
+    #[test]
+    fn file_to_lines_blank_file() {
+        let dir = tmp_dir();
+        let file = dir.join("blank.txt");
+        fs::write(&file, "").unwrap();
+        let lines = util_file_to_lines(file.as_path());
+        assert!(lines.is_empty());
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn file_to_lines_only_newlines() {
+        let dir = tmp_dir();
+        let file = dir.join("nls.txt");
+        fs::write(&file, "\n\n\n").unwrap();
+        let lines = util_file_to_lines(file.as_path());
+        assert_eq!(lines, vec!["", "", ""]);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn file_to_lines_mixed_content() {
+        let dir = tmp_dir();
+        let file = dir.join("mixed.txt");
+        fs::write(&file, "data\n\nmore\n").unwrap();
+        let lines = util_file_to_lines(file.as_path());
+        assert_eq!(lines, vec!["data", "", "more"]);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn file_to_lines_windows_line_endings() {
+        let dir = tmp_dir();
+        let file = dir.join("win.txt");
+        fs::write(&file, "a\r\nb\r\n").unwrap();
+        let lines = util_file_to_lines(file.as_path());
+        // BufReader::lines() strips \n but \r may be preserved
+        for line in &lines {
+            // Each line should contain the original content (possibly with \r)
+            assert!(line == "a" || line == "a\r" || line == "b" || line == "b\r");
+        }
+        assert_eq!(lines.len(), 2);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // ── util_lines_to_file additional ───────────────────
+
+    #[test]
+    fn lines_to_file_empty_strings() {
+        let dir = tmp_dir();
+        let file = dir.join("empties.txt");
+        let lines = vec!["".to_string(), "".to_string(), "".to_string()];
+        util_lines_to_file(&file, lines);
+        let content = fs::read_to_string(&file).unwrap();
+        assert_eq!(content, "\n\n\n");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn lines_to_file_with_special_chars() {
+        let dir = tmp_dir();
+        let file = dir.join("special.txt");
+        let lines = vec!["col1\tcol2".to_string(), "he said \"hi\"".to_string()];
+        util_lines_to_file(&file, lines);
+        let content = fs::read_to_string(&file).unwrap();
+        assert_eq!(content, "col1\tcol2\nhe said \"hi\"\n");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn lines_to_file_very_long_lines() {
+        let dir = tmp_dir();
+        let file = dir.join("longline.txt");
+        let long = "x".repeat(10000);
+        let lines = vec![long.clone()];
+        util_lines_to_file(&file, lines);
+        let content = fs::read_to_string(&file).unwrap();
+        assert_eq!(content, format!("{}\n", long));
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // ── util_file_to_paths additional ───────────────────
+
+    #[test]
+    fn file_to_paths_preserves_order() {
+        let dir = tmp_dir();
+        let file = dir.join("ordered.txt");
+        let expected: Vec<PathBuf> = (0..10).map(|i| PathBuf::from(format!("/path/{}", i))).collect();
+        let content: String = expected.iter().map(|p| format!("{}\n", p.display())).collect();
+        fs::write(&file, &content).unwrap();
+        let paths = util_file_to_paths(file.as_path());
+        assert_eq!(paths, expected);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn file_to_paths_deep_paths() {
+        let dir = tmp_dir();
+        let file = dir.join("deep.txt");
+        let deep: Vec<PathBuf> = (0..3)
+            .map(|i| PathBuf::from(format!("/a/b/c/d/e/f/g/h/i/j/file{}", i)))
+            .collect();
+        let content: String = deep.iter().map(|p| format!("{}\n", p.display())).collect();
+        fs::write(&file, &content).unwrap();
+        let paths = util_file_to_paths(file.as_path());
+        assert_eq!(paths, deep);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn file_to_paths_relative_paths() {
+        let dir = tmp_dir();
+        let file = dir.join("rel.txt");
+        fs::write(&file, "foo/bar\nbaz/qux\n").unwrap();
+        let paths = util_file_to_paths(file.as_path());
+        assert_eq!(paths, vec![PathBuf::from("foo/bar"), PathBuf::from("baz/qux")]);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // ── util_paths_to_file additional ───────────────────
+
+    #[test]
+    fn paths_to_file_then_modify_and_rewrite() {
+        let dir = tmp_dir();
+        let master = dir.join("master");
+        let original = vec![
+            PathBuf::from("/a"),
+            PathBuf::from("/b"),
+            PathBuf::from("/c"),
+        ];
+        util_paths_to_file(original, &master);
+        let mut loaded = util_file_to_paths(master.as_path());
+        loaded.retain(|p| p != &PathBuf::from("/b"));
+        util_paths_to_file(loaded.clone(), &master);
+        let final_paths = util_file_to_paths(master.as_path());
+        assert_eq!(final_paths, vec![PathBuf::from("/a"), PathBuf::from("/c")]);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn paths_to_file_fifty_paths() {
+        let dir = tmp_dir();
+        let master = dir.join("master");
+        let paths: Vec<PathBuf> = (0..50).map(|i| PathBuf::from(format!("/dir/file{}", i))).collect();
+        util_paths_to_file(paths.clone(), &master);
+        let loaded = util_file_to_paths(master.as_path());
+        assert_eq!(loaded, paths);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn paths_to_file_with_deep_nesting() {
+        let dir = tmp_dir();
+        let master = dir.join("master");
+        let paths = vec![
+            PathBuf::from("/a/b/c/d/e/f/g/h"),
+            PathBuf::from("/i/j/k/l/m/n/o/p"),
+        ];
+        util_paths_to_file(paths.clone(), &master);
+        let loaded = util_file_to_paths(master.as_path());
+        assert_eq!(loaded, paths);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // ── Cross-function combos ───────────────────────────
+
+    #[test]
+    fn overwrite_append_overwrite_cycle() {
+        let dir = tmp_dir();
+        let file = dir.join("cycle.txt");
+        util_overwrite_file(&file, "A");
+        util_append_file(&file, "B");
+        util_overwrite_file(&file, "C");
+        assert_eq!(fs::read_to_string(&file).unwrap(), "C");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn paths_to_file_empty_then_nonempty() {
+        let dir = tmp_dir();
+        let master = dir.join("master");
+        util_paths_to_file(vec![], &master);
+        util_paths_to_file(vec![PathBuf::from("/x"), PathBuf::from("/y")], &master);
+        let loaded = util_file_to_paths(master.as_path());
+        assert_eq!(loaded, vec![PathBuf::from("/x"), PathBuf::from("/y")]);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn multiple_files_in_same_dir() {
+        let dir = tmp_dir();
+        for i in 0..5 {
+            let file = dir.join(format!("file{}.txt", i));
+            let content = format!("content{}", i);
+            util_overwrite_file(&file, &content);
+        }
+        for i in 0..5 {
+            let file = dir.join(format!("file{}.txt", i));
+            let expected = format!("content{}", i);
+            assert_eq!(fs::read_to_string(&file).unwrap(), expected);
+        }
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn lines_to_file_round_trip_100_lines() {
+        let dir = tmp_dir();
+        let file = dir.join("100lines.txt");
+        let original: Vec<String> = (0..100).map(|i| format!("line number {}", i)).collect();
+        util_lines_to_file(&file, original.clone());
+        let read_back = util_file_to_lines(file.as_path());
+        assert_eq!(read_back, original);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn file_to_paths_round_trip_with_spaces_and_unicode() {
+        let dir = tmp_dir();
+        let master = dir.join("master");
+        let paths = vec![
+            PathBuf::from("/my dir/some file"),
+            PathBuf::from("/データ/ファイル"),
+            PathBuf::from("/café/résumé"),
+            PathBuf::from("/path with spaces/and 日本語"),
+        ];
+        util_paths_to_file(paths.clone(), &master);
+        let loaded = util_file_to_paths(master.as_path());
+        assert_eq!(loaded, paths);
+        fs::remove_dir_all(&dir).unwrap();
+    }
 }

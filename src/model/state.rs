@@ -864,4 +864,453 @@ mod tests {
         s.set_arg_file(Some(PathBuf::from("/tmp/other")));
         assert_eq!(s.new_temp_file(), &orig);
     }
+
+    // ── constructor edge cases ────────────────────────────
+
+    #[test]
+    fn new_with_single_stack_item() {
+        let s = TempState::new(
+            PathBuf::from("/tmp/out"),
+            PathBuf::from("/tmp/master"),
+            PathBuf::from("/tmp"),
+            vec![PathBuf::from("/tmp/only_one")],
+            None,
+            String::new(),
+        );
+        assert_eq!(s.temp_file_stack().len(), 1);
+        assert_eq!(s.temp_file_stack()[0], PathBuf::from("/tmp/only_one"));
+    }
+
+    #[test]
+    fn new_with_very_large_stack() {
+        let stack: Vec<PathBuf> = (0..200)
+            .map(|i| PathBuf::from(format!("/tmp/temprs/f{}", i)))
+            .collect();
+        let s = TempState::new(
+            PathBuf::from("/tmp/out"),
+            PathBuf::from("/tmp/master"),
+            PathBuf::from("/tmp"),
+            stack,
+            None,
+            String::new(),
+        );
+        assert_eq!(s.temp_file_stack().len(), 200);
+        assert_eq!(s.temp_file_stack()[0], PathBuf::from("/tmp/temprs/f0"));
+        assert_eq!(s.temp_file_stack()[199], PathBuf::from("/tmp/temprs/f199"));
+    }
+
+    #[test]
+    fn new_preserves_output_buffer_with_newlines() {
+        let s = TempState::new(
+            PathBuf::from("/tmp/out"),
+            PathBuf::from("/tmp/master"),
+            PathBuf::from("/tmp"),
+            vec![],
+            None,
+            String::from("a\nb\nc"),
+        );
+        assert_eq!(s.output_buffer(), "a\nb\nc");
+    }
+
+    #[test]
+    fn new_preserves_output_buffer_with_unicode() {
+        let s = TempState::new(
+            PathBuf::from("/tmp/out"),
+            PathBuf::from("/tmp/master"),
+            PathBuf::from("/tmp"),
+            vec![],
+            None,
+            String::from("日本語 🚀"),
+        );
+        assert_eq!(s.output_buffer(), "日本語 🚀");
+    }
+
+    #[test]
+    fn new_with_deeply_nested_paths() {
+        let deep = PathBuf::from("/a/b/c/d/e/f/g/h");
+        let s = TempState::new(
+            deep.clone(),
+            deep.clone(),
+            deep.clone(),
+            vec![deep.clone()],
+            Some(deep.clone()),
+            String::new(),
+        );
+        assert_eq!(s.new_temp_file(), &deep);
+        assert_eq!(s.master_record_file(), &deep);
+        assert_eq!(s.temprs_dir(), &deep);
+        assert_eq!(s.temp_file_stack()[0], deep);
+        assert_eq!(s.arg_file(), &Some(deep));
+    }
+
+    // ── getter/setter interaction sequences ───────────────
+
+    #[test]
+    fn set_all_then_reset_all_to_defaults() {
+        let mut s = make_state();
+        // set everything non-default
+        s.set_verbose(10);
+        s.set_silent(true);
+        s.set_holding_buffer("hold".to_string());
+        s.set_output_buffer("out".to_string());
+        s.set_input_temp_file(Some("1".to_string()));
+        s.set_output_temp_file(Some("2".to_string()));
+        s.set_insert_idx(Some("3".to_string()));
+        s.set_arg_file(Some(PathBuf::from("/tmp/arg")));
+        // reset to defaults
+        s.set_verbose(0);
+        s.set_silent(false);
+        s.set_holding_buffer(String::new());
+        s.set_output_buffer(String::new());
+        s.set_input_temp_file(None);
+        s.set_output_temp_file(None);
+        s.set_insert_idx(None);
+        s.set_arg_file(None);
+        // verify defaults
+        assert_eq!(s.verbose(), 0);
+        assert!(!s.silent());
+        assert!(s.holding_buffer().is_empty());
+        assert!(s.output_buffer().is_empty());
+        assert!(s.input_temp_file().is_none());
+        assert!(s.output_temp_file().is_none());
+        assert!(s.insert_idx().is_none());
+        assert!(s.arg_file().is_none());
+    }
+
+    #[test]
+    fn set_holding_then_output_independent() {
+        let mut s = make_state();
+        s.set_holding_buffer("A".to_string());
+        s.set_output_buffer("B".to_string());
+        assert_eq!(s.holding_buffer(), "A");
+        assert_eq!(s.output_buffer(), "B");
+    }
+
+    #[test]
+    fn set_verbose_doesnt_affect_output_buffer() {
+        let mut s = make_state();
+        s.set_output_buffer("original".to_string());
+        s.set_verbose(42);
+        assert_eq!(s.output_buffer(), "original");
+    }
+
+    #[test]
+    fn set_silent_doesnt_affect_holding_buffer() {
+        let mut s = make_state();
+        s.set_holding_buffer("keep_me".to_string());
+        s.set_silent(true);
+        assert_eq!(s.holding_buffer(), "keep_me");
+    }
+
+    #[test]
+    fn set_insert_idx_doesnt_affect_input_temp_file() {
+        let mut s = make_state();
+        s.set_input_temp_file(Some("99".to_string()));
+        s.set_insert_idx(Some("5".to_string()));
+        assert_eq!(s.input_temp_file(), &Some("99".to_string()));
+    }
+
+    #[test]
+    fn set_output_temp_file_doesnt_affect_insert_idx() {
+        let mut s = make_state();
+        s.set_insert_idx(Some("7".to_string()));
+        s.set_output_temp_file(Some("88".to_string()));
+        assert_eq!(s.insert_idx(), &Some("7".to_string()));
+    }
+
+    // ── path mutation sequences ───────────────────────────
+
+    #[test]
+    fn set_new_temp_file_multiple_times() {
+        let mut s = make_state();
+        for i in 0..5 {
+            s.set_new_temp_file(PathBuf::from(format!("/tmp/path{}", i)));
+        }
+        assert_eq!(s.new_temp_file(), &PathBuf::from("/tmp/path4"));
+    }
+
+    #[test]
+    fn set_master_record_file_with_unicode() {
+        let mut s = make_state();
+        s.set_master_record_file(PathBuf::from("/tmp/日本語/マスター"));
+        assert_eq!(
+            s.master_record_file(),
+            &PathBuf::from("/tmp/日本語/マスター")
+        );
+    }
+
+    #[test]
+    fn set_temprs_dir_deeply_nested() {
+        let mut s = make_state();
+        s.set_temprs_dir(PathBuf::from("/a/b/c/d/e/f"));
+        assert_eq!(s.temprs_dir(), &PathBuf::from("/a/b/c/d/e/f"));
+    }
+
+    #[test]
+    fn set_temp_file_stack_grow_and_shrink() {
+        let mut s = make_state();
+        // 3 items
+        s.set_temp_file_stack(vec![
+            PathBuf::from("/a"),
+            PathBuf::from("/b"),
+            PathBuf::from("/c"),
+        ]);
+        assert_eq!(s.temp_file_stack().len(), 3);
+        // grow to 10
+        let big: Vec<PathBuf> = (0..10).map(|i| PathBuf::from(format!("/f{}", i))).collect();
+        s.set_temp_file_stack(big);
+        assert_eq!(s.temp_file_stack().len(), 10);
+        // shrink to 1
+        s.set_temp_file_stack(vec![PathBuf::from("/only")]);
+        assert_eq!(s.temp_file_stack().len(), 1);
+        assert_eq!(s.temp_file_stack()[0], PathBuf::from("/only"));
+    }
+
+    // ── buffer content edge cases ─────────────────────────
+
+    #[test]
+    fn holding_buffer_with_null_bytes() {
+        let mut s = make_state();
+        s.set_holding_buffer("data\0more".to_string());
+        assert_eq!(s.holding_buffer(), "data\0more");
+    }
+
+    #[test]
+    fn output_buffer_with_carriage_returns() {
+        let mut s = make_state();
+        s.set_output_buffer("line1\r\nline2\r\n".to_string());
+        assert_eq!(s.output_buffer(), "line1\r\nline2\r\n");
+    }
+
+    #[test]
+    fn holding_buffer_only_whitespace() {
+        let mut s = make_state();
+        s.set_holding_buffer("   \t\n  ".to_string());
+        assert_eq!(s.holding_buffer(), "   \t\n  ");
+        assert!(!s.holding_buffer().is_empty());
+    }
+
+    #[test]
+    fn output_buffer_very_long() {
+        let mut s = make_state();
+        let long = "x".repeat(100_000);
+        s.set_output_buffer(long.clone());
+        assert_eq!(s.output_buffer(), long);
+        assert_eq!(s.output_buffer().len(), 100_000);
+    }
+
+    #[test]
+    fn holding_buffer_repeated_set_and_check() {
+        let mut s = make_state();
+        for i in 0..20 {
+            s.set_holding_buffer(format!("val_{}", i));
+        }
+        assert_eq!(s.holding_buffer(), "val_19");
+    }
+
+    // ── index fields edge cases ───────────────────────────
+
+    #[test]
+    fn insert_idx_zero_string() {
+        let mut s = make_state();
+        s.set_insert_idx(Some("0".to_string()));
+        assert_eq!(s.insert_idx(), &Some("0".to_string()));
+    }
+
+    #[test]
+    fn input_temp_file_zero_string() {
+        let mut s = make_state();
+        s.set_input_temp_file(Some("0".to_string()));
+        assert_eq!(s.input_temp_file(), &Some("0".to_string()));
+    }
+
+    #[test]
+    fn output_temp_file_zero_string() {
+        let mut s = make_state();
+        s.set_output_temp_file(Some("0".to_string()));
+        assert_eq!(s.output_temp_file(), &Some("0".to_string()));
+    }
+
+    #[test]
+    fn insert_idx_non_numeric() {
+        let mut s = make_state();
+        s.set_insert_idx(Some("abc".to_string()));
+        assert_eq!(s.insert_idx(), &Some("abc".to_string()));
+    }
+
+    #[test]
+    fn input_temp_file_non_numeric() {
+        let mut s = make_state();
+        s.set_input_temp_file(Some("xyz".to_string()));
+        assert_eq!(s.input_temp_file(), &Some("xyz".to_string()));
+    }
+
+    #[test]
+    fn output_temp_file_non_numeric() {
+        let mut s = make_state();
+        s.set_output_temp_file(Some("not_a_number".to_string()));
+        assert_eq!(s.output_temp_file(), &Some("not_a_number".to_string()));
+    }
+
+    // ── out_file_path_str / master_file_path_str edge cases
+
+    #[test]
+    fn out_file_path_str_with_unicode() {
+        let mut s = make_state();
+        s.set_new_temp_file(PathBuf::from("/tmp/日本語/ファイル"));
+        assert_eq!(s.out_file_path_str(), "/tmp/日本語/ファイル");
+    }
+
+    #[test]
+    fn out_file_path_str_relative_path() {
+        let mut s = make_state();
+        s.set_new_temp_file(PathBuf::from("foo/bar"));
+        assert_eq!(s.out_file_path_str(), "foo/bar");
+    }
+
+    #[test]
+    fn master_file_path_str_with_spaces() {
+        let mut s = make_state();
+        s.set_master_record_file(PathBuf::from("/tmp/my dir/master file"));
+        assert_eq!(s.master_file_path_str(), "/tmp/my dir/master file");
+    }
+
+    #[test]
+    fn out_file_path_str_very_long_path() {
+        let mut s = make_state();
+        let long_path = format!("/tmp/{}", "a".repeat(500));
+        s.set_new_temp_file(PathBuf::from(&long_path));
+        assert_eq!(s.out_file_path_str(), long_path);
+    }
+
+    // ── arg file edge cases ───────────────────────────────
+
+    #[test]
+    fn arg_file_relative_path() {
+        let mut s = make_state();
+        s.set_arg_file(Some(PathBuf::from("relative/path.txt")));
+        assert_eq!(
+            s.arg_file(),
+            &Some(PathBuf::from("relative/path.txt"))
+        );
+    }
+
+    #[test]
+    fn arg_file_root_path() {
+        let mut s = make_state();
+        s.set_arg_file(Some(PathBuf::from("/")));
+        assert_eq!(s.arg_file(), &Some(PathBuf::from("/")));
+    }
+
+    #[test]
+    fn arg_file_with_unicode() {
+        let mut s = make_state();
+        s.set_arg_file(Some(PathBuf::from("/tmp/日本語/file")));
+        assert_eq!(
+            s.arg_file(),
+            &Some(PathBuf::from("/tmp/日本語/file"))
+        );
+    }
+
+    #[test]
+    fn arg_file_set_check_set_none_check() {
+        let mut s = make_state();
+        s.set_arg_file(Some(PathBuf::from("/tmp/present")));
+        assert_eq!(s.arg_file(), &Some(PathBuf::from("/tmp/present")));
+        s.set_arg_file(None);
+        assert!(s.arg_file().is_none());
+    }
+
+    // ── stack content verification ────────────────────────
+
+    #[test]
+    fn temp_file_stack_paths_preserved_exactly() {
+        let mut s = make_state();
+        let paths: Vec<PathBuf> = vec![
+            PathBuf::from("/alpha"),
+            PathBuf::from("/beta"),
+            PathBuf::from("/gamma"),
+            PathBuf::from("/delta"),
+            PathBuf::from("/epsilon"),
+        ];
+        s.set_temp_file_stack(paths.clone());
+        for (i, p) in paths.iter().enumerate() {
+            assert_eq!(&s.temp_file_stack()[i], p);
+        }
+    }
+
+    #[test]
+    fn temp_file_stack_with_unicode_paths() {
+        let mut s = make_state();
+        s.set_temp_file_stack(vec![
+            PathBuf::from("/tmp/日本語"),
+            PathBuf::from("/tmp/中文"),
+            PathBuf::from("/tmp/한국어"),
+        ]);
+        assert_eq!(s.temp_file_stack().len(), 3);
+        assert_eq!(s.temp_file_stack()[0], PathBuf::from("/tmp/日本語"));
+        assert_eq!(s.temp_file_stack()[1], PathBuf::from("/tmp/中文"));
+        assert_eq!(s.temp_file_stack()[2], PathBuf::from("/tmp/한국어"));
+    }
+
+    #[test]
+    fn temp_file_stack_with_duplicate_paths() {
+        let mut s = make_state();
+        let dup = PathBuf::from("/tmp/same");
+        s.set_temp_file_stack(vec![dup.clone(), dup.clone()]);
+        assert_eq!(s.temp_file_stack().len(), 2);
+        assert_eq!(s.temp_file_stack()[0], dup);
+        assert_eq!(s.temp_file_stack()[1], dup);
+    }
+
+    #[test]
+    fn temp_file_stack_with_relative_paths() {
+        let mut s = make_state();
+        s.set_temp_file_stack(vec![
+            PathBuf::from("relative/one"),
+            PathBuf::from("relative/two"),
+        ]);
+        assert_eq!(s.temp_file_stack()[0], PathBuf::from("relative/one"));
+        assert_eq!(s.temp_file_stack()[1], PathBuf::from("relative/two"));
+    }
+
+    // ── multiple field mutation stress test ────────────────
+
+    #[test]
+    fn rapid_mutation_cycle() {
+        let mut s = make_state();
+        for i in 0..50u32 {
+            s.set_verbose(i);
+            s.set_holding_buffer(format!("h{}", i));
+            s.set_output_buffer(format!("o{}", i));
+        }
+        assert_eq!(s.verbose(), 49);
+        assert_eq!(s.holding_buffer(), "h49");
+        assert_eq!(s.output_buffer(), "o49");
+    }
+
+    #[test]
+    fn all_optional_fields_some_then_none() {
+        let mut s = make_state();
+        // set all Option fields to Some
+        s.set_arg_file(Some(PathBuf::from("/tmp/arg")));
+        s.set_insert_idx(Some("5".to_string()));
+        s.set_input_temp_file(Some("10".to_string()));
+        s.set_output_temp_file(Some("20".to_string()));
+        // verify all Some
+        assert!(s.arg_file().is_some());
+        assert!(s.insert_idx().is_some());
+        assert!(s.input_temp_file().is_some());
+        assert!(s.output_temp_file().is_some());
+        // set all to None
+        s.set_arg_file(None);
+        s.set_insert_idx(None);
+        s.set_input_temp_file(None);
+        s.set_output_temp_file(None);
+        // verify all None
+        assert!(s.arg_file().is_none());
+        assert!(s.insert_idx().is_none());
+        assert!(s.input_temp_file().is_none());
+        assert!(s.output_temp_file().is_none());
+    }
 }
