@@ -262,63 +262,63 @@ impl TempApp {
     fn parse_opts(&mut self) {
         let matches = parse_opts().get_matches();
 
-        if matches.is_present(LIST_FILES) {
+        if matches.get_flag(LIST_FILES) {
             self.list_tempfiles();
         }
-        if matches.is_present(LIST_FILES_NUMBERED) {
+        if matches.get_flag(LIST_FILES_NUMBERED) {
             self.list_tempfiles_numbered();
         }
 
-        if matches.is_present(DIRECTORY) {
+        if matches.get_flag(DIRECTORY) {
             self.list_home();
         }
-        if matches.is_present(MASTER) {
+        if matches.get_flag(MASTER) {
             self.list_master();
         }
-        if matches.is_present(VERBOSE) {
+        if matches.get_count(VERBOSE) > 0 {
             let _ = simple_logger::init_with_level(Level::Debug);
             self.state().set_verbose(1);
         }
 
-        if matches.is_present(LIST_CONTENTS) {
+        if matches.get_flag(LIST_CONTENTS) {
             self.list_tempfiles_contents();
         }
-        if matches.is_present(LIST_CONTENTS_NUMBERED) {
+        if matches.get_flag(LIST_CONTENTS_NUMBERED) {
             self.list_tempfiles_contents_numbered();
         }
-        if matches.is_present(CLEAR) {
+        if matches.get_flag(CLEAR) {
             self.clear_all();
         }
-        if matches.is_present(SHIFT) {
+        if matches.get_flag(SHIFT) {
             self.remove_at_idx(format!("{}", 1))
         }
 
-        if matches.is_present(UNSHIFT) {
+        if matches.get_flag(UNSHIFT) {
             self.state().set_insert_idx(Some(String::from("1")));
         }
 
-        if matches.is_present(POP) {
+        if matches.get_flag(POP) {
             let top = self.state().temp_file_stack().len();
             self.remove_at_idx(format!("{}", top))
         }
 
-        if matches.is_present(SILENT) {
+        if matches.get_flag(SILENT) {
             self.state().set_silent(true);
         }
-        if let Some(f) = matches.value_of(REMOVE) {
-            self.remove_at_idx(String::from(f));
+        if let Some(f) = matches.get_one::<String>(REMOVE) {
+            self.remove_at_idx(f.clone());
         }
-        if let Some(i) = matches.value_of(ADD) {
-            self.state().set_insert_idx(Some(String::from(i)));
+        if let Some(i) = matches.get_one::<String>(ADD) {
+            self.state().set_insert_idx(Some(i.clone()));
         }
-        if let Some(f) = matches.value_of(ARGFILE) {
+        if let Some(f) = matches.get_one::<String>(ARGFILE) {
             self.state().set_arg_file(Some(PathBuf::from(f)));
         }
-        if let Some(i) = matches.value_of(INPUT) {
-            self.state().set_input_temp_file(Some(String::from(i)));
+        if let Some(i) = matches.get_one::<String>(INPUT) {
+            self.state().set_input_temp_file(Some(i.clone()));
         }
-        if let Some(i) = matches.value_of(OUTPUT) {
-            self.state().set_output_temp_file(Some(String::from(i)));
+        if let Some(i) = matches.get_one::<String>(OUTPUT) {
+            self.state().set_output_temp_file(Some(i.clone()));
         }
     }
 
