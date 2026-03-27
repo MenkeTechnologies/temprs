@@ -2934,7 +2934,7 @@ fn master_file_uses_null_byte_delimiters() {
     let raw = fs::read(dir.join("temprs-stack")).unwrap();
     // records separated by \0\0, fields by \0
     let nulls: Vec<usize> = raw.iter().enumerate()
-        .filter(|(_, &b)| b == 0)
+        .filter(|&(_, &b)| b == 0)
         .map(|(i, _)| i)
         .collect();
     assert!(nulls.len() >= 3, "expected at least 3 null bytes, got {}", nulls.len());
