@@ -89,7 +89,7 @@ fn help_shows_all_flags() {
         "--input", "--output", "--add", "--remove", "--pop", "--unshift",
         "--shift", "--dir", "--master", "--list-files", "--list-files-numbered",
         "--list-contents", "--list-contents-numbered", "--quiet", "--clear",
-        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat",
+        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count",
     ] {
         assert!(text.contains(flag), "missing flag: {}", flag);
     }
@@ -2006,4 +2006,54 @@ fn cat_negative_index() {
     run_tp_stdin(&dir, &[], "LAST");
     let out = run_tp(&dir, &["-C", "-1"]);
     assert_eq!(stdout(&out), "LAST");
+}
+
+// ── Count ──────────────────────────────────────────────
+
+#[test]
+fn count_empty_stack() {
+    let dir = setup_clean_env();
+    let out = run_tp(&dir, &["-k"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&out).trim(), "0");
+}
+
+#[test]
+fn count_one_file() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["-k"]);
+    assert_eq!(stdout(&out).trim(), "1");
+}
+
+#[test]
+fn count_multiple_files() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a");
+    tick();
+    run_tp_stdin(&dir, &[], "b");
+    tick();
+    run_tp_stdin(&dir, &[], "c");
+    let out = run_tp(&dir, &["-k"]);
+    assert_eq!(stdout(&out).trim(), "3");
+}
+
+#[test]
+fn count_after_remove() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a");
+    tick();
+    run_tp_stdin(&dir, &[], "b");
+    run_tp(&dir, &["-r", "1"]);
+    let out = run_tp(&dir, &["-k"]);
+    assert_eq!(stdout(&out).trim(), "1");
+}
+
+#[test]
+fn count_after_clear() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a");
+    run_tp(&dir, &["-c"]);
+    let out = run_tp(&dir, &["-k"]);
+    assert_eq!(stdout(&out).trim(), "0");
 }

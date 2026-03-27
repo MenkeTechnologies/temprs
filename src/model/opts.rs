@@ -163,6 +163,11 @@ pub fn parse_opts() -> Command {
             .num_args(1..)
             .allow_hyphen_values(true)
             .help("\x1b[32m//\x1b[0m Concatenate tempfiles at indices to stdout"))
+        .arg(Arg::new(COUNT)
+            .short('k')
+            .long("count")
+            .action(ArgAction::SetTrue)
+            .help("\x1b[32m//\x1b[0m Print number of tempfiles on the stack"))
 }
 
 #[cfg(test)]
@@ -568,7 +573,7 @@ mod tests {
         let custom_count = app.get_arguments()
             .filter(|a| a.get_id() != "help" && a.get_id() != "version")
             .count();
-        assert_eq!(custom_count, 23);
+        assert_eq!(custom_count, 24);
     }
 
     // ── flag mutual independence ────────────────────────

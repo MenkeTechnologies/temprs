@@ -151,6 +151,9 @@ tp -n
 
 # list all tempfiles numbered with contents
 tp -N
+
+# print the number of files on the stack
+tp -k
 ```
 
 #### EDITOR INTEGRATION // DIRECT ACCESS

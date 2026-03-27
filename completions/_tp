@@ -37,6 +37,7 @@ _tp() {
     '(-I --info)'{-I,--info}'[Show metadata for tempfile at INDEX]:index:_tp_indices'
     '(-g --grep)'{-g,--grep}'[Search tempfile contents for PATTERN]:pattern: '
     '(-C --cat)'{-C,--cat}'[Concatenate tempfiles to stdout]:*:index:_tp_indices'
+    '(-k --count)'{-k,--count}'[Print number of tempfiles on the stack]'
     '(-p --pop)'{-p,--pop}'[Pop from top of stack]'
     '(-u --unshift)'{-u,--unshift}'[Push to bottom of stack]'
     '(-s --shift)'{-s,--shift}'[Shift from bottom of stack]'

@@ -304,6 +304,9 @@ impl TempApp {
             self.list_tempfiles_numbered();
         }
 
+        if matches.get_flag(COUNT) {
+            self.count_tempfiles();
+        }
         if matches.get_flag(DIRECTORY) {
             self.list_home();
         }
@@ -403,6 +406,11 @@ impl TempApp {
             cyber_idx_content_named(i + 1, p, &string, n);
             cyber_hr();
         }
+        exit(0)
+    }
+
+    fn count_tempfiles(&mut self) {
+        println!("{}", self.state().temp_file_stack().len());
         exit(0)
     }
 
