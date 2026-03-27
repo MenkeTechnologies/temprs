@@ -51,6 +51,7 @@ _tp() {
     '(--size)'--size'[Print byte size of tempfile]:index:_tp_indices'
     '(--sort)'--sort'[Sort stack by key]:key:(name size mtime)'
     '(--replace)'--replace'[Replace pattern in tempfile]:index:_tp_indices:pattern: :replacement: '
+    '(--path)'--path'[Print file path of tempfile]:index:_tp_indices'
     '(-p --pop)'{-p,--pop}'[Pop from top of stack]'
     '(-u --unshift)'{-u,--unshift}'[Push to bottom of stack]'
     '(-s --shift)'{-s,--shift}'[Shift from bottom of stack]'

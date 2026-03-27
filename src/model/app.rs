@@ -389,6 +389,9 @@ impl TempApp {
             let v: Vec<String> = vals.cloned().collect();
             self.replace_in_tempfile(v[0].clone(), v[1].clone(), v[2].clone());
         }
+        if let Some(f) = matches.get_one::<String>(PATH) {
+            self.path_tempfile(f.clone());
+        }
         if matches.get_flag(SHIFT) {
             self.remove_at_idx(format!("{}", 1))
         }
@@ -748,6 +751,16 @@ impl TempApp {
             print!("{}", combined);
         }
         exit(0)
+    }
+
+    fn path_tempfile(&mut self, stk_idx: String) {
+        match self.resolve_idx(&stk_idx) {
+            Some(idx) => {
+                println!("{}", self.state.temp_file_stack()[idx].display());
+                exit(0)
+            }
+            None => util_terminate_error(ERR_INVALID_IDX),
+        }
     }
 
     fn replace_in_tempfile(&mut self, stk_idx: String, pattern: String, replacement: String) {

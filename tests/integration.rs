@@ -89,7 +89,7 @@ fn help_shows_all_flags() {
         "--input", "--output", "--add", "--remove", "--pop", "--unshift",
         "--shift", "--dir", "--master", "--list-files", "--list-files-numbered",
         "--list-contents", "--list-contents-numbered", "--quiet", "--clear",
-        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff", "--mv", "--dup", "--swap", "--append", "--rev", "--expire", "--head", "--tail", "--wc", "--size", "--sort", "--replace",
+        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff", "--mv", "--dup", "--swap", "--append", "--rev", "--expire", "--head", "--tail", "--wc", "--size", "--sort", "--replace", "--path",
     ] {
         assert!(text.contains(flag), "missing flag: {}", flag);
     }
@@ -2872,4 +2872,56 @@ fn replace_preserves_other_files() {
     run_tp(&dir, &["--replace", "1", "original", "modified"]);
     assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "modified");
     assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "untouched");
+}
+
+// ── Path ───────────────────────────────────────────────
+
+#[test]
+fn path_by_index() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["--path", "1"]);
+    assert!(out.status.success());
+    let text = stdout(&out);
+    assert!(text.trim().starts_with(dir.to_str().unwrap()));
+    assert!(text.trim().contains("tempfile"));
+}
+
+#[test]
+fn path_by_name() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "myfile"], "data");
+    let out = run_tp(&dir, &["--path", "myfile"]);
+    assert!(out.status.success());
+    assert!(stdout(&out).trim().contains("tempfile"));
+}
+
+#[test]
+fn path_usable_in_scripts() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "content here");
+    let out = run_tp(&dir, &["--path", "1"]);
+    let path = stdout(&out).trim().to_string();
+    // The path should be a real file we can read
+    let content = std::fs::read_to_string(&path).unwrap();
+    assert_eq!(content, "content here");
+}
+
+#[test]
+fn path_invalid_index_fails() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["--path", "99"]);
+    assert!(!out.status.success());
+}
+
+#[test]
+fn path_negative_index() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "first");
+    tick();
+    run_tp_stdin(&dir, &[], "last");
+    let out1 = run_tp(&dir, &["--path", "-1"]);
+    let out2 = run_tp(&dir, &["--path", "2"]);
+    assert_eq!(stdout(&out1).trim(), stdout(&out2).trim());
 }

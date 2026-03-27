@@ -243,6 +243,11 @@ pub fn parse_opts() -> Command {
             .num_args(3)
             .allow_hyphen_values(true)
             .help("\x1b[32m//\x1b[0m Replace PATTERN with REPLACEMENT in tempfile"))
+        .arg(Arg::new(PATH)
+            .long("path")
+            .value_name("INDEX")
+            .allow_hyphen_values(true)
+            .help("\x1b[32m//\x1b[0m Print file path of tempfile at INDEX"))
 }
 
 #[cfg(test)]
@@ -648,7 +653,7 @@ mod tests {
         let custom_count = app.get_arguments()
             .filter(|a| a.get_id() != "help" && a.get_id() != "version")
             .count();
-        assert_eq!(custom_count, 37);
+        assert_eq!(custom_count, 38);
     }
 
     // ── flag mutual independence ────────────────────────

@@ -123,6 +123,11 @@ tp --wc mydata
 # print byte size
 tp --size INDEX
 tp --size mydata
+
+# print file path (for use in scripts)
+tp --path INDEX
+tp --path mydata
+cat "$(tp --path 1)"
 ```
 
 #### LOADING FILE PAYLOADS // FILE OPERATIONS
