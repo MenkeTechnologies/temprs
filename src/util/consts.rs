@@ -53,9 +53,12 @@ pub const SORT: &str = "sort";
 pub const REPLACE: &str = "replace";
 pub const PATH: &str = "path";
 pub const ERR_INVALID_NAME: &str = "Invalid or duplicate name";
-pub const ERR_NAME_TAB: &str = "Name must not contain tab characters";
+pub const ERR_NAME_NUL: &str = "Name must not contain null bytes";
+pub const MASTER_FIELD_DELIM: char = '\0';
+pub const MASTER_RECORD_DELIM: &str = "\0\0";
 pub const ERR_EDITOR: &str = "Could not open editor";
 pub const ERR_MASTER_WRITE: &str = "Could not write master record";
+pub const ERR_MASTER_LOCK: &str = "Could not acquire lock on master record";
 
 #[cfg(test)]
 mod tests {
@@ -134,6 +137,29 @@ mod tests {
     #[test]
     fn err_master_write_not_empty() {
         assert!(!ERR_MASTER_WRITE.is_empty());
+    }
+
+    #[test]
+    fn err_master_lock_not_empty() {
+        assert!(!ERR_MASTER_LOCK.is_empty());
+    }
+
+    #[test]
+    fn err_name_nul_not_empty() {
+        assert!(!ERR_NAME_NUL.is_empty());
+    }
+
+    // ── master file delimiter constants ──────────────────
+
+    #[test]
+    fn master_field_delim_is_null() {
+        assert_eq!(MASTER_FIELD_DELIM, '\0');
+    }
+
+    #[test]
+    fn master_record_delim_is_double_null() {
+        assert_eq!(MASTER_RECORD_DELIM, "\0\0");
+        assert_eq!(MASTER_RECORD_DELIM.len(), 2);
     }
 
     // ── CLI flag name constants ──────────────────────────

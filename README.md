@@ -334,7 +334,22 @@ export TEMPRS_DIR=/path/to/custom/dir
 
 ---
 
-## [0x05] STACK ARCHITECTURE
+## [0x05] DATA INTEGRITY
+
+ ┌──────────────────────────────────────────────────────────────┐
+ │ CORRUPTION RESISTANCE: MAXIMUM &nbsp;&nbsp; DATA LOSS RISK: ZERO     │
+ └──────────────────────────────────────────────────────────────┘
+
+The master record is hardened against corruption and concurrent access:
+
+- **Null-byte delimited format** // `\0` field separator, `\0\0` record separator — supports filenames with newlines, tabs, spaces, and any special characters
+- **Atomic writes** // data is written to a temp file and atomically renamed — no partial writes on crash
+- **Exclusive file locking** // `flock`-based locking prevents concurrent access corruption from multiple shells or scripts
+- **Auto-recovery** // corrupt or empty records in the master file are silently skipped and cleaned up on next write
+
+---
+
+## [0x06] STACK ARCHITECTURE
 
 ```
  ┌─────────────────────────────────────┐

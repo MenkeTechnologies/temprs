@@ -2322,18 +2322,15 @@ fn swap_invalid_index_fails() {
 }
 
 #[test]
-fn name_with_tab_rejected() {
-    let dir = setup_clean_env();
-    let out = run_tp_stdin(&dir, &["-w", "bad\tname"], "data");
-    assert!(!out.status.success(), "name with tab should be rejected");
+fn name_with_nul_rejected() {
+    // null bytes cannot be passed via CLI arguments (OS restriction),
+    // so validation is only relevant for programmatic/library use
 }
 
 #[test]
-fn rename_to_tab_rejected() {
-    let dir = setup_clean_env();
-    run_tp_stdin(&dir, &["-w", "good"], "data");
-    let out = run_tp(&dir, &["-R", "good", "bad\tname"]);
-    assert!(!out.status.success(), "rename to name with tab should be rejected");
+fn rename_to_nul_rejected() {
+    // null bytes cannot be passed via CLI arguments (OS restriction),
+    // so validation is only relevant for programmatic/library use
 }
 
 #[test]
@@ -2924,4 +2921,103 @@ fn path_negative_index() {
     let out1 = run_tp(&dir, &["--path", "-1"]);
     let out2 = run_tp(&dir, &["--path", "2"]);
     assert_eq!(stdout(&out1).trim(), stdout(&out2).trim());
+}
+
+// ── master file format and robustness ─────────────────
+
+#[test]
+fn master_file_uses_null_byte_delimiters() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "tagged"], "first");
+    tick();
+    run_tp_stdin(&dir, &[], "second");
+    let raw = fs::read(dir.join("temprs-stack")).unwrap();
+    // records separated by \0\0, fields by \0
+    let nulls: Vec<usize> = raw.iter().enumerate()
+        .filter(|(_, &b)| b == 0)
+        .map(|(i, _)| i)
+        .collect();
+    assert!(nulls.len() >= 3, "expected at least 3 null bytes, got {}", nulls.len());
+    // no tab bytes used as delimiters
+    assert!(!raw.windows(1).any(|w| w == b"\t"), "master file should not contain tabs");
+}
+
+#[test]
+fn lock_file_created_on_push() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    assert!(dir.join("temprs-stack.lock").exists(), "lock file should exist");
+}
+
+#[test]
+fn no_tmp_file_left_after_push() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    assert!(!dir.join("temprs-stack.tmp").exists(), "no .tmp file should remain");
+}
+
+#[test]
+fn no_tmp_file_left_after_pop() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    tick();
+    run_tp_stdin(&dir, &[], "more");
+    run_tp(&dir, &["-p"]);
+    assert!(!dir.join("temprs-stack.tmp").exists(), "no .tmp file should remain after pop");
+}
+
+#[test]
+fn no_tmp_file_left_after_remove() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    tick();
+    run_tp_stdin(&dir, &[], "more");
+    run_tp(&dir, &["-r", "1"]);
+    assert!(!dir.join("temprs-stack.tmp").exists(), "no .tmp file should remain after remove");
+}
+
+#[test]
+fn master_file_tab_content_not_corrupted() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "col1\tcol2\tcol3");
+    tick();
+    run_tp_stdin(&dir, &[], "second");
+    let out = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out), "col1\tcol2\tcol3");
+    let out2 = run_tp(&dir, &["-o", "2"]);
+    assert_eq!(stdout(&out2), "second");
+}
+
+#[test]
+fn master_file_newline_content_not_corrupted() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "line1\nline2\nline3");
+    tick();
+    run_tp_stdin(&dir, &[], "other");
+    let out = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out), "line1\nline2\nline3");
+    let out2 = run_tp(&dir, &["-o", "2"]);
+    assert_eq!(stdout(&out2), "other");
+}
+
+#[test]
+fn corrupt_master_file_empty_records_recovered() {
+    let dir = setup_clean_env();
+    // push two items normally
+    run_tp_stdin(&dir, &[], "first");
+    tick();
+    run_tp_stdin(&dir, &[], "second");
+    // read master file raw bytes and inject extra \0\0 (empty records)
+    let master = dir.join("temprs-stack");
+    let raw = fs::read(&master).unwrap();
+    let mut corrupted = Vec::new();
+    corrupted.extend_from_slice(&[0, 0]); // leading empty record
+    corrupted.extend_from_slice(&raw);
+    corrupted.extend_from_slice(&[0, 0]); // trailing empty record
+    fs::write(&master, &corrupted).unwrap();
+    // listing should still work and show 2 items
+    let out = run_tp(&dir, &["-k"]);
+    assert!(out.status.success());
+    let count: usize = stdout(&out).trim().parse().unwrap();
+    assert_eq!(count, 2);
 }

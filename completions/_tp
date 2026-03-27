@@ -10,8 +10,24 @@ _tp_indices() {
   [[ -r "$master_file" ]] || return
 
   local -a indices descriptions
-  local i=1
-  while IFS=$'\t' read -r filepath name_tag; do
+  local i=1 filepath name_tag
+  local content
+  content="$(<"$master_file")"
+  [[ -z "$content" ]] && return
+
+  # records are separated by \0\0, fields within a record by \0
+  local -a records
+  records=("${(@s:\0\0:)content}")
+  for record in "${records[@]}"; do
+    [[ -z "$record" ]] && continue
+    if [[ "$record" == *$'\0'* ]]; then
+      filepath="${record%%$'\0'*}"
+      name_tag="${record#*$'\0'}"
+    else
+      filepath="$record"
+      name_tag=""
+    fi
+    [[ -z "$filepath" ]] && continue
     if [[ -n "$name_tag" ]]; then
       descriptions+=("${i}:${filepath:t} @${name_tag}")
       descriptions+=("${name_tag}:${filepath:t} [${i}]")
@@ -19,7 +35,7 @@ _tp_indices() {
       descriptions+=("${i}:${filepath:t}")
     fi
     (( i++ ))
-  done < "$master_file"
+  done
 
   _describe -t indices 'stack index' descriptions
 }

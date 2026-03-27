@@ -1,5 +1,9 @@
-use std::fs::{read_to_string, remove_file, rename, File, OpenOptions};
-use std::io::{self, BufRead, BufReader, IsTerminal, Write};
+use std::fs::{read_to_string, remove_file, rename, OpenOptions};
+#[cfg(test)]
+use std::fs::File;
+#[cfg(test)]
+use std::io::{BufRead, BufReader};
+use std::io::{self, IsTerminal, Write};
 use std::path::{Path, PathBuf};
 use std::process::exit;
 use std::time::SystemTime;
@@ -125,34 +129,28 @@ pub fn util_file_to_paths(path: &Path) -> Vec<PathBuf> {
 }
 
 pub fn util_file_to_paths_and_names(path: &Path) -> (Vec<PathBuf>, Vec<Option<String>>) {
-    let file = match File::open(path) {
-        Ok(f) => f,
+    let data = match read_to_string(path) {
+        Ok(s) => s,
         Err(_) => { util_terminate_error(ERR_NO_FILE); unreachable!() }
     };
-    let buf = BufReader::new(file);
     let mut paths = Vec::new();
     let mut names = Vec::new();
-    for (line_num, line) in buf.lines().enumerate() {
-        let l = match line {
-            Ok(s) => s,
-            Err(_) => {
-                warn!("skipping unreadable line {} in master record", line_num + 1);
-                continue;
-            }
-        };
-        if l.trim().is_empty() {
+    if data.is_empty() {
+        return (paths, names);
+    }
+    for (rec_num, record) in data.split(MASTER_RECORD_DELIM).enumerate() {
+        if record.trim().is_empty() {
             continue;
         }
-        if let Some((p, n)) = l.split_once('\t') {
-            if p.trim().is_empty() {
-                warn!("skipping line {} with empty path in master record", line_num + 1);
+        if let Some((p, n)) = record.split_once(MASTER_FIELD_DELIM) {
+            if p.is_empty() {
+                warn!("skipping record {} with empty path in master record", rec_num + 1);
                 continue;
             }
             paths.push(PathBuf::from(p));
-            let clean_name = n.replace('\t', "");
-            names.push(if clean_name.is_empty() { None } else { Some(clean_name) });
+            names.push(if n.is_empty() { None } else { Some(n.to_string()) });
         } else {
-            paths.push(PathBuf::from(&l));
+            paths.push(PathBuf::from(record));
             names.push(None);
         }
     }
@@ -165,17 +163,20 @@ pub fn util_paths_to_file(paths: Vec<PathBuf>, out: &Path) {
 }
 
 pub fn util_paths_and_names_to_file(paths: Vec<PathBuf>, names: &[Option<String>], out: &Path) {
-    let lines: Vec<String> = paths.iter().zip(names.iter()).map(|(p, n)| {
+    let records: Vec<String> = paths.iter().zip(names.iter()).map(|(p, n)| {
         let ps = util_path_to_string(p);
         match n {
-            Some(name) => format!("{}\t{}", ps, name),
+            Some(name) => format!("{}{}{}", ps, MASTER_FIELD_DELIM, name),
             None => ps,
         }
     }).collect();
-    let mut buf: String = lines.join("\n");
-    if !buf.is_empty() {
-        buf.push('\n');
-    }
+    let buf = if records.is_empty() {
+        String::new()
+    } else {
+        let mut s = records.join(MASTER_RECORD_DELIM);
+        s.push_str(MASTER_RECORD_DELIM);
+        s
+    };
     let tmp = out.with_extension("tmp");
     util_overwrite_file(&tmp, &buf);
     if let Err(_) = rename(&tmp, out) {
@@ -513,10 +514,11 @@ mod tests {
     // ── master file robustness ──────────────────────────
 
     #[test]
-    fn file_to_paths_skips_empty_lines() {
+    fn file_to_paths_skips_empty_records() {
         let dir = tmp_dir();
         let master = dir.join("master");
-        fs::write(&master, "/tmp/a\n\n/tmp/b\n\n\n/tmp/c\n").unwrap();
+        // extra \0\0 creates empty records between valid ones
+        fs::write(&master, "/tmp/a\0\0\0\0/tmp/b\0\0\0\0/tmp/c\0\0").unwrap();
         let paths = util_file_to_paths(master.as_path());
         assert_eq!(paths, vec![
             PathBuf::from("/tmp/a"),
@@ -527,10 +529,10 @@ mod tests {
     }
 
     #[test]
-    fn file_to_paths_skips_whitespace_only_lines() {
+    fn file_to_paths_skips_whitespace_only_records() {
         let dir = tmp_dir();
         let master = dir.join("master");
-        fs::write(&master, "/tmp/a\n   \n/tmp/b\n \t \n/tmp/c\n").unwrap();
+        fs::write(&master, "/tmp/a\0\0\0\0/tmp/b\0\0\0\0/tmp/c\0\0").unwrap();
         let paths = util_file_to_paths(master.as_path());
         assert_eq!(paths, vec![
             PathBuf::from("/tmp/a"),
@@ -544,7 +546,7 @@ mod tests {
     fn file_to_paths_skips_empty_path_with_name() {
         let dir = tmp_dir();
         let master = dir.join("master");
-        fs::write(&master, "/tmp/a\tfoo\n\tbar\n/tmp/b\n").unwrap();
+        fs::write(&master, "/tmp/a\0foo\0\0\0bar\0\0/tmp/b\0\0").unwrap();
         let (paths, names) = util_file_to_paths_and_names(master.as_path());
         assert_eq!(paths, vec![PathBuf::from("/tmp/a"), PathBuf::from("/tmp/b")]);
         assert_eq!(names, vec![Some("foo".to_string()), None]);
@@ -573,6 +575,50 @@ mod tests {
         let loaded = util_file_to_paths(master.as_path());
         assert_eq!(loaded, paths2);
         assert!(!master.with_extension("tmp").exists());
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn file_to_paths_handles_newlines_in_paths() {
+        let dir = tmp_dir();
+        let master = dir.join("master");
+        fs::write(&master, "/tmp/file\nwith\nnewlines\0\0/tmp/normal\0\0").unwrap();
+        let paths = util_file_to_paths(master.as_path());
+        assert_eq!(paths, vec![
+            PathBuf::from("/tmp/file\nwith\nnewlines"),
+            PathBuf::from("/tmp/normal"),
+        ]);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn paths_with_newlines_round_trip() {
+        let dir = tmp_dir();
+        let master = dir.join("master");
+        let paths = vec![
+            PathBuf::from("/tmp/line\none"),
+            PathBuf::from("/tmp/line\ntwo\nthree"),
+            PathBuf::from("/tmp/normal"),
+        ];
+        util_paths_to_file(paths.clone(), &master);
+        let loaded = util_file_to_paths(master.as_path());
+        assert_eq!(loaded, paths);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn paths_with_newlines_and_names_round_trip() {
+        let dir = tmp_dir();
+        let master = dir.join("master");
+        let paths = vec![
+            PathBuf::from("/tmp/has\nnewline"),
+            PathBuf::from("/tmp/normal"),
+        ];
+        let names = vec![Some("tagged".to_string()), None];
+        util_paths_and_names_to_file(paths.clone(), &names, &master);
+        let (loaded_paths, loaded_names) = util_file_to_paths_and_names(master.as_path());
+        assert_eq!(loaded_paths, paths);
+        assert_eq!(loaded_names, names);
         fs::remove_dir_all(&dir).unwrap();
     }
 
@@ -823,7 +869,7 @@ mod tests {
     fn file_to_paths_single_path() {
         let dir = tmp_dir();
         let file = dir.join("paths.txt");
-        fs::write(&file, "/tmp/only\n").unwrap();
+        fs::write(&file, "/tmp/only\0\0").unwrap();
         let paths = util_file_to_paths(file.as_path());
         assert_eq!(paths, vec![PathBuf::from("/tmp/only")]);
         fs::remove_dir_all(&dir).unwrap();
@@ -1191,7 +1237,7 @@ mod tests {
     fn file_to_paths_with_spaces_in_paths() {
         let dir = tmp_dir();
         let file = dir.join("paths.txt");
-        fs::write(&file, "/tmp/my dir/file1\n/tmp/another dir/file2\n").unwrap();
+        fs::write(&file, "/tmp/my dir/file1\0\0/tmp/another dir/file2\0\0").unwrap();
         let paths = util_file_to_paths(file.as_path());
         assert_eq!(paths.len(), 2);
         assert_eq!(paths[0], PathBuf::from("/tmp/my dir/file1"));
@@ -1203,7 +1249,7 @@ mod tests {
     fn file_to_paths_many_paths() {
         let dir = tmp_dir();
         let file = dir.join("paths.txt");
-        let content: String = (0..50).map(|i| format!("/tmp/f{}\n", i)).collect();
+        let content: String = (0..50).map(|i| format!("/tmp/f{}\0\0", i)).collect();
         fs::write(&file, &content).unwrap();
         let paths = util_file_to_paths(file.as_path());
         assert_eq!(paths.len(), 50);
@@ -1281,7 +1327,7 @@ mod tests {
     // ── util_lines_to_file + util_file_to_paths combo ────
 
     #[test]
-    fn lines_to_file_as_paths_round_trip() {
+    fn paths_to_file_and_read_round_trip() {
         let dir = tmp_dir();
         let file = dir.join("paths.txt");
         let paths = vec![
@@ -1289,10 +1335,7 @@ mod tests {
             PathBuf::from("/tmp/b"),
             PathBuf::from("/tmp/c"),
         ];
-        // Write paths as lines manually
-        let lines: Vec<String> = paths.iter().map(|p| util_path_to_string(p)).collect();
-        util_lines_to_file(&file, lines);
-        // Read them back as paths
+        util_paths_to_file(paths.clone(), &file);
         let loaded = util_file_to_paths(file.as_path());
         assert_eq!(loaded, paths);
         fs::remove_dir_all(&dir).unwrap();
@@ -1573,7 +1616,7 @@ mod tests {
         let dir = tmp_dir();
         let file = dir.join("ordered.txt");
         let expected: Vec<PathBuf> = (0..10).map(|i| PathBuf::from(format!("/path/{}", i))).collect();
-        let content: String = expected.iter().map(|p| format!("{}\n", p.display())).collect();
+        let content: String = expected.iter().map(|p| format!("{}\0\0", p.display())).collect();
         fs::write(&file, &content).unwrap();
         let paths = util_file_to_paths(file.as_path());
         assert_eq!(paths, expected);
@@ -1587,7 +1630,7 @@ mod tests {
         let deep: Vec<PathBuf> = (0..3)
             .map(|i| PathBuf::from(format!("/a/b/c/d/e/f/g/h/i/j/file{}", i)))
             .collect();
-        let content: String = deep.iter().map(|p| format!("{}\n", p.display())).collect();
+        let content: String = deep.iter().map(|p| format!("{}\0\0", p.display())).collect();
         fs::write(&file, &content).unwrap();
         let paths = util_file_to_paths(file.as_path());
         assert_eq!(paths, deep);
@@ -1598,7 +1641,7 @@ mod tests {
     fn file_to_paths_relative_paths() {
         let dir = tmp_dir();
         let file = dir.join("rel.txt");
-        fs::write(&file, "foo/bar\nbaz/qux\n").unwrap();
+        fs::write(&file, "foo/bar\0\0baz/qux\0\0").unwrap();
         let paths = util_file_to_paths(file.as_path());
         assert_eq!(paths, vec![PathBuf::from("foo/bar"), PathBuf::from("baz/qux")]);
         fs::remove_dir_all(&dir).unwrap();

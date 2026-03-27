@@ -9,6 +9,7 @@ use std::path::PathBuf;
 use std::process::{exit, Command as ProcessCommand};
 
 use std::io::IsTerminal;
+use fs2::FileExt;
 use log::{debug, Level};
 
 use crate::model::opts::parse_opts;
@@ -18,6 +19,7 @@ use crate::util::utils::*;
 
 pub struct TempApp {
     state: TempState,
+    _lock_file: File,
 }
 
 impl TempApp {
@@ -75,6 +77,16 @@ impl TempApp {
             }
         }
 
+        let lock_path = temprs_dir.join(format!("{}.lock", MASTER_RECORD_FILENAME));
+        let lock_file = match File::create(&lock_path) {
+            Ok(f) => f,
+            Err(_) => { util_terminate_error(ERR_MASTER_LOCK); unreachable!() }
+        };
+        if let Err(_) = lock_file.lock_exclusive() {
+            util_terminate_error(ERR_MASTER_LOCK);
+        }
+        debug!("acquired exclusive lock on {}", lock_path.display());
+
         if !master_file.exists() {
             match File::create(&master_file) {
                 Ok(_success) => {
@@ -110,7 +122,7 @@ impl TempApp {
             String::new(),
         );
 
-        Self { state }
+        Self { state, _lock_file: lock_file }
     }
 
 
@@ -290,10 +302,10 @@ impl TempApp {
         let mut buffer = String::new();
         buffer.push_str(self.state().out_file_path_str().as_str());
         if let Some(name) = self.state().name() {
-            buffer.push('\t');
+            buffer.push(MASTER_FIELD_DELIM);
             buffer.push_str(name);
         }
-        buffer.push('\n');
+        buffer.push_str(MASTER_RECORD_DELIM);
         util_append_file(self.state().master_record_file(), &buffer);
     }
 
@@ -327,8 +339,8 @@ impl TempApp {
             self.state().set_append_temp_file(Some(i.clone()));
         }
         if let Some(n) = matches.get_one::<String>(TAG) {
-            if n.contains('\t') {
-                util_terminate_error(ERR_NAME_TAB);
+            if n.contains(MASTER_FIELD_DELIM) {
+                util_terminate_error(ERR_NAME_NUL);
             }
             let name = n.clone();
             if self.state().temp_file_names().iter().any(|existing| existing.as_deref() == Some(&name)) {
@@ -879,8 +891,8 @@ impl TempApp {
     }
 
     fn rename_tag(&mut self, old: String, new: String) {
-        if new.contains('\t') {
-            util_terminate_error(ERR_NAME_TAB);
+        if new.contains(MASTER_FIELD_DELIM) {
+            util_terminate_error(ERR_NAME_NUL);
         }
         if self.state().temp_file_names().iter().any(|n| n.as_deref() == Some(&new)) {
             util_terminate_error(ERR_INVALID_NAME);
