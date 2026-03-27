@@ -6,7 +6,7 @@ use std::fs::File;
 use std::io;
 use std::io::Read;
 use std::path::PathBuf;
-use std::process::exit;
+use std::process::{exit, Command as ProcessCommand};
 
 use std::io::IsTerminal;
 use log::{debug, Level};
@@ -83,16 +83,19 @@ impl TempApp {
                 }
             }
         } else {
-            let paths = util_file_to_paths(master_file.as_path());
-            let exist: Vec<PathBuf> = paths.into_iter().filter(|p| p.exists()).collect();
+            let (paths, names) = util_file_to_paths_and_names(master_file.as_path());
+            let (exist, exist_names): (Vec<PathBuf>, Vec<Option<String>>) = paths.into_iter()
+                .zip(names.into_iter())
+                .filter(|(p, _)| p.exists())
+                .unzip();
             debug!("exists size {}", exist.len());
-            util_paths_to_file(exist, &master_file);
+            util_paths_and_names_to_file(exist, &exist_names, &master_file);
         }
 
         debug!("out file {}", out_file.display());
         debug!("file stack {}", master_file.display());
 
-        let temp_file_stack = util_file_to_paths(&master_file);
+        let (temp_file_stack, temp_file_names) = util_file_to_paths_and_names(&master_file);
         debug!("found '{}' temp files on stack", temp_file_stack.len());
 
         let state = TempState::new(
@@ -100,6 +103,7 @@ impl TempApp {
             master_file,
             temprs_dir,
             temp_file_stack,
+            temp_file_names,
             None,
             String::new(),
         );
@@ -161,11 +165,11 @@ impl TempApp {
         match f.parse::<i32>() {
             Ok(idx) => {
                 let mut cur_files = self.state().temp_file_stack().clone();
-                cur_files.insert(
-                    util_transform_idx(idx, cur_files.len()),
-                    self.state().new_temp_file().clone(),
-                );
-                util_paths_to_file(cur_files, self.state().master_record_file());
+                let mut cur_names = self.state().temp_file_names().clone();
+                let insert_pos = util_transform_idx(idx, cur_files.len());
+                cur_files.insert(insert_pos, self.state().new_temp_file().clone());
+                cur_names.insert(insert_pos, self.state().name().clone());
+                util_paths_and_names_to_file(cur_files, &cur_names, self.state().master_record_file());
             }
             Err(_error) => {
                 util_terminate_error(ERR_INVALID_IDX);
@@ -173,13 +177,24 @@ impl TempApp {
         }
     }
 
-    fn idx_in_stack_tempfile(&mut self, f: String) -> Option<&PathBuf> {
+    fn resolve_idx(&self, f: &str) -> Option<usize> {
         match f.parse::<i32>() {
             Ok(idx) => {
-                let stk = self.state().temp_file_stack();
-                stk.get(util_transform_idx(idx, stk.len()))
+                let stk = self.state.temp_file_stack();
+                Some(util_transform_idx(idx, stk.len()))
             }
-            Err(_error) => {
+            Err(_) => {
+                self.state.temp_file_names().iter().position(|n| {
+                    n.as_deref() == Some(f)
+                })
+            }
+        }
+    }
+
+    fn idx_in_stack_tempfile(&mut self, f: String) -> Option<&PathBuf> {
+        match self.resolve_idx(&f) {
+            Some(idx) => self.state().temp_file_stack().get(idx),
+            None => {
                 util_terminate_error(ERR_INVALID_IDX);
                 None
             }
@@ -271,6 +286,10 @@ impl TempApp {
 
         let mut buffer = String::new();
         buffer.push_str(self.state().out_file_path_str().as_str());
+        if let Some(ref name) = self.state().name().clone() {
+            buffer.push('\t');
+            buffer.push_str(name);
+        }
         buffer.push('\n');
         util_append_file(self.state().master_record_file(), &buffer);
     }
@@ -321,6 +340,9 @@ impl TempApp {
         if matches.get_flag(SILENT) {
             self.state().set_silent(true);
         }
+        if let Some(f) = matches.get_one::<String>(EDIT) {
+            self.edit_tempfile(f.clone());
+        }
         if let Some(f) = matches.get_one::<String>(REMOVE) {
             self.remove_at_idx(f.clone());
         }
@@ -336,6 +358,13 @@ impl TempApp {
         if let Some(i) = matches.get_one::<String>(OUTPUT) {
             self.state().set_output_temp_file(Some(i.clone()));
         }
+        if let Some(n) = matches.get_one::<String>(TAG) {
+            let name = n.clone();
+            if self.state().temp_file_names().iter().any(|existing| existing.as_deref() == Some(&name)) {
+                util_terminate_error(ERR_INVALID_NAME);
+            }
+            self.state().set_name(Some(name));
+        }
     }
 
     fn list_tempfiles_contents(&mut self) {
@@ -350,13 +379,14 @@ impl TempApp {
 
     fn list_tempfiles_contents_numbered(&mut self) {
         debug!("list contents");
-        let stk = self.state().temp_file_stack();
+        let stk = self.state().temp_file_stack().clone();
+        let names = self.state().temp_file_names().clone();
         if !stk.is_empty() {
             cyber_hr();
         }
-        for (i, p) in stk.iter().enumerate() {
+        for (i, (p, n)) in stk.iter().zip(names.iter()).enumerate() {
             let string = util_file_contents_to_string(p.as_path()).expect(ERR_FILE_READ);
-            cyber_idx_content(i + 1, p, &string);
+            cyber_idx_content_named(i + 1, p, &string, n);
             cyber_hr();
         }
         exit(0)
@@ -385,12 +415,13 @@ impl TempApp {
 
     fn list_tempfiles_numbered(&mut self) {
         debug!("list files");
-        let stk = self.state().temp_file_stack();
+        let stk = self.state().temp_file_stack().clone();
+        let names = self.state().temp_file_names().clone();
         if !stk.is_empty() {
             cyber_hr();
         }
-        for (i, p) in stk.iter().enumerate() {
-            cyber_idx_path(i + 1, p);
+        for (i, (p, n)) in stk.iter().zip(names.iter()).enumerate() {
+            cyber_idx_path_named(i + 1, p, n);
             cyber_hr();
         }
         exit(0)
@@ -409,14 +440,32 @@ impl TempApp {
         exit(0)
     }
 
-    fn remove_at_idx(&mut self, stk_idx: String) {
-        let cur = self.state().temp_file_stack().clone();
+    fn edit_tempfile(&mut self, stk_idx: String) {
+        let editor = std::env::var("EDITOR").unwrap_or_else(|_| String::from("vi"));
         match self.idx_in_stack_tempfile(stk_idx) {
             Some(f) => {
-                util_remove_file(f);
-                let col: Vec<PathBuf> = cur.into_iter().filter(|p| p != f).collect();
+                let path = f.clone();
+                let status = ProcessCommand::new(&editor)
+                    .arg(&path)
+                    .status()
+                    .expect(ERR_EDITOR);
+                exit(status.code().unwrap_or(1))
+            }
+            None => util_terminate_error(ERR_INVALID_IDX),
+        }
+    }
 
-                util_paths_to_file(col, self.state().master_record_file());
+    fn remove_at_idx(&mut self, stk_idx: String) {
+        match self.resolve_idx(&stk_idx) {
+            Some(idx) => {
+                let cur = self.state().temp_file_stack().clone();
+                let cur_names = self.state().temp_file_names().clone();
+                if let Some(f) = cur.get(idx) {
+                    util_remove_file(f);
+                }
+                let col: Vec<PathBuf> = cur.into_iter().enumerate().filter(|(i, _)| *i != idx).map(|(_, p)| p).collect();
+                let col_names: Vec<Option<String>> = cur_names.into_iter().enumerate().filter(|(i, _)| *i != idx).map(|(_, n)| n).collect();
+                util_paths_and_names_to_file(col, &col_names, self.state().master_record_file());
                 exit(0)
             }
             None => util_terminate_error(ERR_INVALID_IDX),

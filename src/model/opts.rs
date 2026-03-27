@@ -123,11 +123,22 @@ pub fn parse_opts() -> Command {
             .long("clear")
             .action(ArgAction::SetTrue)
             .help("\x1b[32m//\x1b[0m Purge all tempfiles from the stack"))
+        .arg(Arg::new(EDIT)
+            .short('e')
+            .long("edit")
+            .value_name("INDEX")
+            .allow_hyphen_values(true)
+            .help("\x1b[32m//\x1b[0m Open tempfile at INDEX in $EDITOR"))
         .arg(Arg::new(VERBOSE)
             .short('v')
             .long("verbose")
             .action(ArgAction::Count)
             .help("\x1b[32m//\x1b[0m Increase verbosity level"))
+        .arg(Arg::new(TAG)
+            .short('w')
+            .long("name")
+            .value_name("NAME")
+            .help("\x1b[32m//\x1b[0m Tag tempfile with NAME for retrieval by alias"))
 }
 
 #[cfg(test)]

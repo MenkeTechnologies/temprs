@@ -7,12 +7,14 @@ pub struct TempState {
     master_record_file: PathBuf,
     temprs_dir: PathBuf,
     temp_file_stack: Vec<PathBuf>,
+    temp_file_names: Vec<Option<String>>,
     arg_file: Option<PathBuf>,
     insert_idx: Option<String>,
     output_buffer: String,
     holding_buffer: String,
     input_temp_file: Option<String>,
     output_temp_file: Option<String>,
+    name: Option<String>,
     silent: bool,
     verbose: u32,
 }
@@ -70,6 +72,14 @@ impl TempState {
     pub fn set_verbose(&mut self, verbose: u32) {
         self.verbose = verbose;
     }
+
+    pub fn set_name(&mut self, name: Option<String>) {
+        self.name = name;
+    }
+
+    pub fn set_temp_file_names(&mut self, names: Vec<Option<String>>) {
+        self.temp_file_names = names;
+    }
 }
 
 impl TempState {
@@ -122,6 +132,14 @@ impl TempState {
     pub fn verbose(&self) -> u32 {
         self.verbose
     }
+
+    pub fn name(&self) -> &Option<String> {
+        &self.name
+    }
+
+    pub fn temp_file_names(&self) -> &Vec<Option<String>> {
+        &self.temp_file_names
+    }
 }
 
 impl TempState {
@@ -131,6 +149,7 @@ impl TempState {
         master_record_file: PathBuf,
         home_dir: PathBuf,
         temp_file_stack: Vec<PathBuf>,
+        temp_file_names: Vec<Option<String>>,
         arg_file: Option<PathBuf>,
         output_buffer: String,
     ) -> Self {
@@ -139,12 +158,14 @@ impl TempState {
             master_record_file,
             temprs_dir: home_dir,
             temp_file_stack,
+            temp_file_names,
             arg_file,
             insert_idx: None,
             output_buffer,
             holding_buffer: String::new(),
             input_temp_file: None,
             output_temp_file: None,
+            name: None,
             silent: false,
             verbose: 0,
         }
@@ -177,6 +198,7 @@ mod tests {
                 PathBuf::from("/tmp/temprs/f1"),
                 PathBuf::from("/tmp/temprs/f2"),
             ],
+            vec![None, None],
             None,
             String::new(),
         )
@@ -337,6 +359,7 @@ mod tests {
             PathBuf::from("/tmp/master"),
             PathBuf::from("/tmp"),
             vec![],
+            vec![],
             None,
             String::from("preset output"),
         );
@@ -350,6 +373,7 @@ mod tests {
             PathBuf::from("/tmp/master"),
             PathBuf::from("/tmp"),
             vec![],
+            vec![],
             Some(PathBuf::from("/tmp/input.txt")),
             String::new(),
         );
@@ -362,6 +386,7 @@ mod tests {
             PathBuf::from("/tmp/out"),
             PathBuf::from("/tmp/master"),
             PathBuf::from("/tmp"),
+            vec![],
             vec![],
             None,
             String::new(),
@@ -379,6 +404,7 @@ mod tests {
             PathBuf::from("/tmp/master"),
             PathBuf::from("/tmp"),
             stack.clone(),
+            vec![],
             None,
             String::new(),
         );
@@ -489,6 +515,7 @@ mod tests {
             PathBuf::from("/tmp/master"),
             PathBuf::from("/tmp"),
             vec![],
+            vec![],
             None,
             String::new(),
         );
@@ -501,6 +528,7 @@ mod tests {
             PathBuf::from("/tmp/out"),
             PathBuf::from("/a/b/c/d/e/master"),
             PathBuf::from("/tmp"),
+            vec![],
             vec![],
             None,
             String::new(),
@@ -773,6 +801,7 @@ mod tests {
             PathBuf::from("/tmp/master"),
             PathBuf::from("/tmp/dir"),
             vec![PathBuf::from("/tmp/f1"), PathBuf::from("/tmp/f2"), PathBuf::from("/tmp/f3")],
+            vec![],
             Some(PathBuf::from("/tmp/argfile")),
             String::from("initial output"),
         );
@@ -874,6 +903,7 @@ mod tests {
             PathBuf::from("/tmp/master"),
             PathBuf::from("/tmp"),
             vec![PathBuf::from("/tmp/only_one")],
+            vec![],
             None,
             String::new(),
         );
@@ -891,6 +921,7 @@ mod tests {
             PathBuf::from("/tmp/master"),
             PathBuf::from("/tmp"),
             stack,
+            vec![],
             None,
             String::new(),
         );
@@ -906,6 +937,7 @@ mod tests {
             PathBuf::from("/tmp/master"),
             PathBuf::from("/tmp"),
             vec![],
+            vec![],
             None,
             String::from("a\nb\nc"),
         );
@@ -918,6 +950,7 @@ mod tests {
             PathBuf::from("/tmp/out"),
             PathBuf::from("/tmp/master"),
             PathBuf::from("/tmp"),
+            vec![],
             vec![],
             None,
             String::from("日本語 🚀"),
@@ -1323,6 +1356,7 @@ mod tests {
             PathBuf::from("/tmp/master"),
             PathBuf::from("/tmp"),
             vec![PathBuf::from("/tmp/f1")],
+            vec![],
             None,
             String::new(),
         );
@@ -1340,6 +1374,7 @@ mod tests {
             PathBuf::from("/tmp/master"),
             PathBuf::from("/tmp"),
             stack.clone(),
+            vec![],
             None,
             String::new(),
         );
@@ -1458,6 +1493,7 @@ mod tests {
             PathBuf::from("/tmp/master"),
             PathBuf::from("/tmp"),
             vec![],
+            vec![],
             None,
             String::new(),
         );
@@ -1470,6 +1506,7 @@ mod tests {
             PathBuf::from("/tmp/out"),
             PathBuf::from("/tmp/日本語/master"),
             PathBuf::from("/tmp"),
+            vec![],
             vec![],
             None,
             String::new(),
@@ -1676,6 +1713,7 @@ mod tests {
             PathBuf::from("/tmp/m"),
             PathBuf::from("/tmp"),
             vec![],
+            vec![],
             None,
             String::new(),
         );
@@ -1689,6 +1727,7 @@ mod tests {
             PathBuf::from("/tmp/m"),
             PathBuf::from("/tmp"),
             vec![],
+            vec![],
             None,
             String::new(),
         );
@@ -1701,6 +1740,7 @@ mod tests {
             PathBuf::from("/tmp/file.txt.bak"),
             PathBuf::from("/tmp/m"),
             PathBuf::from("/tmp"),
+            vec![],
             vec![],
             None,
             String::new(),

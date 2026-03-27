@@ -138,6 +138,29 @@ tp -n
 tp -N
 ```
 
+#### EDITOR INTEGRATION // DIRECT ACCESS
+
+```sh
+# open tempfile at INDEX in $EDITOR (falls back to vi)
+tp -e INDEX
+
+# open the most recent tempfile (top of stack)
+tp -e -1
+```
+
+#### NAMING TEMPFILES // ALIAS TAGS
+
+```sh
+# tag a new tempfile with a name
+CMD | tp -w mydata
+
+# retrieve by name instead of index
+tp -o mydata | CMD
+
+# remove by name
+tp -r mydata
+```
+
 #### STACK MANIPULATION // PUSH / POP / SHIFT
 
 ```sh

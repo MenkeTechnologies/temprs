@@ -31,6 +31,10 @@ pub const LIST_CONTENTS_NUMBERED: &str = "list_contents_numbered";
 pub const CLEAR: &str = "clear";
 pub const SHIFT: &str = "shift";
 pub const SILENT: &str = "silent";
+pub const EDIT: &str = "edit";
+pub const TAG: &str = "name";
+pub const ERR_INVALID_NAME: &str = "Invalid or duplicate name";
+pub const ERR_EDITOR: &str = "Could not open editor";
 
 #[cfg(test)]
 mod tests {

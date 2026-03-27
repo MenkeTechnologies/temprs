@@ -36,14 +36,26 @@ pub fn cyber_path(path: &Path) {
 }
 
 pub fn cyber_idx_path(i: usize, path: &Path) {
+    cyber_idx_path_named(i, path, &None);
+}
+
+pub fn cyber_idx_path_named(i: usize, path: &Path, name: &Option<String>) {
     let p = util_path_to_string(path);
+    let tag = match name {
+        Some(n) => format!(" \x1b[33m@{}\x1b[0m", n),
+        None => String::new(),
+    };
+    let tag_plain = match name {
+        Some(n) => format!(" @{}", n),
+        None => String::new(),
+    };
     if is_tty() {
         println!(
-            "\x1b[33m [{:02}]\x1b[0m \x1b[36m>\x1b[0m \x1b[35m{}\x1b[0m",
-            i, p
+            "\x1b[33m [{:02}]\x1b[0m \x1b[36m>\x1b[0m \x1b[35m{}\x1b[0m{}",
+            i, p, tag
         );
     } else {
-        println!("{}: {}", i, p);
+        println!("{}: {}{}", i, p, tag_plain);
     }
 }
 
@@ -56,15 +68,27 @@ pub fn cyber_content(text: &str) {
 }
 
 pub fn cyber_idx_content(i: usize, path: &Path, text: &str) {
+    cyber_idx_content_named(i, path, text, &None);
+}
+
+pub fn cyber_idx_content_named(i: usize, path: &Path, text: &str, name: &Option<String>) {
     let p = util_path_to_string(path);
+    let tag = match name {
+        Some(n) => format!(" \x1b[33m@{}\x1b[0m", n),
+        None => String::new(),
+    };
+    let tag_plain = match name {
+        Some(n) => format!(" @{}", n),
+        None => String::new(),
+    };
     if is_tty() {
         println!(
-            "\x1b[33m [{:02}]\x1b[0m \x1b[36m>\x1b[0m \x1b[35m{}\x1b[0m",
-            i, p
+            "\x1b[33m [{:02}]\x1b[0m \x1b[36m>\x1b[0m \x1b[35m{}\x1b[0m{}",
+            i, p, tag
         );
         println!("\x1b[32m{}\x1b[0m", text.trim_end());
     } else {
-        println!("{}: {}", i, p);
+        println!("{}: {}{}", i, p, tag_plain);
         println!("{}", text.trim_end());
     }
 }
@@ -96,16 +120,41 @@ pub fn cyber_single_path(path: &Path) {
 
 
 pub fn util_file_to_paths(path: &Path) -> Vec<PathBuf> {
-    let file = File::open(path).expect(ERR_NO_FILE);
-    let buf = BufReader::new(file);
-    buf.lines()
-        .map(|l| PathBuf::from(l.expect(ERR_PARSE)))
-        .collect()
+    let (paths, _names) = util_file_to_paths_and_names(path);
+    paths
 }
 
+pub fn util_file_to_paths_and_names(path: &Path) -> (Vec<PathBuf>, Vec<Option<String>>) {
+    let file = File::open(path).expect(ERR_NO_FILE);
+    let buf = BufReader::new(file);
+    let mut paths = Vec::new();
+    let mut names = Vec::new();
+    for line in buf.lines() {
+        let l = line.expect(ERR_PARSE);
+        if let Some((p, n)) = l.split_once('\t') {
+            paths.push(PathBuf::from(p));
+            names.push(Some(n.to_string()));
+        } else {
+            paths.push(PathBuf::from(&l));
+            names.push(None);
+        }
+    }
+    (paths, names)
+}
 
 pub fn util_paths_to_file(paths: Vec<PathBuf>, out: &Path) {
-    let lines: Vec<String> = paths.iter().map(|p| util_path_to_string(p)).collect();
+    let names: Vec<Option<String>> = paths.iter().map(|_| None).collect();
+    util_paths_and_names_to_file(paths, &names, out);
+}
+
+pub fn util_paths_and_names_to_file(paths: Vec<PathBuf>, names: &[Option<String>], out: &Path) {
+    let lines: Vec<String> = paths.iter().zip(names.iter()).map(|(p, n)| {
+        let ps = util_path_to_string(p);
+        match n {
+            Some(name) => format!("{}\t{}", ps, name),
+            None => ps,
+        }
+    }).collect();
     if out.exists() {
         debug!("remove file '{}'", util_path_to_string(out));
         util_remove_file(out);
