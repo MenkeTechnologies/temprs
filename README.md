@@ -217,6 +217,16 @@ tp -I mydata
 tp -I 1
 ```
 
+#### FIND AND REPLACE // TRANSFORM
+
+```sh
+# replace all occurrences of PATTERN with REPLACEMENT in tempfile
+tp --replace INDEX PATTERN REPLACEMENT
+
+# replace by name, prints number of replacements made
+tp --replace mydata old new
+```
+
 #### SEARCHING CONTENTS // GREP
 
 ```sh

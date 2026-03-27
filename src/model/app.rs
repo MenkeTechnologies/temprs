@@ -385,6 +385,10 @@ impl TempApp {
         if let Some(key) = matches.get_one::<String>(SORT) {
             self.sort_stack(key.clone());
         }
+        if let Some(vals) = matches.get_many::<String>(REPLACE) {
+            let v: Vec<String> = vals.cloned().collect();
+            self.replace_in_tempfile(v[0].clone(), v[1].clone(), v[2].clone());
+        }
         if matches.get_flag(SHIFT) {
             self.remove_at_idx(format!("{}", 1))
         }
@@ -744,6 +748,20 @@ impl TempApp {
             print!("{}", combined);
         }
         exit(0)
+    }
+
+    fn replace_in_tempfile(&mut self, stk_idx: String, pattern: String, replacement: String) {
+        match self.resolve_idx(&stk_idx) {
+            Some(idx) => {
+                let path = self.state.temp_file_stack()[idx].clone();
+                let content = util_file_contents_to_string(path.as_path());
+                let replaced = content.replace(&pattern, &replacement);
+                util_overwrite_file(&path, &replaced);
+                println!("{}", replaced.matches(&replacement).count());
+                exit(0)
+            }
+            None => util_terminate_error(ERR_INVALID_IDX),
+        }
     }
 
     fn grep_tempfiles(&mut self, pattern: String) {

@@ -89,7 +89,7 @@ fn help_shows_all_flags() {
         "--input", "--output", "--add", "--remove", "--pop", "--unshift",
         "--shift", "--dir", "--master", "--list-files", "--list-files-numbered",
         "--list-contents", "--list-contents-numbered", "--quiet", "--clear",
-        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff", "--mv", "--dup", "--swap", "--append", "--rev", "--expire", "--head", "--tail", "--wc", "--size", "--sort",
+        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff", "--mv", "--dup", "--swap", "--append", "--rev", "--expire", "--head", "--tail", "--wc", "--size", "--sort", "--replace",
     ] {
         assert!(text.contains(flag), "missing flag: {}", flag);
     }
@@ -2807,4 +2807,69 @@ fn sort_single_file() {
     let out = run_tp(&dir, &["--sort", "size"]);
     assert!(out.status.success());
     assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "only");
+}
+
+// ── Replace ────────────────────────────────────────────
+
+#[test]
+fn replace_basic() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "hello world");
+    let out = run_tp(&dir, &["--replace", "1", "world", "rust"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "hello rust");
+}
+
+#[test]
+fn replace_by_name() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "doc"], "foo bar foo");
+    let out = run_tp(&dir, &["--replace", "doc", "foo", "baz"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "doc"])), "baz bar baz");
+}
+
+#[test]
+fn replace_prints_count() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "aaa bbb aaa ccc aaa");
+    let out = run_tp(&dir, &["--replace", "1", "aaa", "zzz"]);
+    assert_eq!(stdout(&out).trim(), "3");
+}
+
+#[test]
+fn replace_no_match() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "hello world");
+    let out = run_tp(&dir, &["--replace", "1", "xyz", "abc"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&out).trim(), "0");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "hello world");
+}
+
+#[test]
+fn replace_with_empty_string() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "remove this word");
+    run_tp(&dir, &["--replace", "1", " this", ""]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "remove word");
+}
+
+#[test]
+fn replace_invalid_index_fails() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["--replace", "99", "a", "b"]);
+    assert!(!out.status.success());
+}
+
+#[test]
+fn replace_preserves_other_files() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "original");
+    tick();
+    run_tp_stdin(&dir, &[], "untouched");
+    run_tp(&dir, &["--replace", "1", "original", "modified"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "modified");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "untouched");
 }
