@@ -209,6 +209,18 @@ pub fn parse_opts() -> Command {
             .long("expire")
             .value_name("HOURS")
             .help("\x1b[32m//\x1b[0m Purge tempfiles older than HOURS hours"))
+        .arg(Arg::new(HEAD)
+            .long("head")
+            .value_names(["INDEX", "N"])
+            .num_args(2)
+            .allow_hyphen_values(true)
+            .help("\x1b[32m//\x1b[0m Show first N lines of tempfile at INDEX"))
+        .arg(Arg::new(TAIL)
+            .long("tail")
+            .value_names(["INDEX", "N"])
+            .num_args(2)
+            .allow_hyphen_values(true)
+            .help("\x1b[32m//\x1b[0m Show last N lines of tempfile at INDEX"))
 }
 
 #[cfg(test)]
@@ -614,7 +626,7 @@ mod tests {
         let custom_count = app.get_arguments()
             .filter(|a| a.get_id() != "help" && a.get_id() != "version")
             .count();
-        assert_eq!(custom_count, 31);
+        assert_eq!(custom_count, 33);
     }
 
     // ── flag mutual independence ────────────────────────

@@ -109,6 +109,12 @@ CMD | tp -i 1 -v
 
 # output tempfile at index 1 to stdout
 tp -o 1 | CMD
+
+# show first 5 lines of tempfile at index 1
+tp --head 1 5
+
+# show last 10 lines by name
+tp --tail mydata 10
 ```
 
 #### LOADING FILE PAYLOADS // FILE OPERATIONS

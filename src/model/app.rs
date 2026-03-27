@@ -368,6 +368,14 @@ impl TempApp {
         if let Some(h) = matches.get_one::<String>(EXPIRE) {
             self.expire_tempfiles(h.clone());
         }
+        if let Some(vals) = matches.get_many::<String>(HEAD) {
+            let v: Vec<String> = vals.cloned().collect();
+            self.head_tempfile(v[0].clone(), v[1].clone());
+        }
+        if let Some(vals) = matches.get_many::<String>(TAIL) {
+            let v: Vec<String> = vals.cloned().collect();
+            self.tail_tempfile(v[0].clone(), v[1].clone());
+        }
         if matches.get_flag(SHIFT) {
             self.remove_at_idx(format!("{}", 1))
         }
@@ -475,6 +483,52 @@ impl TempApp {
             cyber_hr();
         }
         exit(0)
+    }
+
+    fn head_tempfile(&mut self, stk_idx: String, n_str: String) {
+        let n: usize = match n_str.parse() {
+            Ok(v) => v,
+            Err(_) => { util_terminate_error(ERR_INVALID_IDX); unreachable!() }
+        };
+        match self.resolve_idx(&stk_idx) {
+            Some(idx) => {
+                let content = util_file_contents_to_string(self.state.temp_file_stack()[idx].as_path());
+                let lines: String = content.lines().take(n).collect::<Vec<&str>>().join("\n");
+                if !lines.is_empty() {
+                    if io::stdout().is_terminal() {
+                        cyber_print_content(&lines);
+                    } else {
+                        println!("{}", lines);
+                    }
+                }
+                exit(0)
+            }
+            None => util_terminate_error(ERR_INVALID_IDX),
+        }
+    }
+
+    fn tail_tempfile(&mut self, stk_idx: String, n_str: String) {
+        let n: usize = match n_str.parse() {
+            Ok(v) => v,
+            Err(_) => { util_terminate_error(ERR_INVALID_IDX); unreachable!() }
+        };
+        match self.resolve_idx(&stk_idx) {
+            Some(idx) => {
+                let content = util_file_contents_to_string(self.state.temp_file_stack()[idx].as_path());
+                let all_lines: Vec<&str> = content.lines().collect();
+                let start = all_lines.len().saturating_sub(n);
+                let lines: String = all_lines[start..].join("\n");
+                if !lines.is_empty() {
+                    if io::stdout().is_terminal() {
+                        cyber_print_content(&lines);
+                    } else {
+                        println!("{}", lines);
+                    }
+                }
+                exit(0)
+            }
+            None => util_terminate_error(ERR_INVALID_IDX),
+        }
     }
 
     fn expire_tempfiles(&mut self, hours_str: String) {

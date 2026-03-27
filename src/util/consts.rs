@@ -45,6 +45,8 @@ pub const SWAP: &str = "swap";
 pub const APPEND: &str = "append";
 pub const REVERSE: &str = "reverse";
 pub const EXPIRE: &str = "expire";
+pub const HEAD: &str = "head";
+pub const TAIL: &str = "tail";
 pub const ERR_INVALID_NAME: &str = "Invalid or duplicate name";
 pub const ERR_NAME_TAB: &str = "Name must not contain tab characters";
 pub const ERR_EDITOR: &str = "Could not open editor";
@@ -130,7 +132,7 @@ mod tests {
         let flags = vec![
             DIRECTORY, INPUT, OUTPUT, ADD, REMOVE, POP, UNSHIFT,
             ARGFILE, MASTER, VERBOSE, LIST_FILES, LIST_FILES_NUMBERED,
-            LIST_CONTENTS, LIST_CONTENTS_NUMBERED, CLEAR, SHIFT, SILENT, EDIT, TAG, RENAME, INFO, GREP, CAT, COUNT, DIFF, MOVE, DUP, SWAP, APPEND, REVERSE, EXPIRE,
+            LIST_CONTENTS, LIST_CONTENTS_NUMBERED, CLEAR, SHIFT, SILENT, EDIT, TAG, RENAME, INFO, GREP, CAT, COUNT, DIFF, MOVE, DUP, SWAP, APPEND, REVERSE, EXPIRE, HEAD, TAIL,
         ];
         let mut sorted = flags.clone();
         sorted.sort();
@@ -143,7 +145,7 @@ mod tests {
         let flags = vec![
             DIRECTORY, INPUT, OUTPUT, ADD, REMOVE, POP, UNSHIFT,
             ARGFILE, MASTER, VERBOSE, LIST_FILES, LIST_FILES_NUMBERED,
-            LIST_CONTENTS, LIST_CONTENTS_NUMBERED, CLEAR, SHIFT, SILENT, EDIT, TAG, RENAME, INFO, GREP, CAT, COUNT, DIFF, MOVE, DUP, SWAP, APPEND, REVERSE, EXPIRE,
+            LIST_CONTENTS, LIST_CONTENTS_NUMBERED, CLEAR, SHIFT, SILENT, EDIT, TAG, RENAME, INFO, GREP, CAT, COUNT, DIFF, MOVE, DUP, SWAP, APPEND, REVERSE, EXPIRE, HEAD, TAIL,
         ];
         for f in flags {
             assert_eq!(f, f.to_lowercase(), "flag '{}' should be lowercase", f);
@@ -362,7 +364,7 @@ mod tests {
         let flags = vec![
             DIRECTORY, INPUT, OUTPUT, ADD, REMOVE, POP, UNSHIFT,
             ARGFILE, MASTER, VERBOSE, LIST_FILES, LIST_FILES_NUMBERED,
-            LIST_CONTENTS, LIST_CONTENTS_NUMBERED, CLEAR, SHIFT, SILENT, EDIT, TAG, RENAME, INFO, GREP, CAT, COUNT, DIFF, MOVE, DUP, SWAP, APPEND, REVERSE, EXPIRE,
+            LIST_CONTENTS, LIST_CONTENTS_NUMBERED, CLEAR, SHIFT, SILENT, EDIT, TAG, RENAME, INFO, GREP, CAT, COUNT, DIFF, MOVE, DUP, SWAP, APPEND, REVERSE, EXPIRE, HEAD, TAIL,
         ];
         for f in flags {
             assert!(!f.contains(' '), "flag '{}' should not contain spaces", f);
@@ -376,7 +378,7 @@ mod tests {
         let flags = vec![
             DIRECTORY, INPUT, OUTPUT, ADD, REMOVE, POP, UNSHIFT,
             ARGFILE, MASTER, VERBOSE, LIST_FILES, LIST_FILES_NUMBERED,
-            LIST_CONTENTS, LIST_CONTENTS_NUMBERED, CLEAR, SHIFT, SILENT, EDIT, TAG, RENAME, INFO, GREP, CAT, COUNT, DIFF, MOVE, DUP, SWAP, APPEND, REVERSE, EXPIRE,
+            LIST_CONTENTS, LIST_CONTENTS_NUMBERED, CLEAR, SHIFT, SILENT, EDIT, TAG, RENAME, INFO, GREP, CAT, COUNT, DIFF, MOVE, DUP, SWAP, APPEND, REVERSE, EXPIRE, HEAD, TAIL,
         ];
         for f in flags {
             assert!(!f.is_empty(), "flag constant should not be empty");
@@ -390,7 +392,7 @@ mod tests {
         let flags = vec![
             DIRECTORY, INPUT, OUTPUT, ADD, REMOVE, POP, UNSHIFT,
             ARGFILE, MASTER, VERBOSE, LIST_FILES, LIST_FILES_NUMBERED,
-            LIST_CONTENTS, LIST_CONTENTS_NUMBERED, CLEAR, SHIFT, SILENT, EDIT, TAG, RENAME, INFO, GREP, CAT, COUNT, DIFF, MOVE, DUP, SWAP, APPEND, REVERSE, EXPIRE,
+            LIST_CONTENTS, LIST_CONTENTS_NUMBERED, CLEAR, SHIFT, SILENT, EDIT, TAG, RENAME, INFO, GREP, CAT, COUNT, DIFF, MOVE, DUP, SWAP, APPEND, REVERSE, EXPIRE, HEAD, TAIL,
         ];
         for f in flags {
             assert!(f.is_ascii(), "flag '{}' should be ASCII", f);
@@ -404,9 +406,9 @@ mod tests {
         let flags = vec![
             DIRECTORY, INPUT, OUTPUT, ADD, REMOVE, POP, UNSHIFT,
             ARGFILE, MASTER, VERBOSE, LIST_FILES, LIST_FILES_NUMBERED,
-            LIST_CONTENTS, LIST_CONTENTS_NUMBERED, CLEAR, SHIFT, SILENT, EDIT, TAG, RENAME, INFO, GREP, CAT, COUNT, DIFF, MOVE, DUP, SWAP, APPEND, REVERSE, EXPIRE,
+            LIST_CONTENTS, LIST_CONTENTS_NUMBERED, CLEAR, SHIFT, SILENT, EDIT, TAG, RENAME, INFO, GREP, CAT, COUNT, DIFF, MOVE, DUP, SWAP, APPEND, REVERSE, EXPIRE, HEAD, TAIL,
         ];
-        assert_eq!(flags.len(), 31);
+        assert_eq!(flags.len(), 33);
     }
 
     // ── naming conventions ──────────────────────────────

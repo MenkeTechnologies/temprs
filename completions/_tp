@@ -45,6 +45,8 @@ _tp() {
     '(-A --append)'{-A,--append}'[Append stdin to tempfile at INDEX]:index:_tp_indices'
     '(--rev)'--rev'[Reverse the entire stack order]'
     '(--expire)'--expire'[Purge tempfiles older than HOURS hours]:hours: '
+    '(--head)'--head'[Show first N lines of tempfile]:index:_tp_indices:lines: '
+    '(--tail)'--tail'[Show last N lines of tempfile]:index:_tp_indices:lines: '
     '(-p --pop)'{-p,--pop}'[Pop from top of stack]'
     '(-u --unshift)'{-u,--unshift}'[Push to bottom of stack]'
     '(-s --shift)'{-s,--shift}'[Shift from bottom of stack]'

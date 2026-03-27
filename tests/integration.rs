@@ -89,7 +89,7 @@ fn help_shows_all_flags() {
         "--input", "--output", "--add", "--remove", "--pop", "--unshift",
         "--shift", "--dir", "--master", "--list-files", "--list-files-numbered",
         "--list-contents", "--list-contents-numbered", "--quiet", "--clear",
-        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff", "--mv", "--dup", "--swap", "--append", "--rev", "--expire",
+        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff", "--mv", "--dup", "--swap", "--append", "--rev", "--expire", "--head", "--tail",
     ] {
         assert!(text.contains(flag), "missing flag: {}", flag);
     }
@@ -2531,4 +2531,109 @@ fn expire_fractional_hours() {
     let out = run_tp(&dir, &["--expire", "0.001"]);
     assert_eq!(stdout(&out).trim(), "0");
     assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "1");
+}
+
+// ── Head ───────────────────────────────────────────────
+
+#[test]
+fn head_first_n_lines() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "line1\nline2\nline3\nline4\nline5\n");
+    let out = run_tp(&dir, &["--head", "1", "3"]);
+    assert!(out.status.success());
+    let text = stdout(&out);
+    assert_eq!(text.trim(), "line1\nline2\nline3");
+}
+
+#[test]
+fn head_by_name() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "log"], "a\nb\nc\nd\n");
+    let out = run_tp(&dir, &["--head", "log", "2"]);
+    assert_eq!(stdout(&out).trim(), "a\nb");
+}
+
+#[test]
+fn head_more_than_file_length() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "short\n");
+    let out = run_tp(&dir, &["--head", "1", "100"]);
+    assert_eq!(stdout(&out).trim(), "short");
+}
+
+#[test]
+fn head_zero_lines() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data\n");
+    let out = run_tp(&dir, &["--head", "1", "0"]);
+    assert!(out.status.success());
+    assert!(stdout(&out).trim().is_empty());
+}
+
+#[test]
+fn head_invalid_index_fails() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["--head", "99", "1"]);
+    assert!(!out.status.success());
+}
+
+// ── Tail ───────────────────────────────────────────────
+
+#[test]
+fn tail_last_n_lines() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "line1\nline2\nline3\nline4\nline5\n");
+    let out = run_tp(&dir, &["--tail", "1", "3"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&out).trim(), "line3\nline4\nline5");
+}
+
+#[test]
+fn tail_by_name() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "log"], "a\nb\nc\nd\n");
+    let out = run_tp(&dir, &["--tail", "log", "2"]);
+    assert_eq!(stdout(&out).trim(), "c\nd");
+}
+
+#[test]
+fn tail_more_than_file_length() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "short\n");
+    let out = run_tp(&dir, &["--tail", "1", "100"]);
+    assert_eq!(stdout(&out).trim(), "short");
+}
+
+#[test]
+fn tail_zero_lines() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data\n");
+    let out = run_tp(&dir, &["--tail", "1", "0"]);
+    assert!(out.status.success());
+    assert!(stdout(&out).trim().is_empty());
+}
+
+#[test]
+fn tail_invalid_index_fails() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["--tail", "99", "1"]);
+    assert!(!out.status.success());
+}
+
+#[test]
+fn head_one_line() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "first\nsecond\nthird\n");
+    let out = run_tp(&dir, &["--head", "1", "1"]);
+    assert_eq!(stdout(&out).trim(), "first");
+}
+
+#[test]
+fn tail_one_line() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "first\nsecond\nthird\n");
+    let out = run_tp(&dir, &["--tail", "1", "1"]);
+    assert_eq!(stdout(&out).trim(), "third");
 }
