@@ -168,6 +168,13 @@ pub fn parse_opts() -> Command {
             .long("count")
             .action(ArgAction::SetTrue)
             .help("\x1b[32m//\x1b[0m Print number of tempfiles on the stack"))
+        .arg(Arg::new(DIFF)
+            .short('D')
+            .long("diff")
+            .value_names(["A", "B"])
+            .num_args(2)
+            .allow_hyphen_values(true)
+            .help("\x1b[32m//\x1b[0m Diff two tempfiles by index or name"))
 }
 
 #[cfg(test)]
@@ -573,7 +580,7 @@ mod tests {
         let custom_count = app.get_arguments()
             .filter(|a| a.get_id() != "help" && a.get_id() != "version")
             .count();
-        assert_eq!(custom_count, 24);
+        assert_eq!(custom_count, 25);
     }
 
     // ── flag mutual independence ────────────────────────

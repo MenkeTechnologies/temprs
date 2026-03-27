@@ -89,7 +89,7 @@ fn help_shows_all_flags() {
         "--input", "--output", "--add", "--remove", "--pop", "--unshift",
         "--shift", "--dir", "--master", "--list-files", "--list-files-numbered",
         "--list-contents", "--list-contents-numbered", "--quiet", "--clear",
-        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count",
+        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff",
     ] {
         assert!(text.contains(flag), "missing flag: {}", flag);
     }
@@ -2056,4 +2056,69 @@ fn count_after_clear() {
     run_tp(&dir, &["-c"]);
     let out = run_tp(&dir, &["-k"]);
     assert_eq!(stdout(&out).trim(), "0");
+}
+
+// ── Diff ───────────────────────────────────────────────
+
+#[test]
+fn diff_identical_files_exits_zero() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "same content\n");
+    tick();
+    run_tp_stdin(&dir, &[], "same content\n");
+    let out = run_tp(&dir, &["-D", "1", "2"]);
+    assert!(out.status.success(), "diff of identical files should exit 0");
+    assert!(stdout(&out).trim().is_empty());
+}
+
+#[test]
+fn diff_different_files_exits_one() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "aaa\n");
+    tick();
+    run_tp_stdin(&dir, &[], "bbb\n");
+    let out = run_tp(&dir, &["-D", "1", "2"]);
+    assert_eq!(out.status.code(), Some(1), "diff of different files should exit 1");
+    let text = stdout(&out);
+    assert!(text.contains("-aaa"), "should show removed line");
+    assert!(text.contains("+bbb"), "should show added line");
+}
+
+#[test]
+fn diff_by_name() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "left"], "left\n");
+    tick();
+    run_tp_stdin(&dir, &["-w", "right"], "right\n");
+    let out = run_tp(&dir, &["-D", "left", "right"]);
+    assert_eq!(out.status.code(), Some(1));
+    let text = stdout(&out);
+    assert!(text.contains("-left"));
+    assert!(text.contains("+right"));
+}
+
+#[test]
+fn diff_mixed_name_and_index() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "named"], "AAA\n");
+    tick();
+    run_tp_stdin(&dir, &[], "BBB\n");
+    let out = run_tp(&dir, &["-D", "named", "2"]);
+    assert_eq!(out.status.code(), Some(1));
+}
+
+#[test]
+fn diff_invalid_index_fails() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["-D", "1", "99"]);
+    assert!(!out.status.success());
+}
+
+#[test]
+fn diff_same_index_exits_zero() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "content\n");
+    let out = run_tp(&dir, &["-D", "1", "1"]);
+    assert!(out.status.success());
 }

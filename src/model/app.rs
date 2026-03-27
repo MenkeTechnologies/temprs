@@ -356,6 +356,10 @@ impl TempApp {
             let v: Vec<String> = vals.cloned().collect();
             self.cat_tempfiles(v);
         }
+        if let Some(vals) = matches.get_many::<String>(DIFF) {
+            let v: Vec<String> = vals.cloned().collect();
+            self.diff_tempfiles(v[0].clone(), v[1].clone());
+        }
         if let Some(vals) = matches.get_many::<String>(RENAME) {
             let v: Vec<String> = vals.cloned().collect();
             self.rename_tag(v[0].clone(), v[1].clone());
@@ -460,6 +464,24 @@ impl TempApp {
             util_terminate_error(ERR_NO_FILE);
         }
         exit(0)
+    }
+
+    fn diff_tempfiles(&mut self, a: String, b: String) {
+        let path_a = match self.resolve_idx(&a) {
+            Some(idx) => self.state().temp_file_stack()[idx].clone(),
+            None => { util_terminate_error(ERR_INVALID_IDX); unreachable!() }
+        };
+        let path_b = match self.resolve_idx(&b) {
+            Some(idx) => self.state().temp_file_stack()[idx].clone(),
+            None => { util_terminate_error(ERR_INVALID_IDX); unreachable!() }
+        };
+        let status = ProcessCommand::new("diff")
+            .arg("-u")
+            .arg(&path_a)
+            .arg(&path_b)
+            .status()
+            .expect(ERR_FILE_READ);
+        exit(status.code().unwrap_or(2))
     }
 
     fn cat_tempfiles(&mut self, indices: Vec<String>) {

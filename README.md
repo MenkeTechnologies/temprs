@@ -216,6 +216,18 @@ tp -C alpha beta | CMD
 tp -C 3 alpha 1
 ```
 
+#### COMPARING TEMPFILES // DIFF
+
+```sh
+# unified diff of two tempfiles by index
+tp -D 1 2
+
+# diff by name
+tp -D alpha beta
+
+# exits 0 if identical, 1 if different
+```
+
 #### STACK MANIPULATION // PUSH / POP / SHIFT
 
 ```sh
