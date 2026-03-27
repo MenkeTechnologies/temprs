@@ -966,6 +966,7 @@ mod tests {
             deep.clone(),
             deep.clone(),
             vec![deep.clone()],
+            vec![],
             Some(deep.clone()),
             String::new(),
         );
@@ -1692,6 +1693,7 @@ mod tests {
             master.clone(),
             dir.clone(),
             stack.clone(),
+            vec![],
             arg.clone(),
             buf.clone(),
         );

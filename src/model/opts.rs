@@ -544,7 +544,7 @@ mod tests {
         let custom_count = app.get_arguments()
             .filter(|a| a.get_id() != "help" && a.get_id() != "version")
             .count();
-        assert_eq!(custom_count, 17);
+        assert_eq!(custom_count, 19);
     }
 
     // ── flag mutual independence ────────────────────────

@@ -24,21 +24,6 @@ _tp_indices() {
   _describe -t indices 'stack index' descriptions
 }
 
-# Helper: list named tempfiles only
-_tp_names() {
-  local master_file stack_dir
-  stack_dir="${TEMPRS_DIR:-${TMPDIR:-/tmp}/temprs}"
-  master_file="${stack_dir}/temprs-stack"
-  [[ -r "$master_file" ]] || return
-
-  local -a names
-  while IFS=$'\t' read -r filepath name_tag; do
-    [[ -n "$name_tag" ]] && names+=("$name_tag")
-  done < "$master_file"
-
-  compadd -a names
-}
-
 _tp() {
   local -a args
   args=(
@@ -47,7 +32,7 @@ _tp() {
     '(-a --add)'{-a,--add}'[Insert tempfile at INDEX]:index:_tp_indices'
     '(-r --remove)'{-r,--remove}'[Remove tempfile at INDEX]:index:_tp_indices'
     '(-e --edit)'{-e,--edit}'[Open tempfile at INDEX in $EDITOR]:index:_tp_indices'
-    '(-w --name)'{-w,--name}'[Tag tempfile with NAME]:name:_tp_names'
+    '(-w --name)'{-w,--name}'[Tag tempfile with NAME]:name: '
     '(-p --pop)'{-p,--pop}'[Pop from top of stack]'
     '(-u --unshift)'{-u,--unshift}'[Push to bottom of stack]'
     '(-s --shift)'{-s,--shift}'[Shift from bottom of stack]'
