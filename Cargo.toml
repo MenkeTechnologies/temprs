@@ -31,9 +31,9 @@ path = "src/main.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-log = "0.4.14"
-env_logger = "0.10.0"
-simple_logger = "1.13.0"
+log = "0.4.29"
+env_logger = "0.10.2"
+simple_logger = "1.16.0"
 clap = "4.6.0"
 fs2 = "0.4"
 
