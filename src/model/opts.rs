@@ -201,6 +201,10 @@ pub fn parse_opts() -> Command {
             .value_name("INDEX")
             .allow_hyphen_values(true)
             .help("\x1b[32m//\x1b[0m Append stdin to tempfile at INDEX"))
+        .arg(Arg::new(REVERSE)
+            .long("rev")
+            .action(ArgAction::SetTrue)
+            .help("\x1b[32m//\x1b[0m Reverse the entire stack order"))
 }
 
 #[cfg(test)]
@@ -606,7 +610,7 @@ mod tests {
         let custom_count = app.get_arguments()
             .filter(|a| a.get_id() != "help" && a.get_id() != "version")
             .count();
-        assert_eq!(custom_count, 29);
+        assert_eq!(custom_count, 30);
     }
 
     // ── flag mutual independence ────────────────────────

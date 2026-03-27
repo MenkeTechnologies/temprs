@@ -362,6 +362,9 @@ impl TempApp {
         if matches.get_flag(CLEAR) {
             self.clear_all();
         }
+        if matches.get_flag(REVERSE) {
+            self.reverse_stack();
+        }
         if matches.get_flag(SHIFT) {
             self.remove_at_idx(format!("{}", 1))
         }
@@ -468,6 +471,15 @@ impl TempApp {
             cyber_idx_path_named(i + 1, p, n);
             cyber_hr();
         }
+        exit(0)
+    }
+
+    fn reverse_stack(&mut self) {
+        let mut paths = self.state.temp_file_stack().clone();
+        let mut names = self.state.temp_file_names().clone();
+        paths.reverse();
+        names.reverse();
+        util_paths_and_names_to_file(paths, &names, self.state.master_record_file());
         exit(0)
     }
 

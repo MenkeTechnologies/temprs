@@ -278,6 +278,9 @@ tp -x mydata
 # swap two tempfiles
 tp -S 1 3
 tp -S alpha beta
+
+# reverse the entire stack
+tp --rev
 ```
 
 ---

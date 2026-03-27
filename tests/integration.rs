@@ -89,7 +89,7 @@ fn help_shows_all_flags() {
         "--input", "--output", "--add", "--remove", "--pop", "--unshift",
         "--shift", "--dir", "--master", "--list-files", "--list-files-numbered",
         "--list-contents", "--list-contents-numbered", "--quiet", "--clear",
-        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff", "--mv", "--dup", "--swap", "--append",
+        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff", "--mv", "--dup", "--swap", "--append", "--rev",
     ] {
         assert!(text.contains(flag), "missing flag: {}", flag);
     }
@@ -2403,4 +2403,64 @@ fn append_preserves_other_files() {
     run_tp_stdin(&dir, &["-A", "1"], "+extra");
     assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "first+extra");
     assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "second");
+}
+
+// ── Reverse ────────────────────────────────────────────
+
+#[test]
+fn reverse_stack() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "AAA");
+    tick();
+    run_tp_stdin(&dir, &[], "BBB");
+    tick();
+    run_tp_stdin(&dir, &[], "CCC");
+    let out = run_tp(&dir, &["--rev"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "CCC");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "BBB");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "3"])), "AAA");
+}
+
+#[test]
+fn reverse_preserves_names() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "first"], "AA");
+    tick();
+    run_tp_stdin(&dir, &["-w", "last"], "ZZ");
+    run_tp(&dir, &["--rev"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "first"])), "AA");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "last"])), "ZZ");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "ZZ");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "AA");
+}
+
+#[test]
+fn reverse_single_file_is_noop() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "only");
+    run_tp(&dir, &["--rev"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "only");
+}
+
+#[test]
+fn reverse_empty_stack() {
+    let dir = setup_clean_env();
+    let out = run_tp(&dir, &["--rev"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn double_reverse_restores_order() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "AAA");
+    tick();
+    run_tp_stdin(&dir, &[], "BBB");
+    tick();
+    run_tp_stdin(&dir, &[], "CCC");
+    run_tp(&dir, &["--rev"]);
+    run_tp(&dir, &["--rev"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "AAA");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "BBB");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "3"])), "CCC");
 }
