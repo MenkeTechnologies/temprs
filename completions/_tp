@@ -49,6 +49,7 @@ _tp() {
     '(--tail)'--tail'[Show last N lines of tempfile]:index:_tp_indices:lines: '
     '(--wc)'--wc'[Print line count of tempfile]:index:_tp_indices'
     '(--size)'--size'[Print byte size of tempfile]:index:_tp_indices'
+    '(--sort)'--sort'[Sort stack by key]:key:(name size mtime)'
     '(-p --pop)'{-p,--pop}'[Pop from top of stack]'
     '(-u --unshift)'{-u,--unshift}'[Push to bottom of stack]'
     '(-s --shift)'{-s,--shift}'[Shift from bottom of stack]'

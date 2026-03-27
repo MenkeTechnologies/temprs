@@ -89,7 +89,7 @@ fn help_shows_all_flags() {
         "--input", "--output", "--add", "--remove", "--pop", "--unshift",
         "--shift", "--dir", "--master", "--list-files", "--list-files-numbered",
         "--list-contents", "--list-contents-numbered", "--quiet", "--clear",
-        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff", "--mv", "--dup", "--swap", "--append", "--rev", "--expire", "--head", "--tail", "--wc", "--size",
+        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff", "--mv", "--dup", "--swap", "--append", "--rev", "--expire", "--head", "--tail", "--wc", "--size", "--sort",
     ] {
         assert!(text.contains(flag), "missing flag: {}", flag);
     }
@@ -2722,4 +2722,89 @@ fn size_invalid_index_fails() {
     run_tp_stdin(&dir, &[], "data");
     let out = run_tp(&dir, &["--size", "99"]);
     assert!(!out.status.success());
+}
+
+// ── Sort ───────────────────────────────────────────────
+
+#[test]
+fn sort_by_name_default() {
+    let dir = setup_clean_env();
+    // Push files that will have ascending timestamp names
+    run_tp_stdin(&dir, &[], "CCC");
+    tick();
+    run_tp_stdin(&dir, &[], "AAA");
+    tick();
+    run_tp_stdin(&dir, &[], "BBB");
+    // sort by name (filename = tempfileXXX, so timestamp order = name order)
+    let out = run_tp(&dir, &["--sort", "name"]);
+    assert!(out.status.success());
+    // After sorting by name, order should match push order (ascending timestamps)
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "CCC");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "AAA");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "3"])), "BBB");
+}
+
+#[test]
+fn sort_by_size() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "medium!!"); // 8 bytes
+    tick();
+    run_tp_stdin(&dir, &[], "z");        // 1 byte
+    tick();
+    run_tp_stdin(&dir, &[], "very long content here"); // 22 bytes
+    let out = run_tp(&dir, &["--sort", "size"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "z");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "medium!!");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "3"])), "very long content here");
+}
+
+#[test]
+fn sort_by_mtime() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "first");
+    tick();
+    run_tp_stdin(&dir, &[], "second");
+    tick();
+    run_tp_stdin(&dir, &[], "third");
+    // Already in mtime order, sort should preserve it
+    run_tp(&dir, &["--sort", "mtime"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "first");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "3"])), "third");
+}
+
+#[test]
+fn sort_preserves_names() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "big"], "xxxxxxxxxx"); // 10 bytes
+    tick();
+    run_tp_stdin(&dir, &["-w", "small"], "x");         // 1 byte
+    run_tp(&dir, &["--sort", "size"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "small"])), "x");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "big"])), "xxxxxxxxxx");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "x");
+}
+
+#[test]
+fn sort_empty_stack() {
+    let dir = setup_clean_env();
+    let out = run_tp(&dir, &["--sort", "name"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn sort_invalid_key_fails() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["--sort", "bogus"]);
+    assert!(!out.status.success());
+}
+
+#[test]
+fn sort_single_file() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "only");
+    let out = run_tp(&dir, &["--sort", "size"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "only");
 }

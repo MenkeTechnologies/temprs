@@ -231,6 +231,12 @@ pub fn parse_opts() -> Command {
             .value_name("INDEX")
             .allow_hyphen_values(true)
             .help("\x1b[32m//\x1b[0m Print byte size of tempfile at INDEX"))
+        .arg(Arg::new(SORT)
+            .long("sort")
+            .value_name("KEY")
+            .default_missing_value("name")
+            .num_args(0..=1)
+            .help("\x1b[32m//\x1b[0m Sort stack by name, size, or mtime"))
 }
 
 #[cfg(test)]
@@ -636,7 +642,7 @@ mod tests {
         let custom_count = app.get_arguments()
             .filter(|a| a.get_id() != "help" && a.get_id() != "version")
             .count();
-        assert_eq!(custom_count, 35);
+        assert_eq!(custom_count, 36);
     }
 
     // ── flag mutual independence ────────────────────────

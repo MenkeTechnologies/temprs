@@ -382,6 +382,9 @@ impl TempApp {
         if let Some(f) = matches.get_one::<String>(SIZE) {
             self.size_tempfile(f.clone());
         }
+        if let Some(key) = matches.get_one::<String>(SORT) {
+            self.sort_stack(key.clone());
+        }
         if matches.get_flag(SHIFT) {
             self.remove_at_idx(format!("{}", 1))
         }
@@ -595,6 +598,42 @@ impl TempApp {
 
         util_paths_and_names_to_file(kept_paths, &kept_names, self.state.master_record_file());
         println!("{}", removed);
+        exit(0)
+    }
+
+    fn sort_stack(&mut self, key: String) {
+        let paths = self.state.temp_file_stack().clone();
+        let names = self.state.temp_file_names().clone();
+        let mut indices: Vec<usize> = (0..paths.len()).collect();
+
+        match key.as_str() {
+            "name" => {
+                indices.sort_by(|&a, &b| {
+                    paths[a].file_name().cmp(&paths[b].file_name())
+                });
+            }
+            "size" => {
+                indices.sort_by(|&a, &b| {
+                    let sa = fs::metadata(&paths[a]).map(|m| m.len()).unwrap_or(0);
+                    let sb = fs::metadata(&paths[b]).map(|m| m.len()).unwrap_or(0);
+                    sa.cmp(&sb)
+                });
+            }
+            "mtime" => {
+                indices.sort_by(|&a, &b| {
+                    let ma = fs::metadata(&paths[a]).ok().and_then(|m| m.modified().ok());
+                    let mb = fs::metadata(&paths[b]).ok().and_then(|m| m.modified().ok());
+                    ma.cmp(&mb)
+                });
+            }
+            _ => {
+                util_terminate_error(ERR_INVALID_IDX);
+            }
+        }
+
+        let sorted_paths: Vec<PathBuf> = indices.iter().map(|&i| paths[i].clone()).collect();
+        let sorted_names: Vec<Option<String>> = indices.iter().map(|&i| names[i].clone()).collect();
+        util_paths_and_names_to_file(sorted_paths, &sorted_names, self.state.master_record_file());
         exit(0)
     }
 

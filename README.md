@@ -301,6 +301,11 @@ tp -S alpha beta
 
 # reverse the entire stack
 tp --rev
+
+# sort stack by filename (default), size, or modification time
+tp --sort name
+tp --sort size
+tp --sort mtime
 ```
 
 ---
