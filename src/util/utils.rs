@@ -179,7 +179,7 @@ pub fn util_paths_and_names_to_file(paths: Vec<PathBuf>, names: &[Option<String>
     };
     let tmp = out.with_extension("tmp");
     util_overwrite_file(&tmp, &buf);
-    if let Err(_) = rename(&tmp, out) {
+    if rename(&tmp, out).is_err() {
         util_terminate_error(ERR_MASTER_WRITE);
     }
     debug!("atomic write master record '{}'", util_path_to_string(out));

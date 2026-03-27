@@ -22,6 +22,12 @@ pub struct TempApp {
     _lock_file: File,
 }
 
+impl Default for TempApp {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TempApp {
 
     pub fn run(&mut self) {
@@ -41,7 +47,7 @@ impl TempApp {
 
 
     pub fn new() -> Self {
-        if let Err(_) = simple_logger::init_with_level(TEMP_LOG_LEVEL) {
+        if simple_logger::init_with_level(TEMP_LOG_LEVEL).is_err() {
             eprintln!("{}", ERR_LOGGER);
         }
 
@@ -82,7 +88,7 @@ impl TempApp {
             Ok(f) => f,
             Err(_) => { util_terminate_error(ERR_MASTER_LOCK); unreachable!() }
         };
-        if let Err(_) = lock_file.lock_exclusive() {
+        if lock_file.lock_exclusive().is_err() {
             util_terminate_error(ERR_MASTER_LOCK);
         }
         debug!("acquired exclusive lock on {}", lock_path.display());
@@ -99,7 +105,7 @@ impl TempApp {
         } else {
             let (paths, names) = util_file_to_paths_and_names(master_file.as_path());
             let (exist, exist_names): (Vec<PathBuf>, Vec<Option<String>>) = paths.into_iter()
-                .zip(names.into_iter())
+                .zip(names)
                 .filter(|(p, _)| p.exists())
                 .unzip();
             debug!("exists size {}", exist.len());
@@ -134,7 +140,7 @@ impl TempApp {
     fn read_stdin_terminal(&mut self) {
         debug!("stdin term");
 
-        let arg_path = self.state.arg_file().as_ref().map(|p| p.clone());
+        let arg_path = self.state.arg_file().clone();
         match arg_path {
             Some(arg_file) => {
                 let content = util_file_contents_to_string(arg_file.as_path());
