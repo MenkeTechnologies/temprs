@@ -44,6 +44,7 @@ _tp() {
     '(-S --swap)'{-S,--swap}'[Swap two tempfiles]:file A:_tp_indices:file B:_tp_indices'
     '(-A --append)'{-A,--append}'[Append stdin to tempfile at INDEX]:index:_tp_indices'
     '(--rev)'--rev'[Reverse the entire stack order]'
+    '(--expire)'--expire'[Purge tempfiles older than HOURS hours]:hours: '
     '(-p --pop)'{-p,--pop}'[Pop from top of stack]'
     '(-u --unshift)'{-u,--unshift}'[Push to bottom of stack]'
     '(-s --shift)'{-s,--shift}'[Shift from bottom of stack]'

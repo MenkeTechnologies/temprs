@@ -89,7 +89,7 @@ fn help_shows_all_flags() {
         "--input", "--output", "--add", "--remove", "--pop", "--unshift",
         "--shift", "--dir", "--master", "--list-files", "--list-files-numbered",
         "--list-contents", "--list-contents-numbered", "--quiet", "--clear",
-        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff", "--mv", "--dup", "--swap", "--append", "--rev",
+        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff", "--mv", "--dup", "--swap", "--append", "--rev", "--expire",
     ] {
         assert!(text.contains(flag), "missing flag: {}", flag);
     }
@@ -2463,4 +2463,72 @@ fn double_reverse_restores_order() {
     assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "AAA");
     assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "BBB");
     assert_eq!(stdout(&run_tp(&dir, &["-o", "3"])), "CCC");
+}
+
+// ── Expire ─────────────────────────────────────────────
+
+#[test]
+fn expire_large_ttl_keeps_all() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "recent1");
+    tick();
+    run_tp_stdin(&dir, &[], "recent2");
+    let out = run_tp(&dir, &["--expire", "9999"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&out).trim(), "0");
+    let count = run_tp(&dir, &["-k"]);
+    assert_eq!(stdout(&count).trim(), "2");
+}
+
+#[test]
+fn expire_zero_removes_all() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "old1");
+    tick();
+    run_tp_stdin(&dir, &[], "old2");
+    // sleep briefly so files are at least 1ms old
+    std::thread::sleep(std::time::Duration::from_millis(50));
+    let out = run_tp(&dir, &["--expire", "0"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&out).trim(), "2");
+    let count = run_tp(&dir, &["-k"]);
+    assert_eq!(stdout(&count).trim(), "0");
+}
+
+#[test]
+fn expire_empty_stack() {
+    let dir = setup_clean_env();
+    let out = run_tp(&dir, &["--expire", "1"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&out).trim(), "0");
+}
+
+#[test]
+fn expire_prints_removed_count() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a");
+    tick();
+    run_tp_stdin(&dir, &[], "b");
+    tick();
+    run_tp_stdin(&dir, &[], "c");
+    std::thread::sleep(std::time::Duration::from_millis(50));
+    let out = run_tp(&dir, &["--expire", "0"]);
+    assert_eq!(stdout(&out).trim(), "3");
+}
+
+#[test]
+fn expire_invalid_hours_fails() {
+    let dir = setup_clean_env();
+    let out = run_tp(&dir, &["--expire", "notanumber"]);
+    assert!(!out.status.success());
+}
+
+#[test]
+fn expire_fractional_hours() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    // 0.001 hours = 3.6 seconds, file is <1s old so should be kept
+    let out = run_tp(&dir, &["--expire", "0.001"]);
+    assert_eq!(stdout(&out).trim(), "0");
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "1");
 }

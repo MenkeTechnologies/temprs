@@ -365,6 +365,9 @@ impl TempApp {
         if matches.get_flag(REVERSE) {
             self.reverse_stack();
         }
+        if let Some(h) = matches.get_one::<String>(EXPIRE) {
+            self.expire_tempfiles(h.clone());
+        }
         if matches.get_flag(SHIFT) {
             self.remove_at_idx(format!("{}", 1))
         }
@@ -471,6 +474,41 @@ impl TempApp {
             cyber_idx_path_named(i + 1, p, n);
             cyber_hr();
         }
+        exit(0)
+    }
+
+    fn expire_tempfiles(&mut self, hours_str: String) {
+        let hours: f64 = match hours_str.parse() {
+            Ok(h) => h,
+            Err(_) => { util_terminate_error(ERR_INVALID_IDX); unreachable!() }
+        };
+        let cutoff_secs = (hours * 3600.0) as u64;
+        let now = std::time::SystemTime::now();
+        let paths = self.state.temp_file_stack().clone();
+        let names = self.state.temp_file_names().clone();
+        let mut kept_paths = Vec::new();
+        let mut kept_names = Vec::new();
+        let mut removed = 0usize;
+
+        for (p, n) in paths.into_iter().zip(names.into_iter()) {
+            let dominated = fs::metadata(&p).ok().and_then(|m| {
+                m.modified().ok()
+            }).and_then(|mtime| {
+                now.duration_since(mtime).ok()
+            }).map(|age| age.as_secs() >= cutoff_secs)
+            .unwrap_or(true);
+
+            if dominated {
+                util_remove_file(&p);
+                removed += 1;
+            } else {
+                kept_paths.push(p);
+                kept_names.push(n);
+            }
+        }
+
+        util_paths_and_names_to_file(kept_paths, &kept_names, self.state.master_record_file());
+        println!("{}", removed);
         exit(0)
     }
 

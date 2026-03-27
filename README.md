@@ -244,6 +244,12 @@ tp -D alpha beta
 # purge all tempfiles
 tp -c
 
+# purge tempfiles older than 24 hours
+tp --expire 24
+
+# purge tempfiles older than 30 minutes
+tp --expire 0.5
+
 # remove tempfile at INDEX
 tp -r INDEX
 

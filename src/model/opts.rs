@@ -205,6 +205,10 @@ pub fn parse_opts() -> Command {
             .long("rev")
             .action(ArgAction::SetTrue)
             .help("\x1b[32m//\x1b[0m Reverse the entire stack order"))
+        .arg(Arg::new(EXPIRE)
+            .long("expire")
+            .value_name("HOURS")
+            .help("\x1b[32m//\x1b[0m Purge tempfiles older than HOURS hours"))
 }
 
 #[cfg(test)]
@@ -610,7 +614,7 @@ mod tests {
         let custom_count = app.get_arguments()
             .filter(|a| a.get_id() != "help" && a.get_id() != "version")
             .count();
-        assert_eq!(custom_count, 30);
+        assert_eq!(custom_count, 31);
     }
 
     // ── flag mutual independence ────────────────────────
