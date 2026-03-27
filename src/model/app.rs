@@ -346,6 +346,9 @@ impl TempApp {
         if let Some(f) = matches.get_one::<String>(INFO) {
             self.info_tempfile(f.clone());
         }
+        if let Some(p) = matches.get_one::<String>(GREP) {
+            self.grep_tempfiles(p.clone());
+        }
         if let Some(vals) = matches.get_many::<String>(RENAME) {
             let v: Vec<String> = vals.cloned().collect();
             self.rename_tag(v[0].clone(), v[1].clone());
@@ -445,6 +448,60 @@ impl TempApp {
             util_terminate_error(ERR_NO_FILE);
         }
         exit(0)
+    }
+
+    fn grep_tempfiles(&mut self, pattern: String) {
+        let stk = self.state().temp_file_stack().clone();
+        let names = self.state().temp_file_names().clone();
+        let is_tty = io::stdout().is_terminal();
+        let mut found = false;
+
+        for (i, (p, n)) in stk.iter().zip(names.iter()).enumerate() {
+            let content = util_file_contents_to_string(p.as_path()).expect(ERR_FILE_READ);
+            let matching_lines: Vec<(usize, &str)> = content
+                .lines()
+                .enumerate()
+                .filter(|(_, line)| line.contains(&pattern))
+                .collect();
+
+            if matching_lines.is_empty() {
+                continue;
+            }
+            found = true;
+
+            if is_tty {
+                cyber_hr();
+                let tag = match n {
+                    Some(name) => format!(" \x1b[33m@{}\x1b[0m", name),
+                    None => String::new(),
+                };
+                println!(
+                    "\x1b[33m [{:02}]\x1b[0m \x1b[36m>\x1b[0m \x1b[35m{}\x1b[0m{}",
+                    i + 1, p.display(), tag
+                );
+                for (ln, line) in &matching_lines {
+                    let highlighted = line.replace(
+                        &pattern,
+                        &format!("\x1b[31;1m{}\x1b[0;32m", pattern),
+                    );
+                    println!("\x1b[33m  {}:\x1b[0m \x1b[32m{}\x1b[0m", ln + 1, highlighted);
+                }
+            } else {
+                let tag = match n {
+                    Some(name) => format!(" @{}", name),
+                    None => String::new(),
+                };
+                println!("{}:{}{}", i + 1, p.display(), tag);
+                for (ln, line) in &matching_lines {
+                    println!("  {}:{}", ln + 1, line);
+                }
+            }
+        }
+
+        if found && is_tty {
+            cyber_hr();
+        }
+        exit(if found { 0 } else { 1 })
     }
 
     fn info_tempfile(&mut self, stk_idx: String) {

@@ -190,6 +190,16 @@ tp -I mydata
 tp -I 1
 ```
 
+#### SEARCHING CONTENTS // GREP
+
+```sh
+# search all tempfiles for a pattern
+tp -g PATTERN
+
+# exits 0 if matches found, 1 if none
+tp -g needle && echo "found"
+```
+
 #### STACK MANIPULATION // PUSH / POP / SHIFT
 
 ```sh

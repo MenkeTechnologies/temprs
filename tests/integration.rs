@@ -89,7 +89,7 @@ fn help_shows_all_flags() {
         "--input", "--output", "--add", "--remove", "--pop", "--unshift",
         "--shift", "--dir", "--master", "--list-files", "--list-files-numbered",
         "--list-contents", "--list-contents-numbered", "--quiet", "--clear",
-        "--verbose",
+        "--verbose", "--edit", "--name", "--rename", "--info", "--grep",
     ] {
         assert!(text.contains(flag), "missing flag: {}", flag);
     }
@@ -1646,4 +1646,282 @@ fn add_then_remove_same_position() {
     assert_eq!(stdout(&out1), "first");
     let out2 = run_tp(&dir, &["-o", "2"]);
     assert_eq!(stdout(&out2), "second");
+}
+
+// ── Named tempfiles ────────────────────────────────────
+
+#[test]
+fn name_tag_and_output_by_name() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "foo"], "hello foo");
+    let out = run_tp(&dir, &["-o", "foo"]);
+    assert_eq!(stdout(&out), "hello foo");
+}
+
+#[test]
+fn name_tag_shows_in_numbered_list() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "myname"], "data");
+    let out = run_tp(&dir, &["-n"]);
+    let text = stdout(&out);
+    assert!(text.contains("@myname"), "numbered list should show @name tag");
+}
+
+#[test]
+fn duplicate_name_rejected() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "dup"], "first");
+    let out = run_tp_stdin(&dir, &["-w", "dup"], "second");
+    assert!(!out.status.success(), "duplicate name should fail");
+}
+
+#[test]
+fn input_by_name_overwrites() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "target"], "original");
+    run_tp_stdin(&dir, &["-i", "target"], "replaced");
+    let out = run_tp(&dir, &["-o", "target"]);
+    assert_eq!(stdout(&out), "replaced");
+}
+
+#[test]
+fn remove_by_name() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "bye"], "gone");
+    run_tp_stdin(&dir, &[], "stay");
+    run_tp(&dir, &["-r", "bye"]);
+    let list = run_tp(&dir, &["-l"]);
+    assert_eq!(stdout(&list).trim().lines().count(), 1);
+}
+
+// ── Rename tag ─────────────────────────────────────────
+
+#[test]
+fn rename_tag_by_name() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "old"], "data");
+    let out = run_tp(&dir, &["-R", "old", "new"]);
+    assert!(out.status.success());
+    let read = run_tp(&dir, &["-o", "new"]);
+    assert_eq!(stdout(&read), "data");
+}
+
+#[test]
+fn rename_tag_by_index() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "orig"], "data");
+    let out = run_tp(&dir, &["-R", "1", "renamed"]);
+    assert!(out.status.success());
+    let read = run_tp(&dir, &["-o", "renamed"]);
+    assert_eq!(stdout(&read), "data");
+}
+
+#[test]
+fn rename_old_name_no_longer_resolves() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "before"], "data");
+    run_tp(&dir, &["-R", "before", "after"]);
+    let out = run_tp(&dir, &["-o", "before"]);
+    assert!(!out.status.success(), "old name should no longer resolve");
+}
+
+#[test]
+fn rename_to_duplicate_rejected() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "aaa"], "one");
+    tick();
+    run_tp_stdin(&dir, &["-w", "bbb"], "two");
+    let out = run_tp(&dir, &["-R", "aaa", "bbb"]);
+    assert!(!out.status.success(), "rename to existing name should fail");
+}
+
+#[test]
+fn rename_unnamed_by_index() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "unnamed");
+    let out = run_tp(&dir, &["-R", "1", "nownamed"]);
+    assert!(out.status.success());
+    let read = run_tp(&dir, &["-o", "nownamed"]);
+    assert_eq!(stdout(&read), "unnamed");
+}
+
+#[test]
+fn rename_preserves_other_names() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "keep"], "keep-data");
+    tick();
+    run_tp_stdin(&dir, &["-w", "change"], "change-data");
+    run_tp(&dir, &["-R", "change", "changed"]);
+    let keep = run_tp(&dir, &["-o", "keep"]);
+    assert_eq!(stdout(&keep), "keep-data");
+    let changed = run_tp(&dir, &["-o", "changed"]);
+    assert_eq!(stdout(&changed), "change-data");
+}
+
+// ── Info ───────────────────────────────────────────────
+
+#[test]
+fn info_by_index() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "some content");
+    let out = run_tp(&dir, &["-I", "1"]);
+    assert!(out.status.success());
+    let text = stdout(&out);
+    assert!(text.contains("index: 1"));
+    assert!(text.contains("path:"));
+    assert!(text.contains("size:"));
+    assert!(text.contains("mtime:"));
+}
+
+#[test]
+fn info_by_name() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "myfile"], "content here");
+    let out = run_tp(&dir, &["-I", "myfile"]);
+    assert!(out.status.success());
+    let text = stdout(&out);
+    assert!(text.contains("index: 1"));
+    assert!(text.contains("name: myfile"));
+}
+
+#[test]
+fn info_shows_correct_size() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "12345");
+    let out = run_tp(&dir, &["-I", "1"]);
+    let text = stdout(&out);
+    assert!(text.contains("5 B"), "expected 5 bytes, got: {}", text);
+}
+
+#[test]
+fn info_invalid_index_fails() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["-I", "99"]);
+    assert!(!out.status.success());
+}
+
+#[test]
+fn info_unnamed_has_no_name_line() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["-I", "1"]);
+    let text = stdout(&out);
+    assert!(!text.contains("name:"), "unnamed file should not show name line");
+}
+
+// ── Grep ───────────────────────────────────────────────
+
+#[test]
+fn grep_finds_matching_file() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "hello world");
+    tick();
+    run_tp_stdin(&dir, &[], "goodbye world");
+    let out = run_tp(&dir, &["-g", "hello"]);
+    assert!(out.status.success());
+    let text = stdout(&out);
+    assert!(text.contains("hello world"));
+    assert!(!text.contains("goodbye"));
+}
+
+#[test]
+fn grep_finds_multiple_files() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "alpha needle beta");
+    tick();
+    run_tp_stdin(&dir, &[], "no match here");
+    tick();
+    run_tp_stdin(&dir, &[], "gamma needle delta");
+    let out = run_tp(&dir, &["-g", "needle"]);
+    assert!(out.status.success());
+    let text = stdout(&out);
+    assert!(text.contains("1:"));
+    assert!(text.contains("3:"));
+    assert!(!text.contains("2:"));
+}
+
+#[test]
+fn grep_no_match_exits_nonzero() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "hello");
+    let out = run_tp(&dir, &["-g", "nonexistent"]);
+    assert!(!out.status.success(), "grep with no matches should exit nonzero");
+}
+
+#[test]
+fn grep_empty_stack_exits_nonzero() {
+    let dir = setup_clean_env();
+    let out = run_tp(&dir, &["-g", "anything"]);
+    assert!(!out.status.success());
+}
+
+#[test]
+fn grep_shows_line_numbers() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "line1\nmatch here\nline3");
+    let out = run_tp(&dir, &["-g", "match"]);
+    let text = stdout(&out);
+    assert!(text.contains("2:"), "should show line number 2, got: {}", text);
+}
+
+#[test]
+fn grep_shows_name_tag() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "tagged"], "findme");
+    let out = run_tp(&dir, &["-g", "findme"]);
+    let text = stdout(&out);
+    assert!(text.contains("@tagged"), "should show @name tag in grep output");
+}
+
+#[test]
+fn grep_multiple_lines_in_one_file() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "foo bar\nbaz foo\nqux");
+    let out = run_tp(&dir, &["-g", "foo"]);
+    let text = stdout(&out);
+    let match_lines: Vec<&str> = text.lines().filter(|l| l.contains("foo")).collect();
+    assert_eq!(match_lines.len(), 2, "should match 2 lines, got: {:?}", match_lines);
+}
+
+// ── Edit ───────────────────────────────────────────────
+
+#[test]
+fn edit_by_name() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "editable"], "content");
+    // Use 'true' as EDITOR to verify it launches and exits
+    let out = Command::new(bin())
+        .env("TEMPRS_DIR", &dir)
+        .env("EDITOR", "true")
+        .args(&["-e", "editable"])
+        .output()
+        .expect("failed to execute tp");
+    assert!(out.status.success());
+}
+
+#[test]
+fn edit_by_index() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "content");
+    let out = Command::new(bin())
+        .env("TEMPRS_DIR", &dir)
+        .env("EDITOR", "true")
+        .args(&["-e", "1"])
+        .output()
+        .expect("failed to execute tp");
+    assert!(out.status.success());
+}
+
+#[test]
+fn edit_invalid_index_fails() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = Command::new(bin())
+        .env("TEMPRS_DIR", &dir)
+        .env("EDITOR", "true")
+        .args(&["-e", "99"])
+        .output()
+        .expect("failed to execute tp");
+    assert!(!out.status.success());
 }
