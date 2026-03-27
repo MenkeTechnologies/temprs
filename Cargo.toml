@@ -2,7 +2,7 @@
 name = "temprs"
 version = "2.7.0"
 authors = ["Jacob Menke <linux.dev25@gmail.com>"]
-edition = "2018"
+edition = "2021"
 description = "A temporary file manager with stack mechanism"
 license = "MIT"
 repository = "https://github.com/MenkeTechnologies/temprs"
