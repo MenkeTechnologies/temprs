@@ -89,7 +89,7 @@ fn help_shows_all_flags() {
         "--input", "--output", "--add", "--remove", "--pop", "--unshift",
         "--shift", "--dir", "--master", "--list-files", "--list-files-numbered",
         "--list-contents", "--list-contents-numbered", "--quiet", "--clear",
-        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff", "--mv", "--dup", "--swap", "--append", "--rev", "--expire", "--head", "--tail",
+        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff", "--mv", "--dup", "--swap", "--append", "--rev", "--expire", "--head", "--tail", "--wc",
     ] {
         assert!(text.contains(flag), "missing flag: {}", flag);
     }
@@ -2636,4 +2636,47 @@ fn tail_one_line() {
     run_tp_stdin(&dir, &[], "first\nsecond\nthird\n");
     let out = run_tp(&dir, &["--tail", "1", "1"]);
     assert_eq!(stdout(&out).trim(), "third");
+}
+
+// ── Wc (line count) ───────────────────────────────────
+
+#[test]
+fn wc_counts_lines() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a\nb\nc\nd\ne\n");
+    let out = run_tp(&dir, &["--wc", "1"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&out).trim(), "5");
+}
+
+#[test]
+fn wc_by_name() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "log"], "line1\nline2\nline3\n");
+    let out = run_tp(&dir, &["--wc", "log"]);
+    assert_eq!(stdout(&out).trim(), "3");
+}
+
+#[test]
+fn wc_single_line_no_newline() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "hello");
+    let out = run_tp(&dir, &["--wc", "1"]);
+    assert_eq!(stdout(&out).trim(), "1");
+}
+
+#[test]
+fn wc_empty_file() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "");
+    let out = run_tp(&dir, &["--wc", "1"]);
+    assert_eq!(stdout(&out).trim(), "0");
+}
+
+#[test]
+fn wc_invalid_index_fails() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["--wc", "99"]);
+    assert!(!out.status.success());
 }

@@ -115,6 +115,10 @@ tp --head 1 5
 
 # show last 10 lines by name
 tp --tail mydata 10
+
+# print line count
+tp --wc INDEX
+tp --wc mydata
 ```
 
 #### LOADING FILE PAYLOADS // FILE OPERATIONS

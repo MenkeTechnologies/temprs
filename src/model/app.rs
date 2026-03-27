@@ -376,6 +376,9 @@ impl TempApp {
             let v: Vec<String> = vals.cloned().collect();
             self.tail_tempfile(v[0].clone(), v[1].clone());
         }
+        if let Some(f) = matches.get_one::<String>(WC) {
+            self.wc_tempfile(f.clone());
+        }
         if matches.get_flag(SHIFT) {
             self.remove_at_idx(format!("{}", 1))
         }
@@ -483,6 +486,17 @@ impl TempApp {
             cyber_hr();
         }
         exit(0)
+    }
+
+    fn wc_tempfile(&mut self, stk_idx: String) {
+        match self.resolve_idx(&stk_idx) {
+            Some(idx) => {
+                let content = util_file_contents_to_string(self.state.temp_file_stack()[idx].as_path());
+                println!("{}", content.lines().count());
+                exit(0)
+            }
+            None => util_terminate_error(ERR_INVALID_IDX),
+        }
     }
 
     fn head_tempfile(&mut self, stk_idx: String, n_str: String) {
