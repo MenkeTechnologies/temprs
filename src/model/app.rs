@@ -349,6 +349,10 @@ impl TempApp {
         if let Some(p) = matches.get_one::<String>(GREP) {
             self.grep_tempfiles(p.clone());
         }
+        if let Some(vals) = matches.get_many::<String>(CAT) {
+            let v: Vec<String> = vals.cloned().collect();
+            self.cat_tempfiles(v);
+        }
         if let Some(vals) = matches.get_many::<String>(RENAME) {
             let v: Vec<String> = vals.cloned().collect();
             self.rename_tag(v[0].clone(), v[1].clone());
@@ -446,6 +450,26 @@ impl TempApp {
                 .expect(ERR_NO_FILE),
         ) {
             util_terminate_error(ERR_NO_FILE);
+        }
+        exit(0)
+    }
+
+    fn cat_tempfiles(&mut self, indices: Vec<String>) {
+        let mut combined = String::new();
+        for idx_str in &indices {
+            match self.resolve_idx(idx_str) {
+                Some(idx) => {
+                    let path = &self.state().temp_file_stack()[idx];
+                    let content = util_file_contents_to_string(path.as_path()).expect(ERR_FILE_READ);
+                    combined.push_str(&content);
+                }
+                None => util_terminate_error(ERR_INVALID_IDX),
+            }
+        }
+        if io::stdout().is_terminal() {
+            cyber_print_content(&combined);
+        } else {
+            print!("{}", combined);
         }
         exit(0)
     }

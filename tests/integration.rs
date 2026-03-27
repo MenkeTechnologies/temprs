@@ -89,7 +89,7 @@ fn help_shows_all_flags() {
         "--input", "--output", "--add", "--remove", "--pop", "--unshift",
         "--shift", "--dir", "--master", "--list-files", "--list-files-numbered",
         "--list-contents", "--list-contents-numbered", "--quiet", "--clear",
-        "--verbose", "--edit", "--name", "--rename", "--info", "--grep",
+        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat",
     ] {
         assert!(text.contains(flag), "missing flag: {}", flag);
     }
@@ -1924,4 +1924,86 @@ fn edit_invalid_index_fails() {
         .output()
         .expect("failed to execute tp");
     assert!(!out.status.success());
+}
+
+// ── Cat (concatenate) ──────────────────────────────────
+
+#[test]
+fn cat_single_file() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "only one");
+    let out = run_tp(&dir, &["-C", "1"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&out), "only one");
+}
+
+#[test]
+fn cat_multiple_files() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "AAA\n");
+    tick();
+    run_tp_stdin(&dir, &[], "BBB\n");
+    tick();
+    run_tp_stdin(&dir, &[], "CCC\n");
+    let out = run_tp(&dir, &["-C", "1", "2", "3"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&out), "AAA\nBBB\nCCC\n");
+}
+
+#[test]
+fn cat_by_name() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "x"], "XX");
+    tick();
+    run_tp_stdin(&dir, &["-w", "y"], "YY");
+    let out = run_tp(&dir, &["-C", "x", "y"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&out), "XXYY");
+}
+
+#[test]
+fn cat_mixed_index_and_name() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "named"], "FIRST");
+    tick();
+    run_tp_stdin(&dir, &[], "SECOND");
+    let out = run_tp(&dir, &["-C", "named", "2"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&out), "FIRSTSECOND");
+}
+
+#[test]
+fn cat_reversed_order() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "AAA");
+    tick();
+    run_tp_stdin(&dir, &[], "BBB");
+    let out = run_tp(&dir, &["-C", "2", "1"]);
+    assert_eq!(stdout(&out), "BBBAAA");
+}
+
+#[test]
+fn cat_duplicate_index() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "DUP");
+    let out = run_tp(&dir, &["-C", "1", "1"]);
+    assert_eq!(stdout(&out), "DUPDUP");
+}
+
+#[test]
+fn cat_invalid_index_fails() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["-C", "99"]);
+    assert!(!out.status.success());
+}
+
+#[test]
+fn cat_negative_index() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "FIRST");
+    tick();
+    run_tp_stdin(&dir, &[], "LAST");
+    let out = run_tp(&dir, &["-C", "-1"]);
+    assert_eq!(stdout(&out), "LAST");
 }

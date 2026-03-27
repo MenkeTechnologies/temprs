@@ -200,6 +200,19 @@ tp -g PATTERN
 tp -g needle && echo "found"
 ```
 
+#### CONCATENATING TEMPFILES // MERGE
+
+```sh
+# concatenate tempfiles by index
+tp -C 1 2 3 | CMD
+
+# concatenate by name
+tp -C alpha beta | CMD
+
+# mix indices and names, any order
+tp -C 3 alpha 1
+```
+
 #### STACK MANIPULATION // PUSH / POP / SHIFT
 
 ```sh

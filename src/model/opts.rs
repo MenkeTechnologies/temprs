@@ -156,6 +156,13 @@ pub fn parse_opts() -> Command {
             .long("grep")
             .value_name("PATTERN")
             .help("\x1b[32m//\x1b[0m Search tempfile contents for PATTERN"))
+        .arg(Arg::new(CAT)
+            .short('C')
+            .long("cat")
+            .value_name("INDEX")
+            .num_args(1..)
+            .allow_hyphen_values(true)
+            .help("\x1b[32m//\x1b[0m Concatenate tempfiles at indices to stdout"))
 }
 
 #[cfg(test)]
@@ -561,7 +568,7 @@ mod tests {
         let custom_count = app.get_arguments()
             .filter(|a| a.get_id() != "help" && a.get_id() != "version")
             .count();
-        assert_eq!(custom_count, 22);
+        assert_eq!(custom_count, 23);
     }
 
     // ── flag mutual independence ────────────────────────
