@@ -40,6 +40,8 @@ _tp() {
     '(-k --count)'{-k,--count}'[Print number of tempfiles on the stack]'
     '(-D --diff)'{-D,--diff}'[Diff two tempfiles]:file A:_tp_indices:file B:_tp_indices'
     '(-M --mv)'{-M,--mv}'[Move tempfile to another position]:from:_tp_indices:to:_tp_indices'
+    '(-x --dup)'{-x,--dup}'[Duplicate tempfile onto top of stack]:index:_tp_indices'
+    '(-S --swap)'{-S,--swap}'[Swap two tempfiles]:file A:_tp_indices:file B:_tp_indices'
     '(-p --pop)'{-p,--pop}'[Pop from top of stack]'
     '(-u --unshift)'{-u,--unshift}'[Push to bottom of stack]'
     '(-s --shift)'{-s,--shift}'[Shift from bottom of stack]'

@@ -89,7 +89,7 @@ fn help_shows_all_flags() {
         "--input", "--output", "--add", "--remove", "--pop", "--unshift",
         "--shift", "--dir", "--master", "--list-files", "--list-files-numbered",
         "--list-contents", "--list-contents-numbered", "--quiet", "--clear",
-        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff", "--mv",
+        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff", "--mv", "--dup", "--swap",
     ] {
         assert!(text.contains(flag), "missing flag: {}", flag);
     }
@@ -2205,4 +2205,129 @@ fn move_middle_to_first() {
     assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "BBB");
     assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "AAA");
     assert_eq!(stdout(&run_tp(&dir, &["-o", "3"])), "CCC");
+}
+
+// ── Dup (duplicate) ────────────────────────────────────
+
+#[test]
+fn dup_by_index() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "original");
+    let out = run_tp(&dir, &["-x", "1"]);
+    assert!(out.status.success());
+    let count = run_tp(&dir, &["-k"]);
+    assert_eq!(stdout(&count).trim(), "2");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "original");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "original");
+}
+
+#[test]
+fn dup_by_name() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "src"], "data");
+    let out = run_tp(&dir, &["-x", "src"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "data");
+}
+
+#[test]
+fn dup_does_not_copy_name() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "unique"], "data");
+    run_tp(&dir, &["-x", "unique"]);
+    // original name still works
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "unique"])), "data");
+    // clone is at index 2 without a name
+    let list = run_tp(&dir, &["-n"]);
+    let text = stdout(&list);
+    let lines: Vec<&str> = text.lines().filter(|l| l.contains("@unique")).collect();
+    assert_eq!(lines.len(), 1, "name should not be duplicated");
+}
+
+#[test]
+fn dup_invalid_index_fails() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["-x", "99"]);
+    assert!(!out.status.success());
+}
+
+#[test]
+fn dup_negative_index() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "first");
+    tick();
+    run_tp_stdin(&dir, &[], "last");
+    run_tp(&dir, &["-x", "-1"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "3"])), "last");
+}
+
+// ── Swap ───────────────────────────────────────────────
+
+#[test]
+fn swap_by_index() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "AAA");
+    tick();
+    run_tp_stdin(&dir, &[], "BBB");
+    tick();
+    run_tp_stdin(&dir, &[], "CCC");
+    let out = run_tp(&dir, &["-S", "1", "3"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "CCC");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "BBB");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "3"])), "AAA");
+}
+
+#[test]
+fn swap_by_name() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "x"], "XX");
+    tick();
+    run_tp_stdin(&dir, &["-w", "y"], "YY");
+    run_tp(&dir, &["-S", "x", "y"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "YY");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "XX");
+}
+
+#[test]
+fn swap_preserves_names() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "a"], "AA");
+    tick();
+    run_tp_stdin(&dir, &["-w", "b"], "BB");
+    run_tp(&dir, &["-S", "1", "2"]);
+    // names follow files
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "a"])), "AA");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "b"])), "BB");
+}
+
+#[test]
+fn swap_same_index_is_noop() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "AAA");
+    tick();
+    run_tp_stdin(&dir, &[], "BBB");
+    run_tp(&dir, &["-S", "1", "1"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "AAA");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "BBB");
+}
+
+#[test]
+fn swap_invalid_index_fails() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["-S", "1", "99"]);
+    assert!(!out.status.success());
+}
+
+#[test]
+fn swap_mixed_name_and_index() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "named"], "NN");
+    tick();
+    run_tp_stdin(&dir, &[], "UU");
+    run_tp(&dir, &["-S", "named", "2"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "UU");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "NN");
 }

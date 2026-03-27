@@ -182,6 +182,19 @@ pub fn parse_opts() -> Command {
             .num_args(2)
             .allow_hyphen_values(true)
             .help("\x1b[32m//\x1b[0m Move tempfile from one position to another"))
+        .arg(Arg::new(DUP)
+            .short('x')
+            .long("dup")
+            .value_name("INDEX")
+            .allow_hyphen_values(true)
+            .help("\x1b[32m//\x1b[0m Duplicate tempfile onto top of stack"))
+        .arg(Arg::new(SWAP)
+            .short('S')
+            .long("swap")
+            .value_names(["A", "B"])
+            .num_args(2)
+            .allow_hyphen_values(true)
+            .help("\x1b[32m//\x1b[0m Swap two tempfiles by index or name"))
 }
 
 #[cfg(test)]
@@ -587,7 +600,7 @@ mod tests {
         let custom_count = app.get_arguments()
             .filter(|a| a.get_id() != "help" && a.get_id() != "version")
             .count();
-        assert_eq!(custom_count, 26);
+        assert_eq!(custom_count, 28);
     }
 
     // ── flag mutual independence ────────────────────────

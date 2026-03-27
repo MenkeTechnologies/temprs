@@ -364,6 +364,13 @@ impl TempApp {
             let v: Vec<String> = vals.cloned().collect();
             self.move_tempfile(v[0].clone(), v[1].clone());
         }
+        if let Some(f) = matches.get_one::<String>(DUP) {
+            self.dup_tempfile(f.clone());
+        }
+        if let Some(vals) = matches.get_many::<String>(SWAP) {
+            let v: Vec<String> = vals.cloned().collect();
+            self.swap_tempfiles(v[0].clone(), v[1].clone());
+        }
         if let Some(vals) = matches.get_many::<String>(RENAME) {
             let v: Vec<String> = vals.cloned().collect();
             self.rename_tag(v[0].clone(), v[1].clone());
@@ -467,6 +474,36 @@ impl TempApp {
         ) {
             util_terminate_error(ERR_NO_FILE);
         }
+        exit(0)
+    }
+
+    fn dup_tempfile(&mut self, stk_idx: String) {
+        match self.resolve_idx(&stk_idx) {
+            Some(idx) => {
+                let src = self.state().temp_file_stack()[idx].clone();
+                let content = util_file_contents_to_string(src.as_path()).expect(ERR_FILE_READ);
+                self.append_to_master_list();
+                util_overwrite_file(self.state().new_temp_file(), &content);
+                exit(0)
+            }
+            None => util_terminate_error(ERR_INVALID_IDX),
+        }
+    }
+
+    fn swap_tempfiles(&mut self, a: String, b: String) {
+        let idx_a = match self.resolve_idx(&a) {
+            Some(idx) => idx,
+            None => { util_terminate_error(ERR_INVALID_IDX); unreachable!() }
+        };
+        let idx_b = match self.resolve_idx(&b) {
+            Some(idx) => idx,
+            None => { util_terminate_error(ERR_INVALID_IDX); unreachable!() }
+        };
+        let mut paths = self.state().temp_file_stack().clone();
+        let mut names = self.state().temp_file_names().clone();
+        paths.swap(idx_a, idx_b);
+        names.swap(idx_a, idx_b);
+        util_paths_and_names_to_file(paths, &names, self.state().master_record_file());
         exit(0)
     }
 
