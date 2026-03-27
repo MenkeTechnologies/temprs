@@ -137,6 +137,16 @@ CMD | tp -vi 1 | CMD
 CMD | tp -vi 2
 ```
 
+#### APPENDING DATA // ACCUMULATE
+
+```sh
+# append stdin to tempfile at INDEX
+CMD | tp -A INDEX
+
+# append by name
+CMD | tp -A mydata
+```
+
 #### ENUMERATING STACK CONTENTS // LISTING
 
 ```sh

@@ -14,6 +14,7 @@ pub struct TempState {
     holding_buffer: String,
     input_temp_file: Option<String>,
     output_temp_file: Option<String>,
+    append_temp_file: Option<String>,
     name: Option<String>,
     silent: bool,
     verbose: u32,
@@ -63,6 +64,10 @@ impl TempState {
 
     pub fn set_output_temp_file(&mut self, output_temp_file: Option<String>) {
         self.output_temp_file = output_temp_file;
+    }
+
+    pub fn set_append_temp_file(&mut self, append_temp_file: Option<String>) {
+        self.append_temp_file = append_temp_file;
     }
 
     pub fn set_silent(&mut self, silent: bool) {
@@ -124,6 +129,10 @@ impl TempState {
         &self.output_temp_file
     }
 
+    pub fn append_temp_file(&self) -> &Option<String> {
+        &self.append_temp_file
+    }
+
     #[cfg(test)]
     pub fn silent(&self) -> bool {
         self.silent
@@ -165,6 +174,7 @@ impl TempState {
             holding_buffer: String::new(),
             input_temp_file: None,
             output_temp_file: None,
+            append_temp_file: None,
             name: None,
             silent: false,
             verbose: 0,

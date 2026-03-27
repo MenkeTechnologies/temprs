@@ -257,6 +257,12 @@ impl TempApp {
 
     fn overwrite_idx_or_write_new_tempfile(&mut self) {
         let file_contents = String::from(self.state().holding_buffer());
+        if let Some(stk_idx) = self.state().append_temp_file().clone() {
+            if let Some(f) = self.idx_in_stack_tempfile(stk_idx) {
+                util_append_file(f, &file_contents);
+            }
+            return;
+        }
         match self.state().input_temp_file().clone() {
             Some(stk_idx) => {
                 if let Some(f) = self.idx_in_stack_tempfile(stk_idx) {
@@ -288,7 +294,7 @@ impl TempApp {
 
         let mut buffer = String::new();
         buffer.push_str(self.state().out_file_path_str().as_str());
-        if let Some(ref name) = self.state().name().clone() {
+        if let Some(name) = self.state().name() {
             buffer.push('\t');
             buffer.push_str(name);
         }
@@ -299,13 +305,47 @@ impl TempApp {
     fn parse_opts(&mut self) {
         let matches = parse_opts().get_matches();
 
+        // ── state-setting flags (order independent) ──────────
+        if matches.get_count(VERBOSE) > 0 {
+            let _ = simple_logger::init_with_level(Level::Debug);
+            self.state().set_verbose(1);
+        }
+        if matches.get_flag(SILENT) {
+            self.state().set_silent(true);
+        }
+        if matches.get_flag(UNSHIFT) {
+            self.state().set_insert_idx(Some(String::from("1")));
+        }
+        if let Some(i) = matches.get_one::<String>(ADD) {
+            self.state().set_insert_idx(Some(i.clone()));
+        }
+        if let Some(f) = matches.get_one::<String>(ARGFILE) {
+            self.state().set_arg_file(Some(PathBuf::from(f)));
+        }
+        if let Some(i) = matches.get_one::<String>(INPUT) {
+            self.state().set_input_temp_file(Some(i.clone()));
+        }
+        if let Some(i) = matches.get_one::<String>(OUTPUT) {
+            self.state().set_output_temp_file(Some(i.clone()));
+        }
+        if let Some(i) = matches.get_one::<String>(APPEND) {
+            self.state().set_append_temp_file(Some(i.clone()));
+        }
+        if let Some(n) = matches.get_one::<String>(TAG) {
+            let name = n.clone();
+            if self.state().temp_file_names().iter().any(|existing| existing.as_deref() == Some(&name)) {
+                util_terminate_error(ERR_INVALID_NAME);
+            }
+            self.state().set_name(Some(name));
+        }
+
+        // ── immediate-exit commands ──────────────────────────
         if matches.get_flag(LIST_FILES) {
             self.list_tempfiles();
         }
         if matches.get_flag(LIST_FILES_NUMBERED) {
             self.list_tempfiles_numbered();
         }
-
         if matches.get_flag(COUNT) {
             self.count_tempfiles();
         }
@@ -315,11 +355,6 @@ impl TempApp {
         if matches.get_flag(MASTER) {
             self.list_master();
         }
-        if matches.get_count(VERBOSE) > 0 {
-            let _ = simple_logger::init_with_level(Level::Debug);
-            self.state().set_verbose(1);
-        }
-
         if matches.get_flag(LIST_CONTENTS) {
             self.list_tempfiles_contents();
         }
@@ -332,18 +367,9 @@ impl TempApp {
         if matches.get_flag(SHIFT) {
             self.remove_at_idx(format!("{}", 1))
         }
-
-        if matches.get_flag(UNSHIFT) {
-            self.state().set_insert_idx(Some(String::from("1")));
-        }
-
         if matches.get_flag(POP) {
             let top = self.state().temp_file_stack().len();
             self.remove_at_idx(format!("{}", top))
-        }
-
-        if matches.get_flag(SILENT) {
-            self.state().set_silent(true);
         }
         if let Some(f) = matches.get_one::<String>(EDIT) {
             self.edit_tempfile(f.clone());
@@ -379,25 +405,6 @@ impl TempApp {
         }
         if let Some(f) = matches.get_one::<String>(REMOVE) {
             self.remove_at_idx(f.clone());
-        }
-        if let Some(i) = matches.get_one::<String>(ADD) {
-            self.state().set_insert_idx(Some(i.clone()));
-        }
-        if let Some(f) = matches.get_one::<String>(ARGFILE) {
-            self.state().set_arg_file(Some(PathBuf::from(f)));
-        }
-        if let Some(i) = matches.get_one::<String>(INPUT) {
-            self.state().set_input_temp_file(Some(i.clone()));
-        }
-        if let Some(i) = matches.get_one::<String>(OUTPUT) {
-            self.state().set_output_temp_file(Some(i.clone()));
-        }
-        if let Some(n) = matches.get_one::<String>(TAG) {
-            let name = n.clone();
-            if self.state().temp_file_names().iter().any(|existing| existing.as_deref() == Some(&name)) {
-                util_terminate_error(ERR_INVALID_NAME);
-            }
-            self.state().set_name(Some(name));
         }
     }
 

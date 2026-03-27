@@ -195,6 +195,12 @@ pub fn parse_opts() -> Command {
             .num_args(2)
             .allow_hyphen_values(true)
             .help("\x1b[32m//\x1b[0m Swap two tempfiles by index or name"))
+        .arg(Arg::new(APPEND)
+            .short('A')
+            .long("append")
+            .value_name("INDEX")
+            .allow_hyphen_values(true)
+            .help("\x1b[32m//\x1b[0m Append stdin to tempfile at INDEX"))
 }
 
 #[cfg(test)]
@@ -600,7 +606,7 @@ mod tests {
         let custom_count = app.get_arguments()
             .filter(|a| a.get_id() != "help" && a.get_id() != "version")
             .count();
-        assert_eq!(custom_count, 28);
+        assert_eq!(custom_count, 29);
     }
 
     // ── flag mutual independence ────────────────────────

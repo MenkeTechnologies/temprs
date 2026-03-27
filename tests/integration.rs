@@ -89,7 +89,7 @@ fn help_shows_all_flags() {
         "--input", "--output", "--add", "--remove", "--pop", "--unshift",
         "--shift", "--dir", "--master", "--list-files", "--list-files-numbered",
         "--list-contents", "--list-contents-numbered", "--quiet", "--clear",
-        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff", "--mv", "--dup", "--swap",
+        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff", "--mv", "--dup", "--swap", "--append",
     ] {
         assert!(text.contains(flag), "missing flag: {}", flag);
     }
@@ -2330,4 +2330,62 @@ fn swap_mixed_name_and_index() {
     run_tp(&dir, &["-S", "named", "2"]);
     assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "UU");
     assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "NN");
+}
+
+// ── Append ─────────────────────────────────────────────
+
+#[test]
+fn append_to_existing() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "hello");
+    run_tp_stdin(&dir, &["-A", "1"], " world");
+    let out = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out), "hello world");
+}
+
+#[test]
+fn append_by_name() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "log"], "line1\n");
+    run_tp_stdin(&dir, &["-A", "log"], "line2\n");
+    let out = run_tp(&dir, &["-o", "log"]);
+    assert_eq!(stdout(&out), "line1\nline2\n");
+}
+
+#[test]
+fn append_does_not_create_new_file() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "base");
+    run_tp_stdin(&dir, &["-A", "1"], "extra");
+    let count = run_tp(&dir, &["-k"]);
+    assert_eq!(stdout(&count).trim(), "1");
+}
+
+#[test]
+fn append_multiple_times() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a");
+    run_tp_stdin(&dir, &["-A", "1"], "b");
+    run_tp_stdin(&dir, &["-A", "1"], "c");
+    let out = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out), "abc");
+}
+
+#[test]
+fn append_invalid_index_fails() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp_stdin(&dir, &["-A", "99"], "more");
+    assert!(!out.status.success());
+}
+
+#[test]
+fn append_preserves_other_files() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "first");
+    tick();
+    run_tp_stdin(&dir, &[], "second");
+    run_tp_stdin(&dir, &["-A", "1"], "+extra");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "first+extra");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "second");
 }
