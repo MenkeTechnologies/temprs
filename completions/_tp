@@ -1,0 +1,71 @@
+#compdef tp temprs
+
+# Zsh completion for temprs/tp — temporary file stack manager
+
+# Helper: list 1-based indices from the temprs stack
+_tp_indices() {
+  local master_file stack_dir
+  stack_dir="${TEMPRS_DIR:-${TMPDIR:-/tmp}/temprs}"
+  master_file="${stack_dir}/temprs-stack"
+  [[ -r "$master_file" ]] || return
+
+  local -a indices descriptions
+  local i=1
+  while IFS=$'\t' read -r filepath name_tag; do
+    if [[ -n "$name_tag" ]]; then
+      descriptions+=("${i}:${filepath:t} @${name_tag}")
+      descriptions+=("${name_tag}:${filepath:t} [${i}]")
+    else
+      descriptions+=("${i}:${filepath:t}")
+    fi
+    (( i++ ))
+  done < "$master_file"
+
+  _describe -t indices 'stack index' descriptions
+}
+
+# Helper: list named tempfiles only
+_tp_names() {
+  local master_file stack_dir
+  stack_dir="${TEMPRS_DIR:-${TMPDIR:-/tmp}/temprs}"
+  master_file="${stack_dir}/temprs-stack"
+  [[ -r "$master_file" ]] || return
+
+  local -a names
+  while IFS=$'\t' read -r filepath name_tag; do
+    [[ -n "$name_tag" ]] && names+=("$name_tag")
+  done < "$master_file"
+
+  compadd -a names
+}
+
+_tp() {
+  local -a args
+  args=(
+    '(-i --input)'{-i,--input}'[Write into tempfile at INDEX]:index:_tp_indices'
+    '(-o --output)'{-o,--output}'[Read from tempfile at INDEX]:index:_tp_indices'
+    '(-a --add)'{-a,--add}'[Insert tempfile at INDEX]:index:_tp_indices'
+    '(-r --remove)'{-r,--remove}'[Remove tempfile at INDEX]:index:_tp_indices'
+    '(-e --edit)'{-e,--edit}'[Open tempfile at INDEX in $EDITOR]:index:_tp_indices'
+    '(-w --name)'{-w,--name}'[Tag tempfile with NAME]:name:_tp_names'
+    '(-p --pop)'{-p,--pop}'[Pop from top of stack]'
+    '(-u --unshift)'{-u,--unshift}'[Push to bottom of stack]'
+    '(-s --shift)'{-s,--shift}'[Shift from bottom of stack]'
+    '(-d --dir)'{-d,--dir}'[List temprs directory]'
+    '(-m --master)'{-m,--master}'[List temprs master record file]'
+    '(-l --list-files)'{-l,--list-files}'[List all tempfiles on the stack]'
+    '(-n --list-files-numbered)'{-n,--list-files-numbered}'[List all tempfiles numbered on the stack]'
+    '(-L --list-contents)'{-L,--list-contents}'[List all tempfile contents on the stack]'
+    '(-N --list-contents-numbered)'{-N,--list-contents-numbered}'[List all tempfiles numbered with contents]'
+    '(-q --quiet)'{-q,--quiet}'[Suppress output when creating tempfile]'
+    '(-c --clear)'{-c,--clear}'[Purge all tempfiles from the stack]'
+    '*'{-v,--verbose}'[Increase verbosity level]'
+    '(-h --help)'{-h,--help}'[Print help]'
+    '(-V --version)'{-V,--version}'[Print version]'
+    '1::input file:_files'
+  )
+
+  _arguments -s -S $args
+}
+
+_tp "$@"

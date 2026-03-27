@@ -64,6 +64,21 @@ cargo build --release
 
 [temprs on Crates.io](https://crates.io/crates/temprs)
 
+#### ZSH COMPLETION // TAB-COMPLETE ALL THE THINGS
+
+```sh
+# copy to a directory in your fpath
+cp completions/_tp /usr/local/share/zsh/site-functions/_tp
+
+# or add the completions directory to fpath in your .zshrc
+fpath=(/path/to/temprs/completions $fpath)
+
+# then reload completions
+autoload -Uz compinit && compinit
+```
+
+Completions dynamically resolve stack indices, file names, and `@name` tags.
+
 ---
 
 ## [0x03] USAGE
