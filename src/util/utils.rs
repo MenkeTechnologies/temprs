@@ -1,10 +1,10 @@
-use std::fs::{read_to_string, remove_file, File, OpenOptions};
+use std::fs::{read_to_string, remove_file, rename, File, OpenOptions};
 use std::io::{self, BufRead, BufReader, IsTerminal, Write};
 use std::path::{Path, PathBuf};
 use std::process::exit;
 use std::time::SystemTime;
 
-use log::{debug, error};
+use log::{debug, error, warn};
 
 use crate::util::consts::*;
 
@@ -132,12 +132,22 @@ pub fn util_file_to_paths_and_names(path: &Path) -> (Vec<PathBuf>, Vec<Option<St
     let buf = BufReader::new(file);
     let mut paths = Vec::new();
     let mut names = Vec::new();
-    for line in buf.lines() {
+    for (line_num, line) in buf.lines().enumerate() {
         let l = match line {
             Ok(s) => s,
-            Err(_) => { util_terminate_error(ERR_PARSE); unreachable!() }
+            Err(_) => {
+                warn!("skipping unreadable line {} in master record", line_num + 1);
+                continue;
+            }
         };
+        if l.trim().is_empty() {
+            continue;
+        }
         if let Some((p, n)) = l.split_once('\t') {
+            if p.trim().is_empty() {
+                warn!("skipping line {} with empty path in master record", line_num + 1);
+                continue;
+            }
             paths.push(PathBuf::from(p));
             let clean_name = n.replace('\t', "");
             names.push(if clean_name.is_empty() { None } else { Some(clean_name) });
@@ -162,11 +172,16 @@ pub fn util_paths_and_names_to_file(paths: Vec<PathBuf>, names: &[Option<String>
             None => ps,
         }
     }).collect();
-    if out.exists() {
-        debug!("remove file '{}'", util_path_to_string(out));
-        util_remove_file(out);
+    let mut buf: String = lines.join("\n");
+    if !buf.is_empty() {
+        buf.push('\n');
     }
-    util_lines_to_file(out, lines)
+    let tmp = out.with_extension("tmp");
+    util_overwrite_file(&tmp, &buf);
+    if let Err(_) = rename(&tmp, out) {
+        util_terminate_error(ERR_MASTER_WRITE);
+    }
+    debug!("atomic write master record '{}'", util_path_to_string(out));
 }
 
 
@@ -492,6 +507,72 @@ mod tests {
         assert!(file.exists());
         util_remove_file(&file);
         assert!(!file.exists());
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    // ── master file robustness ──────────────────────────
+
+    #[test]
+    fn file_to_paths_skips_empty_lines() {
+        let dir = tmp_dir();
+        let master = dir.join("master");
+        fs::write(&master, "/tmp/a\n\n/tmp/b\n\n\n/tmp/c\n").unwrap();
+        let paths = util_file_to_paths(master.as_path());
+        assert_eq!(paths, vec![
+            PathBuf::from("/tmp/a"),
+            PathBuf::from("/tmp/b"),
+            PathBuf::from("/tmp/c"),
+        ]);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn file_to_paths_skips_whitespace_only_lines() {
+        let dir = tmp_dir();
+        let master = dir.join("master");
+        fs::write(&master, "/tmp/a\n   \n/tmp/b\n \t \n/tmp/c\n").unwrap();
+        let paths = util_file_to_paths(master.as_path());
+        assert_eq!(paths, vec![
+            PathBuf::from("/tmp/a"),
+            PathBuf::from("/tmp/b"),
+            PathBuf::from("/tmp/c"),
+        ]);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn file_to_paths_skips_empty_path_with_name() {
+        let dir = tmp_dir();
+        let master = dir.join("master");
+        fs::write(&master, "/tmp/a\tfoo\n\tbar\n/tmp/b\n").unwrap();
+        let (paths, names) = util_file_to_paths_and_names(master.as_path());
+        assert_eq!(paths, vec![PathBuf::from("/tmp/a"), PathBuf::from("/tmp/b")]);
+        assert_eq!(names, vec![Some("foo".to_string()), None]);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn atomic_write_no_temp_file_left() {
+        let dir = tmp_dir();
+        let master = dir.join("master");
+        let paths = vec![PathBuf::from("/tmp/a"), PathBuf::from("/tmp/b")];
+        util_paths_to_file(paths, &master);
+        assert!(master.exists());
+        assert!(!master.with_extension("tmp").exists());
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn atomic_write_preserves_content_on_overwrite() {
+        let dir = tmp_dir();
+        let master = dir.join("master");
+        let paths1 = vec![PathBuf::from("/tmp/old")];
+        util_paths_to_file(paths1, &master);
+        let paths2 = vec![PathBuf::from("/tmp/new1"), PathBuf::from("/tmp/new2")];
+        util_paths_to_file(paths2.clone(), &master);
+        let loaded = util_file_to_paths(master.as_path());
+        assert_eq!(loaded, paths2);
+        assert!(!master.with_extension("tmp").exists());
         fs::remove_dir_all(&dir).unwrap();
     }
 

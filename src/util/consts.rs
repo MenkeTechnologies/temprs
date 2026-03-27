@@ -131,6 +131,11 @@ mod tests {
         assert!(!ERR_CLOCK.is_empty());
     }
 
+    #[test]
+    fn err_master_write_not_empty() {
+        assert!(!ERR_MASTER_WRITE.is_empty());
+    }
+
     // ── CLI flag name constants ──────────────────────────
 
     #[test]
