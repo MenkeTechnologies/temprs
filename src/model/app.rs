@@ -360,6 +360,10 @@ impl TempApp {
             let v: Vec<String> = vals.cloned().collect();
             self.diff_tempfiles(v[0].clone(), v[1].clone());
         }
+        if let Some(vals) = matches.get_many::<String>(MOVE) {
+            let v: Vec<String> = vals.cloned().collect();
+            self.move_tempfile(v[0].clone(), v[1].clone());
+        }
         if let Some(vals) = matches.get_many::<String>(RENAME) {
             let v: Vec<String> = vals.cloned().collect();
             self.rename_tag(v[0].clone(), v[1].clone());
@@ -463,6 +467,26 @@ impl TempApp {
         ) {
             util_terminate_error(ERR_NO_FILE);
         }
+        exit(0)
+    }
+
+    fn move_tempfile(&mut self, from: String, to: String) {
+        let from_idx = match self.resolve_idx(&from) {
+            Some(idx) => idx,
+            None => { util_terminate_error(ERR_INVALID_IDX); unreachable!() }
+        };
+        let to_idx = match to.parse::<i32>() {
+            Ok(idx) => util_transform_idx(idx, self.state().temp_file_stack().len()),
+            Err(_) => { util_terminate_error(ERR_INVALID_IDX); unreachable!() }
+        };
+        let mut paths = self.state().temp_file_stack().clone();
+        let mut names = self.state().temp_file_names().clone();
+        let path = paths.remove(from_idx);
+        let name = names.remove(from_idx);
+        let insert_at = if to_idx > paths.len() { paths.len() } else { to_idx };
+        paths.insert(insert_at, path);
+        names.insert(insert_at, name);
+        util_paths_and_names_to_file(paths, &names, self.state().master_record_file());
         exit(0)
     }
 

@@ -89,7 +89,7 @@ fn help_shows_all_flags() {
         "--input", "--output", "--add", "--remove", "--pop", "--unshift",
         "--shift", "--dir", "--master", "--list-files", "--list-files-numbered",
         "--list-contents", "--list-contents-numbered", "--quiet", "--clear",
-        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff",
+        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff", "--mv",
     ] {
         assert!(text.contains(flag), "missing flag: {}", flag);
     }
@@ -2121,4 +2121,88 @@ fn diff_same_index_exits_zero() {
     run_tp_stdin(&dir, &[], "content\n");
     let out = run_tp(&dir, &["-D", "1", "1"]);
     assert!(out.status.success());
+}
+
+// ── Move ───────────────────────────────────────────────
+
+#[test]
+fn move_first_to_last() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "AAA");
+    tick();
+    run_tp_stdin(&dir, &[], "BBB");
+    tick();
+    run_tp_stdin(&dir, &[], "CCC");
+    let out = run_tp(&dir, &["-M", "1", "3"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "BBB");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "CCC");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "3"])), "AAA");
+}
+
+#[test]
+fn move_last_to_first() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "AAA");
+    tick();
+    run_tp_stdin(&dir, &[], "BBB");
+    tick();
+    run_tp_stdin(&dir, &[], "CCC");
+    run_tp(&dir, &["-M", "3", "1"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "CCC");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "AAA");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "3"])), "BBB");
+}
+
+#[test]
+fn move_by_name() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "x"], "XX");
+    tick();
+    run_tp_stdin(&dir, &[], "YY");
+    tick();
+    run_tp_stdin(&dir, &[], "ZZ");
+    run_tp(&dir, &["-M", "x", "3"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "3"])), "XX");
+    // name should follow the file
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "x"])), "XX");
+}
+
+#[test]
+fn move_preserves_names() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "a"], "AA");
+    tick();
+    run_tp_stdin(&dir, &["-w", "b"], "BB");
+    tick();
+    run_tp_stdin(&dir, &["-w", "c"], "CC");
+    run_tp(&dir, &["-M", "1", "3"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "a"])), "AA");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "b"])), "BB");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "c"])), "CC");
+}
+
+#[test]
+fn move_same_position_is_noop() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "AAA");
+    tick();
+    run_tp_stdin(&dir, &[], "BBB");
+    run_tp(&dir, &["-M", "1", "1"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "AAA");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "BBB");
+}
+
+#[test]
+fn move_middle_to_first() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "AAA");
+    tick();
+    run_tp_stdin(&dir, &[], "BBB");
+    tick();
+    run_tp_stdin(&dir, &[], "CCC");
+    run_tp(&dir, &["-M", "2", "1"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "BBB");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "AAA");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "3"])), "CCC");
 }

@@ -175,6 +175,13 @@ pub fn parse_opts() -> Command {
             .num_args(2)
             .allow_hyphen_values(true)
             .help("\x1b[32m//\x1b[0m Diff two tempfiles by index or name"))
+        .arg(Arg::new(MOVE)
+            .short('M')
+            .long("mv")
+            .value_names(["FROM", "TO"])
+            .num_args(2)
+            .allow_hyphen_values(true)
+            .help("\x1b[32m//\x1b[0m Move tempfile from one position to another"))
 }
 
 #[cfg(test)]
@@ -580,7 +587,7 @@ mod tests {
         let custom_count = app.get_arguments()
             .filter(|a| a.get_id() != "help" && a.get_id() != "version")
             .count();
-        assert_eq!(custom_count, 25);
+        assert_eq!(custom_count, 26);
     }
 
     // ── flag mutual independence ────────────────────────

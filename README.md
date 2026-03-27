@@ -254,6 +254,12 @@ CMD | tp -a 1
 
 # shift from bottom of stack
 tp -s
+
+# move tempfile from one position to another
+tp -M 1 3
+
+# move by name
+tp -M mydata 1
 ```
 
 ---
