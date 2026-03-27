@@ -89,7 +89,7 @@ fn help_shows_all_flags() {
         "--input", "--output", "--add", "--remove", "--pop", "--unshift",
         "--shift", "--dir", "--master", "--list-files", "--list-files-numbered",
         "--list-contents", "--list-contents-numbered", "--quiet", "--clear",
-        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff", "--mv", "--dup", "--swap", "--append", "--rev", "--expire", "--head", "--tail", "--wc",
+        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff", "--mv", "--dup", "--swap", "--append", "--rev", "--expire", "--head", "--tail", "--wc", "--size",
     ] {
         assert!(text.contains(flag), "missing flag: {}", flag);
     }
@@ -2678,5 +2678,48 @@ fn wc_invalid_index_fails() {
     let dir = setup_clean_env();
     run_tp_stdin(&dir, &[], "data");
     let out = run_tp(&dir, &["--wc", "99"]);
+    assert!(!out.status.success());
+}
+
+// ── Size (byte count) ─────────────────────────────────
+
+#[test]
+fn size_by_index() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "hello");
+    let out = run_tp(&dir, &["--size", "1"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&out).trim(), "5");
+}
+
+#[test]
+fn size_by_name() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "data"], "abcdefghij");
+    let out = run_tp(&dir, &["--size", "data"]);
+    assert_eq!(stdout(&out).trim(), "10");
+}
+
+#[test]
+fn size_empty_file() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "");
+    let out = run_tp(&dir, &["--size", "1"]);
+    assert_eq!(stdout(&out).trim(), "0");
+}
+
+#[test]
+fn size_with_newlines() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a\nb\nc\n");
+    let out = run_tp(&dir, &["--size", "1"]);
+    assert_eq!(stdout(&out).trim(), "6");
+}
+
+#[test]
+fn size_invalid_index_fails() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["--size", "99"]);
     assert!(!out.status.success());
 }

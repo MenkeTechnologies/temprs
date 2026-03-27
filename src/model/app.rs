@@ -379,6 +379,9 @@ impl TempApp {
         if let Some(f) = matches.get_one::<String>(WC) {
             self.wc_tempfile(f.clone());
         }
+        if let Some(f) = matches.get_one::<String>(SIZE) {
+            self.size_tempfile(f.clone());
+        }
         if matches.get_flag(SHIFT) {
             self.remove_at_idx(format!("{}", 1))
         }
@@ -486,6 +489,21 @@ impl TempApp {
             cyber_hr();
         }
         exit(0)
+    }
+
+    fn size_tempfile(&mut self, stk_idx: String) {
+        match self.resolve_idx(&stk_idx) {
+            Some(idx) => {
+                let path = &self.state.temp_file_stack()[idx];
+                let meta = match fs::metadata(path) {
+                    Ok(m) => m,
+                    Err(_) => { util_terminate_error(ERR_FILE_READ); unreachable!() }
+                };
+                println!("{}", meta.len());
+                exit(0)
+            }
+            None => util_terminate_error(ERR_INVALID_IDX),
+        }
     }
 
     fn wc_tempfile(&mut self, stk_idx: String) {

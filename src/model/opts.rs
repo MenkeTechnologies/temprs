@@ -226,6 +226,11 @@ pub fn parse_opts() -> Command {
             .value_name("INDEX")
             .allow_hyphen_values(true)
             .help("\x1b[32m//\x1b[0m Print line count of tempfile at INDEX"))
+        .arg(Arg::new(SIZE)
+            .long("size")
+            .value_name("INDEX")
+            .allow_hyphen_values(true)
+            .help("\x1b[32m//\x1b[0m Print byte size of tempfile at INDEX"))
 }
 
 #[cfg(test)]
@@ -631,7 +636,7 @@ mod tests {
         let custom_count = app.get_arguments()
             .filter(|a| a.get_id() != "help" && a.get_id() != "version")
             .count();
-        assert_eq!(custom_count, 34);
+        assert_eq!(custom_count, 35);
     }
 
     // ── flag mutual independence ────────────────────────

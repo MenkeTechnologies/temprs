@@ -48,6 +48,7 @@ _tp() {
     '(--head)'--head'[Show first N lines of tempfile]:index:_tp_indices:lines: '
     '(--tail)'--tail'[Show last N lines of tempfile]:index:_tp_indices:lines: '
     '(--wc)'--wc'[Print line count of tempfile]:index:_tp_indices'
+    '(--size)'--size'[Print byte size of tempfile]:index:_tp_indices'
     '(-p --pop)'{-p,--pop}'[Pop from top of stack]'
     '(-u --unshift)'{-u,--unshift}'[Push to bottom of stack]'
     '(-s --shift)'{-s,--shift}'[Shift from bottom of stack]'

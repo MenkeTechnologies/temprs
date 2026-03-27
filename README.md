@@ -119,6 +119,10 @@ tp --tail mydata 10
 # print line count
 tp --wc INDEX
 tp --wc mydata
+
+# print byte size
+tp --size INDEX
+tp --size mydata
 ```
 
 #### LOADING FILE PAYLOADS // FILE OPERATIONS
