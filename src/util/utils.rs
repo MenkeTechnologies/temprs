@@ -125,12 +125,18 @@ pub fn util_file_to_paths(path: &Path) -> Vec<PathBuf> {
 }
 
 pub fn util_file_to_paths_and_names(path: &Path) -> (Vec<PathBuf>, Vec<Option<String>>) {
-    let file = File::open(path).expect(ERR_NO_FILE);
+    let file = match File::open(path) {
+        Ok(f) => f,
+        Err(_) => { util_terminate_error(ERR_NO_FILE); unreachable!() }
+    };
     let buf = BufReader::new(file);
     let mut paths = Vec::new();
     let mut names = Vec::new();
     for line in buf.lines() {
-        let l = line.expect(ERR_PARSE);
+        let l = match line {
+            Ok(s) => s,
+            Err(_) => { util_terminate_error(ERR_PARSE); unreachable!() }
+        };
         if let Some((p, n)) = l.split_once('\t') {
             paths.push(PathBuf::from(p));
             names.push(Some(n.to_string()));
@@ -217,19 +223,19 @@ pub fn util_remove_file(f: &Path) {
 
 
 pub fn util_path_to_string(path: &Path) -> String {
-    path.to_path_buf()
-        .into_os_string()
-        .into_string()
-        .expect(ERR_NO_FILE)
+    match path.to_path_buf().into_os_string().into_string() {
+        Ok(s) => s,
+        Err(_) => { util_terminate_error(ERR_NO_FILE); unreachable!() }
+    }
 }
 
 
-pub fn util_file_contents_to_string(filename: &Path) -> Option<String> {
+pub fn util_file_contents_to_string(filename: &Path) -> String {
     match read_to_string(filename) {
-        Ok(str) => Some(str),
+        Ok(str) => str,
         Err(_error) => {
             util_terminate_error(ERR_INVALID_FILE);
-            None
+            unreachable!()
         }
     }
 }
@@ -270,11 +276,10 @@ pub fn util_overwrite_file(path: &Path, buffer: &str) {
 
 
 pub fn util_time_ms() -> String {
-    SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .expect(ERR_CLOCK)
-        .as_millis()
-        .to_string()
+    match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+        Ok(d) => d.as_millis().to_string(),
+        Err(_) => { util_terminate_error(ERR_CLOCK); unreachable!() }
+    }
 }
 
 #[cfg(test)]
@@ -415,7 +420,7 @@ mod tests {
         let file = dir.join("test.txt");
         fs::write(&file, "content here").unwrap();
         let result = util_file_contents_to_string(file.as_path());
-        assert_eq!(result.unwrap(), "content here");
+        assert_eq!(result, "content here");
         fs::remove_dir_all(&dir).unwrap();
     }
 
@@ -649,7 +654,7 @@ mod tests {
         let file = dir.join("empty.txt");
         fs::write(&file, "").unwrap();
         let result = util_file_contents_to_string(file.as_path());
-        assert_eq!(result.unwrap(), "");
+        assert_eq!(result, "");
         fs::remove_dir_all(&dir).unwrap();
     }
 
@@ -659,7 +664,7 @@ mod tests {
         let file = dir.join("multi.txt");
         fs::write(&file, "a\nb\nc").unwrap();
         let result = util_file_contents_to_string(file.as_path());
-        assert_eq!(result.unwrap(), "a\nb\nc");
+        assert_eq!(result, "a\nb\nc");
         fs::remove_dir_all(&dir).unwrap();
     }
 
@@ -669,7 +674,7 @@ mod tests {
         let file = dir.join("unicode.txt");
         fs::write(&file, "日本語テスト").unwrap();
         let result = util_file_contents_to_string(file.as_path());
-        assert_eq!(result.unwrap(), "日本語テスト");
+        assert_eq!(result, "日本語テスト");
         fs::remove_dir_all(&dir).unwrap();
     }
 
@@ -794,7 +799,7 @@ mod tests {
         let file = dir.join("roundtrip.txt");
         let content = String::from("round trip data");
         util_overwrite_file(&file, &content);
-        let result = util_file_contents_to_string(file.as_path()).unwrap();
+        let result = util_file_contents_to_string(file.as_path());
         assert_eq!(result, "round trip data");
         fs::remove_dir_all(&dir).unwrap();
     }
@@ -805,7 +810,7 @@ mod tests {
         let file = dir.join("combo.txt");
         util_overwrite_file(&file, &String::from("base"));
         util_append_file(&file, &String::from("+extra"));
-        let result = util_file_contents_to_string(file.as_path()).unwrap();
+        let result = util_file_contents_to_string(file.as_path());
         assert_eq!(result, "base+extra");
         fs::remove_dir_all(&dir).unwrap();
     }
@@ -999,7 +1004,7 @@ mod tests {
         let dir = tmp_dir();
         let file = dir.join("trail.txt");
         fs::write(&file, "data\n").unwrap();
-        let result = util_file_contents_to_string(file.as_path()).unwrap();
+        let result = util_file_contents_to_string(file.as_path());
         assert_eq!(result, "data\n");
         fs::remove_dir_all(&dir).unwrap();
     }
@@ -1010,7 +1015,7 @@ mod tests {
         let file = dir.join("special.txt");
         let content = "tab\there\nnewline\r\nwindows\0null";
         fs::write(&file, content).unwrap();
-        let result = util_file_contents_to_string(file.as_path()).unwrap();
+        let result = util_file_contents_to_string(file.as_path());
         assert_eq!(result, content);
         fs::remove_dir_all(&dir).unwrap();
     }
@@ -1021,7 +1026,7 @@ mod tests {
         let file = dir.join("large.txt");
         let content = "y".repeat(50_000);
         fs::write(&file, &content).unwrap();
-        let result = util_file_contents_to_string(file.as_path()).unwrap();
+        let result = util_file_contents_to_string(file.as_path());
         assert_eq!(result.len(), 50_000);
         fs::remove_dir_all(&dir).unwrap();
     }
@@ -1372,7 +1377,7 @@ mod tests {
         let file = dir.join("ws.txt");
         let content = "  hello  \n  world  ";
         fs::write(&file, content).unwrap();
-        assert_eq!(util_file_contents_to_string(&file).unwrap(), content);
+        assert_eq!(util_file_contents_to_string(&file), content);
         fs::remove_dir_all(&dir).unwrap();
     }
 
@@ -1382,7 +1387,7 @@ mod tests {
         let file = dir.join("cr.txt");
         let content = "a\r\nb\r\n";
         fs::write(&file, content).unwrap();
-        assert_eq!(util_file_contents_to_string(&file).unwrap(), content);
+        assert_eq!(util_file_contents_to_string(&file), content);
         fs::remove_dir_all(&dir).unwrap();
     }
 
@@ -1392,7 +1397,7 @@ mod tests {
         let file = dir.join("nls.txt");
         let content = "\n\n\n";
         fs::write(&file, content).unwrap();
-        assert_eq!(util_file_contents_to_string(&file).unwrap(), content);
+        assert_eq!(util_file_contents_to_string(&file), content);
         fs::remove_dir_all(&dir).unwrap();
     }
 

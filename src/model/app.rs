@@ -39,7 +39,9 @@ impl TempApp {
 
 
     pub fn new() -> Self {
-        simple_logger::init_with_level(TEMP_LOG_LEVEL).expect(ERR_LOGGER);
+        if let Err(_) = simple_logger::init_with_level(TEMP_LOG_LEVEL) {
+            eprintln!("{}", ERR_LOGGER);
+        }
 
         let system_temp_dir = match std::env::var("TEMPRS_DIR") {
             Ok(dir) => PathBuf::from(dir),
@@ -67,8 +69,8 @@ impl TempApp {
                 Ok(_success) => {
                     debug!("create temp dir {}", temprs_dir.display());
                 }
-                Err(error) => {
-                    panic!("_____________'e' = '{}'_____________", error);
+                Err(_error) => {
+                    util_terminate_error(ERR_NO_FILE);
                 }
             }
         }
@@ -78,8 +80,8 @@ impl TempApp {
                 Ok(_success) => {
                     debug!("create master file {}", master_file.display());
                 }
-                Err(error) => {
-                    panic!("_____________'e' = '{}'_____________", error);
+                Err(_error) => {
+                    util_terminate_error(ERR_FILE_READ);
                 }
             }
         } else {
@@ -122,7 +124,7 @@ impl TempApp {
 
         match self.state().arg_file() {
             Some(arg_file) => {
-                let str = util_file_contents_to_string(arg_file.as_path()).expect(ERR_FILE_READ);
+                let str = util_file_contents_to_string(arg_file.as_path());
                 if self.state.verbose() > 0 {
                     self.state().set_output_buffer(str.clone());
                 }
@@ -132,7 +134,7 @@ impl TempApp {
             }
             None => {
                 if let Some(f) = self.state().temp_file_stack().last() {
-                    let string = util_file_contents_to_string(f.as_path()).expect(ERR_FILE_READ);
+                    let string = util_file_contents_to_string(f.as_path());
                     self.state().set_output_buffer(string);
                 }
             }
@@ -208,7 +210,7 @@ impl TempApp {
                 if let Some(f) = self.idx_in_stack_tempfile(stk_idx) {
                     print!(
                         "{}",
-                        util_file_contents_to_string(f.as_path()).expect(ERR_FILE_READ)
+                        util_file_contents_to_string(f.as_path())
                     );
                 }
             }
@@ -224,7 +226,7 @@ impl TempApp {
         match self.state().output_temp_file().clone() {
             Some(stk_idx) => {
                 if let Some(f) = self.idx_in_stack_tempfile(stk_idx) {
-                    let content = util_file_contents_to_string(f.as_path()).expect(ERR_FILE_READ);
+                    let content = util_file_contents_to_string(f.as_path());
                     cyber_print_content(&content);
                 }
             }
@@ -403,7 +405,7 @@ impl TempApp {
         debug!("list contents");
         let stk = self.state().temp_file_stack();
         for p in stk.iter() {
-            let string = util_file_contents_to_string(p.as_path()).expect(ERR_FILE_READ);
+            let string = util_file_contents_to_string(p.as_path());
             cyber_content(&string);
         }
         exit(0)
@@ -417,7 +419,7 @@ impl TempApp {
             cyber_hr();
         }
         for (i, (p, n)) in stk.iter().zip(names.iter()).enumerate() {
-            let string = util_file_contents_to_string(p.as_path()).expect(ERR_FILE_READ);
+            let string = util_file_contents_to_string(p.as_path());
             cyber_idx_content_named(i + 1, p, &string, n);
             cyber_hr();
         }
@@ -465,13 +467,11 @@ impl TempApp {
     }
 
     fn clear_all(&mut self) {
-        if let Err(_e) = remove_dir_all(
-            self.state()
-                .master_record_file()
-                .as_path()
-                .parent()
-                .expect(ERR_NO_FILE),
-        ) {
+        let parent = match self.state().master_record_file().as_path().parent() {
+            Some(p) => p.to_path_buf(),
+            None => { util_terminate_error(ERR_NO_FILE); unreachable!() }
+        };
+        if let Err(_e) = remove_dir_all(&parent) {
             util_terminate_error(ERR_NO_FILE);
         }
         exit(0)
@@ -481,7 +481,7 @@ impl TempApp {
         match self.resolve_idx(&stk_idx) {
             Some(idx) => {
                 let src = self.state().temp_file_stack()[idx].clone();
-                let content = util_file_contents_to_string(src.as_path()).expect(ERR_FILE_READ);
+                let content = util_file_contents_to_string(src.as_path());
                 self.append_to_master_list();
                 util_overwrite_file(self.state().new_temp_file(), &content);
                 exit(0)
@@ -540,9 +540,11 @@ impl TempApp {
             .arg("-u")
             .arg(&path_a)
             .arg(&path_b)
-            .status()
-            .expect(ERR_FILE_READ);
-        exit(status.code().unwrap_or(2))
+            .status();
+        match status {
+            Ok(s) => exit(s.code().unwrap_or(2)),
+            Err(_) => { util_terminate_error(ERR_FILE_READ); }
+        }
     }
 
     fn cat_tempfiles(&mut self, indices: Vec<String>) {
@@ -551,7 +553,7 @@ impl TempApp {
             match self.resolve_idx(idx_str) {
                 Some(idx) => {
                     let path = &self.state().temp_file_stack()[idx];
-                    let content = util_file_contents_to_string(path.as_path()).expect(ERR_FILE_READ);
+                    let content = util_file_contents_to_string(path.as_path());
                     combined.push_str(&content);
                 }
                 None => util_terminate_error(ERR_INVALID_IDX),
@@ -572,7 +574,7 @@ impl TempApp {
         let mut found = false;
 
         for (i, (p, n)) in stk.iter().zip(names.iter()).enumerate() {
-            let content = util_file_contents_to_string(p.as_path()).expect(ERR_FILE_READ);
+            let content = util_file_contents_to_string(p.as_path());
             let matching_lines: Vec<(usize, &str)> = content
                 .lines()
                 .enumerate()
@@ -624,7 +626,10 @@ impl TempApp {
             Some(idx) => {
                 let path = self.state().temp_file_stack()[idx].clone();
                 let name = self.state().temp_file_names()[idx].clone();
-                let meta = fs::metadata(&path).expect(ERR_FILE_READ);
+                let meta = match fs::metadata(&path) {
+                    Ok(m) => m,
+                    Err(_) => { util_terminate_error(ERR_FILE_READ); unreachable!() }
+                };
                 let size = meta.len();
                 let modified = meta.modified().ok().and_then(|t| {
                     t.duration_since(std::time::UNIX_EPOCH).ok()
@@ -684,11 +689,10 @@ impl TempApp {
         match self.idx_in_stack_tempfile(stk_idx) {
             Some(f) => {
                 let path = f.clone();
-                let status = ProcessCommand::new(&editor)
-                    .arg(&path)
-                    .status()
-                    .expect(ERR_EDITOR);
-                exit(status.code().unwrap_or(1))
+                match ProcessCommand::new(&editor).arg(&path).status() {
+                    Ok(s) => exit(s.code().unwrap_or(1)),
+                    Err(_) => util_terminate_error(ERR_EDITOR),
+                }
             }
             None => util_terminate_error(ERR_INVALID_IDX),
         }
