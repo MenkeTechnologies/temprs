@@ -122,20 +122,21 @@ impl TempApp {
     fn read_stdin_terminal(&mut self) {
         debug!("stdin term");
 
-        match self.state().arg_file() {
+        let arg_path = self.state.arg_file().as_ref().map(|p| p.clone());
+        match arg_path {
             Some(arg_file) => {
-                let str = util_file_contents_to_string(arg_file.as_path());
+                let content = util_file_contents_to_string(arg_file.as_path());
                 if self.state.verbose() > 0 {
-                    self.state().set_output_buffer(str.clone());
+                    self.state.set_output_buffer(content.clone());
                 }
-                self.state().set_holding_buffer(str);
-
+                self.state.set_holding_buffer(content);
                 self.overwrite_idx_or_write_new_tempfile();
             }
             None => {
-                if let Some(f) = self.state().temp_file_stack().last() {
-                    let string = util_file_contents_to_string(f.as_path());
-                    self.state().set_output_buffer(string);
+                let last_path = self.state.temp_file_stack().last().cloned();
+                if let Some(f) = last_path {
+                    let content = util_file_contents_to_string(f.as_path());
+                    self.state.set_output_buffer(content);
                 }
             }
         }
@@ -204,73 +205,67 @@ impl TempApp {
     }
 
 
-    fn print_buffer_or_stack_file(&mut self) {
-        match self.state().output_temp_file().clone() {
-            Some(stk_idx) => {
-                if let Some(f) = self.idx_in_stack_tempfile(stk_idx) {
-                    print!(
-                        "{}",
-                        util_file_contents_to_string(f.as_path())
-                    );
-                }
+    fn resolve_output_path(&self) -> Option<PathBuf> {
+        self.state.output_temp_file().as_ref().map(|stk_idx| {
+            match self.resolve_idx(stk_idx) {
+                Some(idx) => self.state.temp_file_stack()[idx].clone(),
+                None => { util_terminate_error(ERR_INVALID_IDX); unreachable!() }
             }
-            None => {
-                if !self.state().output_buffer().is_empty() {
-                    print!("{}", self.state().output_buffer());
-                }
-            }
+        })
+    }
+
+    fn print_buffer_or_stack_file(&self) {
+        if let Some(path) = self.resolve_output_path() {
+            print!("{}", util_file_contents_to_string(path.as_path()));
+        } else if !self.state.output_buffer().is_empty() {
+            print!("{}", self.state.output_buffer());
         }
     }
 
-    fn cyber_print_buffer_or_stack_file(&mut self) {
-        match self.state().output_temp_file().clone() {
-            Some(stk_idx) => {
-                if let Some(f) = self.idx_in_stack_tempfile(stk_idx) {
-                    let content = util_file_contents_to_string(f.as_path());
-                    cyber_print_content(&content);
-                }
-            }
-            None => {
-                if !self.state().output_buffer().is_empty() {
-                    cyber_print_content(self.state().output_buffer());
-                }
-            }
+    fn cyber_print_buffer_or_stack_file(&self) {
+        if let Some(path) = self.resolve_output_path() {
+            cyber_print_content(&util_file_contents_to_string(path.as_path()));
+        } else if !self.state.output_buffer().is_empty() {
+            cyber_print_content(self.state.output_buffer());
         }
     }
 
 
     fn read_stdin_pipe(&mut self) {
         debug!("stdin pipe");
-        let mut str = String::new();
-        if let Err(_e) = stdin().read_to_string(&mut str) {
+        let mut input = String::new();
+        if let Err(_e) = stdin().read_to_string(&mut input) {
             util_terminate_error(ERR_FILE_READ);
         }
 
         if self.state.verbose() > 0 {
-            self.state().set_output_buffer(str.clone());
+            self.state.set_output_buffer(input.clone());
         }
-        self.state().set_holding_buffer(str);
+        self.state.set_holding_buffer(input);
 
         self.overwrite_idx_or_write_new_tempfile()
     }
 
 
     fn overwrite_idx_or_write_new_tempfile(&mut self) {
-        let file_contents = String::from(self.state().holding_buffer());
-        if let Some(stk_idx) = self.state().append_temp_file().clone() {
+        let file_contents = String::from(self.state.holding_buffer());
+        let append_idx = self.state.append_temp_file().clone();
+        let input_idx = self.state.input_temp_file().clone();
+        let insert_idx = self.state.insert_idx().clone();
+
+        if let Some(stk_idx) = append_idx {
             if let Some(f) = self.idx_in_stack_tempfile(stk_idx) {
                 util_append_file(f, &file_contents);
             }
             return;
         }
-        match self.state().input_temp_file().clone() {
+        match input_idx {
             Some(stk_idx) => {
                 if let Some(f) = self.idx_in_stack_tempfile(stk_idx) {
                     util_overwrite_file(f, &file_contents);
                 }
             }
             None => {
-                let insert_idx = self.state().insert_idx().clone();
                 match insert_idx {
                     Some(idx) => {
                         self.add_idx_in_stack(idx);
@@ -332,6 +327,9 @@ impl TempApp {
             self.state().set_append_temp_file(Some(i.clone()));
         }
         if let Some(n) = matches.get_one::<String>(TAG) {
+            if n.contains('\t') {
+                util_terminate_error(ERR_NAME_TAB);
+            }
             let name = n.clone();
             if self.state().temp_file_names().iter().any(|existing| existing.as_deref() == Some(&name)) {
                 util_terminate_error(ERR_INVALID_NAME);
@@ -487,10 +485,9 @@ impl TempApp {
     fn dup_tempfile(&mut self, stk_idx: String) {
         match self.resolve_idx(&stk_idx) {
             Some(idx) => {
-                let src = self.state().temp_file_stack()[idx].clone();
-                let content = util_file_contents_to_string(src.as_path());
+                let content = util_file_contents_to_string(self.state.temp_file_stack()[idx].as_path());
                 self.append_to_master_list();
-                util_overwrite_file(self.state().new_temp_file(), &content);
+                util_overwrite_file(self.state.new_temp_file(), &content);
                 exit(0)
             }
             None => util_terminate_error(ERR_INVALID_IDX),
@@ -676,6 +673,9 @@ impl TempApp {
     }
 
     fn rename_tag(&mut self, old: String, new: String) {
+        if new.contains('\t') {
+            util_terminate_error(ERR_NAME_TAB);
+        }
         if self.state().temp_file_names().iter().any(|n| n.as_deref() == Some(&new)) {
             util_terminate_error(ERR_INVALID_NAME);
         }

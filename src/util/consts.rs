@@ -44,6 +44,7 @@ pub const DUP: &str = "dup";
 pub const SWAP: &str = "swap";
 pub const APPEND: &str = "append";
 pub const ERR_INVALID_NAME: &str = "Invalid or duplicate name";
+pub const ERR_NAME_TAB: &str = "Name must not contain tab characters";
 pub const ERR_EDITOR: &str = "Could not open editor";
 
 #[cfg(test)]

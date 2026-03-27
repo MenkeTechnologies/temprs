@@ -2322,6 +2322,21 @@ fn swap_invalid_index_fails() {
 }
 
 #[test]
+fn name_with_tab_rejected() {
+    let dir = setup_clean_env();
+    let out = run_tp_stdin(&dir, &["-w", "bad\tname"], "data");
+    assert!(!out.status.success(), "name with tab should be rejected");
+}
+
+#[test]
+fn rename_to_tab_rejected() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "good"], "data");
+    let out = run_tp(&dir, &["-R", "good", "bad\tname"]);
+    assert!(!out.status.success(), "rename to name with tab should be rejected");
+}
+
+#[test]
 fn swap_mixed_name_and_index() {
     let dir = setup_clean_env();
     run_tp_stdin(&dir, &["-w", "named"], "NN");

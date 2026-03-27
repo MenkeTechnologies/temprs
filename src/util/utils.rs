@@ -139,7 +139,8 @@ pub fn util_file_to_paths_and_names(path: &Path) -> (Vec<PathBuf>, Vec<Option<St
         };
         if let Some((p, n)) = l.split_once('\t') {
             paths.push(PathBuf::from(p));
-            names.push(Some(n.to_string()));
+            let clean_name = n.replace('\t', "");
+            names.push(if clean_name.is_empty() { None } else { Some(clean_name) });
         } else {
             paths.push(PathBuf::from(&l));
             names.push(None);
