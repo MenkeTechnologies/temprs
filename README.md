@@ -174,6 +174,20 @@ tp -o mydata | CMD
 
 # remove by name
 tp -r mydata
+
+# rename a tag
+tp -R mydata newname
+
+# rename by index
+tp -R 1 newname
+```
+
+#### INSPECTING TEMPFILES // METADATA
+
+```sh
+# show metadata for tempfile by name or index
+tp -I mydata
+tp -I 1
 ```
 
 #### STACK MANIPULATION // PUSH / POP / SHIFT

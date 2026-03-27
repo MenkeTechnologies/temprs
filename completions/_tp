@@ -33,6 +33,8 @@ _tp() {
     '(-r --remove)'{-r,--remove}'[Remove tempfile at INDEX]:index:_tp_indices'
     '(-e --edit)'{-e,--edit}'[Open tempfile at INDEX in $EDITOR]:index:_tp_indices'
     '(-w --name)'{-w,--name}'[Tag tempfile with NAME]:name: '
+    '(-R --rename)'{-R,--rename}'[Rename tag from OLD to NEW]:old name:_tp_indices:new name: '
+    '(-I --info)'{-I,--info}'[Show metadata for tempfile at INDEX]:index:_tp_indices'
     '(-p --pop)'{-p,--pop}'[Pop from top of stack]'
     '(-u --unshift)'{-u,--unshift}'[Push to bottom of stack]'
     '(-s --shift)'{-s,--shift}'[Shift from bottom of stack]'

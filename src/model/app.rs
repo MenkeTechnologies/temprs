@@ -343,6 +343,13 @@ impl TempApp {
         if let Some(f) = matches.get_one::<String>(EDIT) {
             self.edit_tempfile(f.clone());
         }
+        if let Some(f) = matches.get_one::<String>(INFO) {
+            self.info_tempfile(f.clone());
+        }
+        if let Some(vals) = matches.get_many::<String>(RENAME) {
+            let v: Vec<String> = vals.cloned().collect();
+            self.rename_tag(v[0].clone(), v[1].clone());
+        }
         if let Some(f) = matches.get_one::<String>(REMOVE) {
             self.remove_at_idx(f.clone());
         }
@@ -438,6 +445,66 @@ impl TempApp {
             util_terminate_error(ERR_NO_FILE);
         }
         exit(0)
+    }
+
+    fn info_tempfile(&mut self, stk_idx: String) {
+        match self.resolve_idx(&stk_idx) {
+            Some(idx) => {
+                let path = self.state().temp_file_stack()[idx].clone();
+                let name = self.state().temp_file_names()[idx].clone();
+                let meta = fs::metadata(&path).expect(ERR_FILE_READ);
+                let size = meta.len();
+                let modified = meta.modified().ok().and_then(|t| {
+                    t.duration_since(std::time::UNIX_EPOCH).ok()
+                }).map(|d| d.as_secs()).unwrap_or(0);
+
+                let size_str = if size < 1024 {
+                    format!("{} B", size)
+                } else if size < 1024 * 1024 {
+                    format!("{:.1} KiB", size as f64 / 1024.0)
+                } else {
+                    format!("{:.1} MiB", size as f64 / (1024.0 * 1024.0))
+                };
+
+                if io::stdout().is_terminal() {
+                    cyber_hr();
+                    println!("\x1b[33m  index:\x1b[0m  {}", idx + 1);
+                    if let Some(ref n) = name {
+                        println!("\x1b[33m  name:\x1b[0m   \x1b[35m@{}\x1b[0m", n);
+                    }
+                    println!("\x1b[33m  path:\x1b[0m   \x1b[35m{}\x1b[0m", path.display());
+                    println!("\x1b[33m  size:\x1b[0m   {}", size_str);
+                    println!("\x1b[33m  mtime:\x1b[0m  {}", modified);
+                    cyber_hr();
+                } else {
+                    println!("index: {}", idx + 1);
+                    if let Some(ref n) = name {
+                        println!("name: {}", n);
+                    }
+                    println!("path: {}", path.display());
+                    println!("size: {}", size_str);
+                    println!("mtime: {}", modified);
+                }
+                exit(0)
+            }
+            None => util_terminate_error(ERR_INVALID_IDX),
+        }
+    }
+
+    fn rename_tag(&mut self, old: String, new: String) {
+        if self.state().temp_file_names().iter().any(|n| n.as_deref() == Some(&new)) {
+            util_terminate_error(ERR_INVALID_NAME);
+        }
+        match self.resolve_idx(&old) {
+            Some(idx) => {
+                let mut names = self.state().temp_file_names().clone();
+                names[idx] = Some(new);
+                let paths = self.state().temp_file_stack().clone();
+                util_paths_and_names_to_file(paths, &names, self.state().master_record_file());
+                exit(0)
+            }
+            None => util_terminate_error(ERR_INVALID_IDX),
+        }
     }
 
     fn edit_tempfile(&mut self, stk_idx: String) {

@@ -139,6 +139,18 @@ pub fn parse_opts() -> Command {
             .long("name")
             .value_name("NAME")
             .help("\x1b[32m//\x1b[0m Tag tempfile with NAME for retrieval by alias"))
+        .arg(Arg::new(RENAME)
+            .short('R')
+            .long("rename")
+            .value_names(["OLD", "NEW"])
+            .num_args(2)
+            .help("\x1b[32m//\x1b[0m Rename tag from OLD to NEW"))
+        .arg(Arg::new(INFO)
+            .short('I')
+            .long("info")
+            .value_name("INDEX")
+            .allow_hyphen_values(true)
+            .help("\x1b[32m//\x1b[0m Show metadata for tempfile at INDEX"))
 }
 
 #[cfg(test)]
@@ -544,7 +556,7 @@ mod tests {
         let custom_count = app.get_arguments()
             .filter(|a| a.get_id() != "help" && a.get_id() != "version")
             .count();
-        assert_eq!(custom_count, 19);
+        assert_eq!(custom_count, 21);
     }
 
     // ── flag mutual independence ────────────────────────
