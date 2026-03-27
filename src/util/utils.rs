@@ -158,7 +158,7 @@ pub fn util_file_to_paths_and_names(path: &Path) -> (Vec<PathBuf>, Vec<Option<St
 }
 
 pub fn util_paths_to_file(paths: Vec<PathBuf>, out: &Path) {
-    let names: Vec<Option<String>> = paths.iter().map(|_| None).collect();
+    let names: Vec<Option<String>> = vec![None; paths.len()];
     util_paths_and_names_to_file(paths, &names, out);
 }
 
@@ -240,9 +240,9 @@ pub fn util_remove_file(f: &Path) {
 
 
 pub fn util_path_to_string(path: &Path) -> String {
-    match path.to_path_buf().into_os_string().into_string() {
-        Ok(s) => s,
-        Err(_) => { util_terminate_error(ERR_NO_FILE); unreachable!() }
+    match path.as_os_str().to_str() {
+        Some(s) => s.to_owned(),
+        None => { util_terminate_error(ERR_NO_FILE); unreachable!() }
     }
 }
 

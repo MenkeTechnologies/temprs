@@ -51,26 +51,13 @@ impl TempApp {
             eprintln!("{}", ERR_LOGGER);
         }
 
-        let system_temp_dir = match std::env::var("TEMPRS_DIR") {
+        let temprs_dir = match std::env::var("TEMPRS_DIR") {
             Ok(dir) => PathBuf::from(dir),
-            Err(_) => {
-                let mut d = temp_dir();
-                d.push(TEMP_DIR);
-                d
-            }
+            Err(_) => temp_dir().join(TEMP_DIR),
         };
 
-        let mut temprs_dir = PathBuf::new();
-        temprs_dir.push(system_temp_dir.as_path());
-
-        let mut out_file = PathBuf::new();
-        let mut master_file = PathBuf::new();
-
-        out_file.push(system_temp_dir.as_path());
-        master_file.push(system_temp_dir.as_path());
-
-        out_file.push(format!("{}{}", TEMPFILE_PREFIX, util_time_ms()));
-        master_file.push(MASTER_RECORD_FILENAME);
+        let out_file = temprs_dir.join(format!("{}{}", TEMPFILE_PREFIX, util_time_ms()));
+        let master_file = temprs_dir.join(MASTER_RECORD_FILENAME);
 
         if !temprs_dir.exists() {
             match create_dir(temprs_dir.as_path()) {
@@ -93,7 +80,7 @@ impl TempApp {
         }
         debug!("acquired exclusive lock on {}", lock_path.display());
 
-        if !master_file.exists() {
+        let (temp_file_stack, temp_file_names) = if !master_file.exists() {
             match File::create(&master_file) {
                 Ok(_success) => {
                     debug!("create master file {}", master_file.display());
@@ -102,6 +89,7 @@ impl TempApp {
                     util_terminate_error(ERR_FILE_READ);
                 }
             }
+            (Vec::new(), Vec::new())
         } else {
             let (paths, names) = util_file_to_paths_and_names(master_file.as_path());
             let (exist, exist_names): (Vec<PathBuf>, Vec<Option<String>>) = paths.into_iter()
@@ -109,13 +97,12 @@ impl TempApp {
                 .filter(|(p, _)| p.exists())
                 .unzip();
             debug!("exists size {}", exist.len());
-            util_paths_and_names_to_file(exist, &exist_names, &master_file);
-        }
+            util_paths_and_names_to_file(exist.clone(), &exist_names, &master_file);
+            (exist, exist_names)
+        };
 
         debug!("out file {}", out_file.display());
         debug!("file stack {}", master_file.display());
-
-        let (temp_file_stack, temp_file_names) = util_file_to_paths_and_names(&master_file);
         debug!("found '{}' temp files on stack", temp_file_stack.len());
 
         let state = TempState::new(
@@ -411,11 +398,11 @@ impl TempApp {
             self.path_tempfile(f.clone());
         }
         if matches.get_flag(SHIFT) {
-            self.remove_at_idx(format!("{}", 1))
+            self.remove_at_idx(1.to_string())
         }
         if matches.get_flag(POP) {
             let top = self.state().temp_file_stack().len();
-            self.remove_at_idx(format!("{}", top))
+            self.remove_at_idx(top.to_string())
         }
         if let Some(f) = matches.get_one::<String>(EDIT) {
             self.edit_tempfile(f.clone());
@@ -454,10 +441,9 @@ impl TempApp {
         }
     }
 
-    fn list_tempfiles_contents(&mut self) {
+    fn list_tempfiles_contents(&self) {
         debug!("list contents");
-        let stk = self.state().temp_file_stack();
-        for p in stk.iter() {
+        for p in self.state.temp_file_stack() {
             let string = util_file_contents_to_string(p.as_path());
             cyber_content(&string);
         }
@@ -479,27 +465,24 @@ impl TempApp {
         exit(0)
     }
 
-    fn count_tempfiles(&mut self) {
-        println!("{}", self.state().temp_file_stack().len());
+    fn count_tempfiles(&self) {
+        println!("{}", self.state.temp_file_stack().len());
         exit(0)
     }
 
-    fn list_home(&mut self) {
-        let dir = self.state().temprs_dir();
-        cyber_single_path(dir);
+    fn list_home(&self) {
+        cyber_single_path(self.state.temprs_dir());
         exit(0)
     }
 
-    fn list_master(&mut self) {
-        let master = self.state().master_record_file();
-        cyber_single_path(master);
+    fn list_master(&self) {
+        cyber_single_path(self.state.master_record_file());
         exit(0)
     }
 
-    fn list_tempfiles(&mut self) {
+    fn list_tempfiles(&self) {
         debug!("list files");
-        let stk = self.state().temp_file_stack();
-        for p in stk.iter() {
+        for p in self.state.temp_file_stack() {
             cyber_path(p);
         }
         exit(0)
@@ -638,18 +621,16 @@ impl TempApp {
                 });
             }
             "size" => {
-                indices.sort_by(|&a, &b| {
-                    let sa = fs::metadata(&paths[a]).map(|m| m.len()).unwrap_or(0);
-                    let sb = fs::metadata(&paths[b]).map(|m| m.len()).unwrap_or(0);
-                    sa.cmp(&sb)
-                });
+                let sizes: Vec<u64> = paths.iter()
+                    .map(|p| fs::metadata(p).map(|m| m.len()).unwrap_or(0))
+                    .collect();
+                indices.sort_by(|&a, &b| sizes[a].cmp(&sizes[b]));
             }
             "mtime" => {
-                indices.sort_by(|&a, &b| {
-                    let ma = fs::metadata(&paths[a]).ok().and_then(|m| m.modified().ok());
-                    let mb = fs::metadata(&paths[b]).ok().and_then(|m| m.modified().ok());
-                    ma.cmp(&mb)
-                });
+                let mtimes: Vec<Option<std::time::SystemTime>> = paths.iter()
+                    .map(|p| fs::metadata(p).ok().and_then(|m| m.modified().ok()))
+                    .collect();
+                indices.sort_by(|&a, &b| mtimes[a].cmp(&mtimes[b]));
             }
             _ => {
                 util_terminate_error(ERR_INVALID_IDX);
@@ -932,14 +913,12 @@ impl TempApp {
     fn remove_at_idx(&mut self, stk_idx: String) {
         match self.resolve_idx(&stk_idx) {
             Some(idx) => {
-                let cur = self.state().temp_file_stack().clone();
-                let cur_names = self.state().temp_file_names().clone();
-                if let Some(f) = cur.get(idx) {
-                    util_remove_file(f);
-                }
-                let col: Vec<PathBuf> = cur.into_iter().enumerate().filter(|(i, _)| *i != idx).map(|(_, p)| p).collect();
-                let col_names: Vec<Option<String>> = cur_names.into_iter().enumerate().filter(|(i, _)| *i != idx).map(|(_, n)| n).collect();
-                util_paths_and_names_to_file(col, &col_names, self.state().master_record_file());
+                util_remove_file(&self.state.temp_file_stack()[idx]);
+                let mut paths = self.state.temp_file_stack().clone();
+                let mut names = self.state.temp_file_names().clone();
+                paths.remove(idx);
+                names.remove(idx);
+                util_paths_and_names_to_file(paths, &names, self.state.master_record_file());
                 exit(0)
             }
             None => util_terminate_error(ERR_INVALID_IDX),
