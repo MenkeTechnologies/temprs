@@ -178,7 +178,11 @@ impl TempApp {
             Ok(idx) => {
                 let mut cur_files = self.state().temp_file_stack().clone();
                 let mut cur_names = self.state().temp_file_names().clone();
-                let insert_pos = util_transform_idx(idx, cur_files.len());
+                let insert_pos = if cur_files.is_empty() {
+                    0
+                } else {
+                    util_transform_idx(idx, cur_files.len())
+                };
                 cur_files.insert(insert_pos, self.state().new_temp_file().clone());
                 cur_names.insert(insert_pos, self.state().name().clone());
                 util_paths_and_names_to_file(cur_files, &cur_names, self.state().master_record_file());

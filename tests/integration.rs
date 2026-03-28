@@ -566,11 +566,12 @@ fn shift_multiple_times() {
 // ── Unshift edge cases ──────────────────────────────────
 
 #[test]
-fn unshift_to_empty_stack_fails() {
+fn unshift_to_empty_stack_succeeds() {
     let dir = setup_clean_env();
-    // unshift on empty stack should fail (index 1 in a 0-length stack)
+    // unshift on empty stack should succeed (insert at position 0)
     let out = run_tp_stdin(&dir, &["-u"], "first_via_unshift");
-    assert!(!out.status.success());
+    assert!(out.status.success());
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "first_via_unshift");
 }
 
 #[test]
