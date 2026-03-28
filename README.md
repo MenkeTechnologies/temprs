@@ -197,6 +197,10 @@ tp -e -1
 
 #### NAMING TEMPFILES // ALIAS TAGS
 
+Every tempfile can optionally be given a **tag name** — a string alias that can be used anywhere you'd normally pass a numeric index. This means all operations support **dual indexing**: by position (`1`, `2`, `-1`) or by name (`mydata`, `config`).
+
+When you pass an argument to an operation, it is first tried as a numeric index. If that fails, it is looked up as a tag name. Names must be unique across the stack and must not contain null bytes.
+
 ```sh
 # tag a new tempfile with a name
 CMD | tp -w mydata
@@ -213,6 +217,8 @@ tp -R mydata newname
 # rename by index
 tp -R 1 newname
 ```
+
+Names travel with their files — moves, swaps, and duplicates preserve the tag. Names are displayed with a `@` prefix in listings (e.g. `@mydata`).
 
 #### INSPECTING TEMPFILES // METADATA
 
