@@ -291,8 +291,11 @@ tp -a INDEX FILE
 # pop from top of stack
 tp -p
 
-# push to bottom of stack
+# push to bottom of stack (stdin, no stdout)
 CMD | tp -u
+
+# push to bottom of stack from terminal (waits for stdin)
+tp -u
 
 # push to bottom of stack (equivalent)
 CMD | tp -a 1

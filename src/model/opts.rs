@@ -73,7 +73,7 @@ pub fn parse_opts() -> Command {
             .short('u')
             .long("unshift")
             .action(ArgAction::SetTrue)
-            .help("\x1b[32m//\x1b[0m Push to bottom of stack"))
+            .help("\x1b[32m//\x1b[0m Push to bottom of stack (reads stdin, no stdout)"))
         .arg(Arg::new(SHIFT)
             .short('s')
             .long("shift")

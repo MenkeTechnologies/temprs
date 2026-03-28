@@ -138,6 +138,10 @@ impl TempApp {
                 self.overwrite_idx_or_write_new_tempfile();
             }
             None => {
+                if self.state.insert_idx().is_some() {
+                    self.read_stdin_pipe();
+                    return;
+                }
                 let last_path = self.state.temp_file_stack().last().cloned();
                 if let Some(f) = last_path {
                     let content = util_file_contents_to_string(f.as_path());
