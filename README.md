@@ -7,11 +7,11 @@
     ╚═╝   ╚══════╝╚═╝     ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝
 ```
 
+[![CI](https://github.com/MenkeTechnologies/temprs/actions/workflows/ci.yml/badge.svg)](https://github.com/MenkeTechnologies/temprs/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/temprs.svg)](https://crates.io/crates/temprs)
 [![Downloads](https://img.shields.io/crates/d/temprs.svg)](https://crates.io/crates/temprs)
 [![Docs.rs](https://docs.rs/temprs/badge.svg)](https://docs.rs/temprs)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://github.com/MenkeTechnologies/temprs/actions/workflows/rust.yml/badge.svg)](https://github.com/MenkeTechnologies/temprs/actions)
 
 ### `[TEMPORARY FILE STACK MANAGER // FULL SPECTRUM DATA CONTROL]`
 
