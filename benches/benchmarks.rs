@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use std::fs;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -9,11 +9,7 @@ static COUNTER: AtomicU64 = AtomicU64::new(0);
 
 fn bench_tmp_dir() -> PathBuf {
     let id = COUNTER.fetch_add(1, Ordering::SeqCst);
-    let dir = std::env::temp_dir().join(format!(
-        "temprs_bench_{}_{}",
-        std::process::id(),
-        id
-    ));
+    let dir = std::env::temp_dir().join(format!("temprs_bench_{}_{}", std::process::id(), id));
     fs::create_dir_all(&dir).unwrap();
     dir
 }
@@ -36,9 +32,7 @@ fn bench_path_to_string(c: &mut Criterion) {
 }
 
 fn bench_time_ms(c: &mut Criterion) {
-    c.bench_function("time_ms", |b| {
-        b.iter(|| util_time_ms())
-    });
+    c.bench_function("time_ms", |b| b.iter(util_time_ms));
 }
 
 fn bench_file_to_paths(c: &mut Criterion) {

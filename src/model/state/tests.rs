@@ -426,7 +426,10 @@ fn holding_buffer_tabs_and_newlines() {
 fn output_buffer_special_chars() {
     let mut s = make_state();
     s.set_output_buffer("quotes: \"hello\" 'world'\nbackslash: \\".to_string());
-    assert_eq!(s.output_buffer(), "quotes: \"hello\" 'world'\nbackslash: \\");
+    assert_eq!(
+        s.output_buffer(),
+        "quotes: \"hello\" 'world'\nbackslash: \\"
+    );
 }
 
 #[test]
@@ -611,7 +614,11 @@ fn new_all_fields_non_default() {
         PathBuf::from("/tmp/out"),
         PathBuf::from("/tmp/master"),
         PathBuf::from("/tmp/dir"),
-        vec![PathBuf::from("/tmp/f1"), PathBuf::from("/tmp/f2"), PathBuf::from("/tmp/f3")],
+        vec![
+            PathBuf::from("/tmp/f1"),
+            PathBuf::from("/tmp/f2"),
+            PathBuf::from("/tmp/f3"),
+        ],
         vec![],
         Some(PathBuf::from("/tmp/argfile")),
         String::from("initial output"),
@@ -1034,10 +1041,7 @@ fn out_file_path_str_very_long_path() {
 fn arg_file_relative_path() {
     let mut s = make_state();
     s.set_arg_file(Some(PathBuf::from("relative/path.txt")));
-    assert_eq!(
-        s.arg_file(),
-        &Some(PathBuf::from("relative/path.txt"))
-    );
+    assert_eq!(s.arg_file(), &Some(PathBuf::from("relative/path.txt")));
 }
 
 #[test]
@@ -1051,10 +1055,7 @@ fn arg_file_root_path() {
 fn arg_file_with_unicode() {
     let mut s = make_state();
     s.set_arg_file(Some(PathBuf::from("/tmp/日本語/file")));
-    assert_eq!(
-        s.arg_file(),
-        &Some(PathBuf::from("/tmp/日本語/file"))
-    );
+    assert_eq!(s.arg_file(), &Some(PathBuf::from("/tmp/日本語/file")));
 }
 
 #[test]
@@ -1331,9 +1332,7 @@ fn master_file_path_str_unicode() {
 #[test]
 fn set_temp_file_stack_preserves_order() {
     let mut s = make_state();
-    let stack: Vec<PathBuf> = (0..5)
-        .map(|i| PathBuf::from(format!("/f{}", i)))
-        .collect();
+    let stack: Vec<PathBuf> = (0..5).map(|i| PathBuf::from(format!("/f{}", i))).collect();
     s.set_temp_file_stack(stack.clone());
     for (i, p) in s.temp_file_stack().iter().enumerate() {
         assert_eq!(p, &stack[i]);

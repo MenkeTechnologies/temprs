@@ -17,11 +17,7 @@ fn bin() -> PathBuf {
 /// Create a unique isolated directory for each test, returning its path.
 fn setup_clean_env() -> PathBuf {
     let id = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
-    let dir = std::env::temp_dir().join(format!(
-        "temprs_test_{}_{}",
-        std::process::id(),
-        id,
-    ));
+    let dir = std::env::temp_dir().join(format!("temprs_test_{}_{}", std::process::id(), id,));
     if dir.exists() {
         let _ = fs::remove_dir_all(&dir);
     }
@@ -76,7 +72,10 @@ fn help_flag_shows_cyberpunk_banner() {
     let text = stdout(&out);
     assert!(text.contains("████████╗"), "missing ASCII art banner");
     assert!(text.contains("STATUS: ONLINE"), "missing status bar");
-    assert!(text.contains("TEMPORARY FILE STACK MANAGER"), "missing tagline");
+    assert!(
+        text.contains("TEMPORARY FILE STACK MANAGER"),
+        "missing tagline"
+    );
     assert!(text.contains("JACK IN"), "missing cyberpunk footer");
 }
 
@@ -86,10 +85,43 @@ fn help_shows_all_flags() {
     let out = run_tp(&dir, &["-h"]);
     let text = stdout(&out);
     for flag in &[
-        "--input", "--output", "--add", "--remove", "--pop", "--unshift",
-        "--shift", "--dir", "--master", "--list-files", "--list-files-numbered",
-        "--list-contents", "--list-contents-numbered", "--quiet", "--clear",
-        "--verbose", "--edit", "--name", "--rename", "--info", "--grep", "--cat", "--count", "--diff", "--mv", "--dup", "--swap", "--append", "--rev", "--expire", "--head", "--tail", "--wc", "--size", "--sort", "--replace", "--path",
+        "--input",
+        "--output",
+        "--add",
+        "--remove",
+        "--pop",
+        "--unshift",
+        "--shift",
+        "--dir",
+        "--master",
+        "--list-files",
+        "--list-files-numbered",
+        "--list-contents",
+        "--list-contents-numbered",
+        "--quiet",
+        "--clear",
+        "--verbose",
+        "--edit",
+        "--name",
+        "--rename",
+        "--info",
+        "--grep",
+        "--cat",
+        "--count",
+        "--diff",
+        "--mv",
+        "--dup",
+        "--swap",
+        "--append",
+        "--rev",
+        "--expire",
+        "--head",
+        "--tail",
+        "--wc",
+        "--size",
+        "--sort",
+        "--replace",
+        "--path",
     ] {
         assert!(text.contains(flag), "missing flag: {}", flag);
     }
@@ -343,7 +375,10 @@ fn dir_flag_shows_directory() {
     run_tp_stdin(&dir, &[], "x");
     let out = run_tp(&dir, &["-d"]);
     let text = stdout(&out);
-    assert!(text.contains("temprs"), "dir output should contain 'temprs'");
+    assert!(
+        text.contains("temprs"),
+        "dir output should contain 'temprs'"
+    );
 }
 
 #[test]
@@ -365,7 +400,10 @@ fn verbose_echoes_stdin() {
     let dir = setup_clean_env();
     let out = run_tp_stdin(&dir, &["-v"], "echo me");
     let text = stdout(&out);
-    assert!(text.contains("echo me"), "verbose should echo stdin to stdout");
+    assert!(
+        text.contains("echo me"),
+        "verbose should echo stdin to stdout"
+    );
 }
 
 // ── File argument ───────────────────────────────────────
@@ -758,7 +796,11 @@ fn list_files_paths_contain_tempfile_prefix() {
     let out = run_tp(&dir, &["-l"]);
     let text = stdout(&out);
     for line in text.trim().lines() {
-        assert!(line.contains("tempfile"), "path should contain 'tempfile': {}", line);
+        assert!(
+            line.contains("tempfile"),
+            "path should contain 'tempfile': {}",
+            line
+        );
     }
 }
 
@@ -1037,7 +1079,10 @@ fn help_shows_short_flags() {
     let dir = setup_clean_env();
     let out = run_tp(&dir, &["-h"]);
     let text = stdout(&out);
-    for flag in &["-i", "-o", "-a", "-r", "-p", "-u", "-s", "-d", "-m", "-l", "-n", "-L", "-N", "-q", "-c", "-v"] {
+    for flag in &[
+        "-i", "-o", "-a", "-r", "-p", "-u", "-s", "-d", "-m", "-l", "-n", "-L", "-N", "-q", "-c",
+        "-v",
+    ] {
         assert!(text.contains(flag), "missing short flag: {}", flag);
     }
 }
@@ -1059,7 +1104,10 @@ fn list_files_numbered_contains_separator() {
     let out = run_tp(&dir, &["-n"]);
     let text = stdout(&out);
     // numbered lists use horizontal rules as separators
-    assert!(text.contains("---"), "numbered list should have separator lines");
+    assert!(
+        text.contains("---"),
+        "numbered list should have separator lines"
+    );
 }
 
 #[test]
@@ -1068,7 +1116,10 @@ fn list_contents_numbered_contains_separator() {
     run_tp_stdin(&dir, &[], "data");
     let out = run_tp(&dir, &["-N"]);
     let text = stdout(&out);
-    assert!(text.contains("---"), "numbered contents list should have separator lines");
+    assert!(
+        text.contains("---"),
+        "numbered contents list should have separator lines"
+    );
 }
 
 // ── Stderr for errors ───────────────────────────────────
@@ -1080,7 +1131,11 @@ fn invalid_index_shows_error_message() {
     let out = run_tp(&dir, &["-o", "0"]);
     // simple_logger outputs to stdout
     let text = stdout(&out);
-    assert!(text.contains("Invalid specified index"), "output should contain error message: {}", text);
+    assert!(
+        text.contains("Invalid specified index"),
+        "output should contain error message: {}",
+        text
+    );
 }
 
 #[test]
@@ -1089,7 +1144,11 @@ fn out_of_bounds_shows_error_message() {
     run_tp_stdin(&dir, &[], "data");
     let out = run_tp(&dir, &["-o", "100"]);
     let text = stdout(&out);
-    assert!(text.contains("Invalid specified index"), "output should contain error message: {}", text);
+    assert!(
+        text.contains("Invalid specified index"),
+        "output should contain error message: {}",
+        text
+    );
 }
 
 // ── Remove with negative index ──────────────────────────
@@ -1665,7 +1724,10 @@ fn name_tag_shows_in_numbered_list() {
     run_tp_stdin(&dir, &["-w", "myname"], "data");
     let out = run_tp(&dir, &["-n"]);
     let text = stdout(&out);
-    assert!(text.contains("@myname"), "numbered list should show @name tag");
+    assert!(
+        text.contains("@myname"),
+        "numbered list should show @name tag"
+    );
 }
 
 #[test]
@@ -1808,7 +1870,10 @@ fn info_unnamed_has_no_name_line() {
     run_tp_stdin(&dir, &[], "data");
     let out = run_tp(&dir, &["-I", "1"]);
     let text = stdout(&out);
-    assert!(!text.contains("name:"), "unnamed file should not show name line");
+    assert!(
+        !text.contains("name:"),
+        "unnamed file should not show name line"
+    );
 }
 
 // ── Grep ───────────────────────────────────────────────
@@ -1847,7 +1912,10 @@ fn grep_no_match_exits_nonzero() {
     let dir = setup_clean_env();
     run_tp_stdin(&dir, &[], "hello");
     let out = run_tp(&dir, &["-g", "nonexistent"]);
-    assert!(!out.status.success(), "grep with no matches should exit nonzero");
+    assert!(
+        !out.status.success(),
+        "grep with no matches should exit nonzero"
+    );
 }
 
 #[test]
@@ -1863,7 +1931,11 @@ fn grep_shows_line_numbers() {
     run_tp_stdin(&dir, &[], "line1\nmatch here\nline3");
     let out = run_tp(&dir, &["-g", "match"]);
     let text = stdout(&out);
-    assert!(text.contains("2:"), "should show line number 2, got: {}", text);
+    assert!(
+        text.contains("2:"),
+        "should show line number 2, got: {}",
+        text
+    );
 }
 
 #[test]
@@ -1872,7 +1944,10 @@ fn grep_shows_name_tag() {
     run_tp_stdin(&dir, &["-w", "tagged"], "findme");
     let out = run_tp(&dir, &["-g", "findme"]);
     let text = stdout(&out);
-    assert!(text.contains("@tagged"), "should show @name tag in grep output");
+    assert!(
+        text.contains("@tagged"),
+        "should show @name tag in grep output"
+    );
 }
 
 #[test]
@@ -1882,7 +1957,12 @@ fn grep_multiple_lines_in_one_file() {
     let out = run_tp(&dir, &["-g", "foo"]);
     let text = stdout(&out);
     let match_lines: Vec<&str> = text.lines().filter(|l| l.contains("foo")).collect();
-    assert_eq!(match_lines.len(), 2, "should match 2 lines, got: {:?}", match_lines);
+    assert_eq!(
+        match_lines.len(),
+        2,
+        "should match 2 lines, got: {:?}",
+        match_lines
+    );
 }
 
 // ── Edit ───────────────────────────────────────────────
@@ -1895,7 +1975,7 @@ fn edit_by_name() {
     let out = Command::new(bin())
         .env("TEMPRS_DIR", &dir)
         .env("EDITOR", "true")
-        .args(&["-e", "editable"])
+        .args(["-e", "editable"])
         .output()
         .expect("failed to execute tp");
     assert!(out.status.success());
@@ -1908,7 +1988,7 @@ fn edit_by_index() {
     let out = Command::new(bin())
         .env("TEMPRS_DIR", &dir)
         .env("EDITOR", "true")
-        .args(&["-e", "1"])
+        .args(["-e", "1"])
         .output()
         .expect("failed to execute tp");
     assert!(out.status.success());
@@ -1921,7 +2001,7 @@ fn edit_invalid_index_fails() {
     let out = Command::new(bin())
         .env("TEMPRS_DIR", &dir)
         .env("EDITOR", "true")
-        .args(&["-e", "99"])
+        .args(["-e", "99"])
         .output()
         .expect("failed to execute tp");
     assert!(!out.status.success());
@@ -2068,7 +2148,10 @@ fn diff_identical_files_exits_zero() {
     tick();
     run_tp_stdin(&dir, &[], "same content\n");
     let out = run_tp(&dir, &["-D", "1", "2"]);
-    assert!(out.status.success(), "diff of identical files should exit 0");
+    assert!(
+        out.status.success(),
+        "diff of identical files should exit 0"
+    );
     assert!(stdout(&out).trim().is_empty());
 }
 
@@ -2079,7 +2162,11 @@ fn diff_different_files_exits_one() {
     tick();
     run_tp_stdin(&dir, &[], "bbb\n");
     let out = run_tp(&dir, &["-D", "1", "2"]);
-    assert_eq!(out.status.code(), Some(1), "diff of different files should exit 1");
+    assert_eq!(
+        out.status.code(),
+        Some(1),
+        "diff of different files should exit 1"
+    );
     let text = stdout(&out);
     assert!(text.contains("-aaa"), "should show removed line");
     assert!(text.contains("+bbb"), "should show added line");
@@ -2747,14 +2834,17 @@ fn sort_by_size() {
     let dir = setup_clean_env();
     run_tp_stdin(&dir, &[], "medium!!"); // 8 bytes
     tick();
-    run_tp_stdin(&dir, &[], "z");        // 1 byte
+    run_tp_stdin(&dir, &[], "z"); // 1 byte
     tick();
     run_tp_stdin(&dir, &[], "very long content here"); // 22 bytes
     let out = run_tp(&dir, &["--sort", "size"]);
     assert!(out.status.success());
     assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "z");
     assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])), "medium!!");
-    assert_eq!(stdout(&run_tp(&dir, &["-o", "3"])), "very long content here");
+    assert_eq!(
+        stdout(&run_tp(&dir, &["-o", "3"])),
+        "very long content here"
+    );
 }
 
 #[test]
@@ -2776,7 +2866,7 @@ fn sort_preserves_names() {
     let dir = setup_clean_env();
     run_tp_stdin(&dir, &["-w", "big"], "xxxxxxxxxx"); // 10 bytes
     tick();
-    run_tp_stdin(&dir, &["-w", "small"], "x");         // 1 byte
+    run_tp_stdin(&dir, &["-w", "small"], "x"); // 1 byte
     run_tp(&dir, &["--sort", "size"]);
     assert_eq!(stdout(&run_tp(&dir, &["-o", "small"])), "x");
     assert_eq!(stdout(&run_tp(&dir, &["-o", "big"])), "xxxxxxxxxx");
@@ -2934,27 +3024,42 @@ fn master_file_uses_null_byte_delimiters() {
     run_tp_stdin(&dir, &[], "second");
     let raw = fs::read(dir.join("temprs-stack")).unwrap();
     // records separated by \0\0, fields by \0
-    let nulls: Vec<usize> = raw.iter().enumerate()
+    let nulls: Vec<usize> = raw
+        .iter()
+        .enumerate()
         .filter(|&(_, &b)| b == 0)
         .map(|(i, _)| i)
         .collect();
-    assert!(nulls.len() >= 3, "expected at least 3 null bytes, got {}", nulls.len());
+    assert!(
+        nulls.len() >= 3,
+        "expected at least 3 null bytes, got {}",
+        nulls.len()
+    );
     // no tab bytes used as delimiters
-    assert!(!raw.windows(1).any(|w| w == b"\t"), "master file should not contain tabs");
+    assert!(
+        !raw.windows(1).any(|w| w == b"\t"),
+        "master file should not contain tabs"
+    );
 }
 
 #[test]
 fn lock_file_created_on_push() {
     let dir = setup_clean_env();
     run_tp_stdin(&dir, &[], "data");
-    assert!(dir.join("temprs-stack.lock").exists(), "lock file should exist");
+    assert!(
+        dir.join("temprs-stack.lock").exists(),
+        "lock file should exist"
+    );
 }
 
 #[test]
 fn no_tmp_file_left_after_push() {
     let dir = setup_clean_env();
     run_tp_stdin(&dir, &[], "data");
-    assert!(!dir.join("temprs-stack.tmp").exists(), "no .tmp file should remain");
+    assert!(
+        !dir.join("temprs-stack.tmp").exists(),
+        "no .tmp file should remain"
+    );
 }
 
 #[test]
@@ -2964,7 +3069,10 @@ fn no_tmp_file_left_after_pop() {
     tick();
     run_tp_stdin(&dir, &[], "more");
     run_tp(&dir, &["-p"]);
-    assert!(!dir.join("temprs-stack.tmp").exists(), "no .tmp file should remain after pop");
+    assert!(
+        !dir.join("temprs-stack.tmp").exists(),
+        "no .tmp file should remain after pop"
+    );
 }
 
 #[test]
@@ -2974,7 +3082,10 @@ fn no_tmp_file_left_after_remove() {
     tick();
     run_tp_stdin(&dir, &[], "more");
     run_tp(&dir, &["-r", "1"]);
-    assert!(!dir.join("temprs-stack.tmp").exists(), "no .tmp file should remain after remove");
+    assert!(
+        !dir.join("temprs-stack.tmp").exists(),
+        "no .tmp file should remain after remove"
+    );
 }
 
 #[test]
@@ -3188,7 +3299,9 @@ fn cat_many_files() {
     let dir = setup_clean_env();
     for i in 1..=5 {
         run_tp_stdin(&dir, &[], &format!("{}", i));
-        if i < 5 { tick(); }
+        if i < 5 {
+            tick();
+        }
     }
     let out = run_tp(&dir, &["-C", "1", "2", "3", "4", "5"]);
     assert_eq!(stdout(&out), "12345");
@@ -3234,7 +3347,11 @@ fn grep_across_multiple_files_shows_indices() {
     let out = run_tp(&dir, &["-g", "needle"]);
     let text = stdout(&out);
     for i in 1..=5 {
-        assert!(text.contains(&format!("{}:", i)), "missing index {} in grep output", i);
+        assert!(
+            text.contains(&format!("{}:", i)),
+            "missing index {} in grep output",
+            i
+        );
     }
 }
 
@@ -3265,8 +3382,14 @@ fn replace_multiline_pattern() {
 fn replace_with_longer_string() {
     let dir = setup_clean_env();
     run_tp_stdin(&dir, &[], "short");
-    run_tp(&dir, &["--replace", "1", "short", "very long replacement string"]);
-    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "very long replacement string");
+    run_tp(
+        &dir,
+        &["--replace", "1", "short", "very long replacement string"],
+    );
+    assert_eq!(
+        stdout(&run_tp(&dir, &["-o", "1"])),
+        "very long replacement string"
+    );
 }
 
 #[test]
@@ -3359,7 +3482,11 @@ fn wc_content_with_no_trailing_newline() {
     let out = run_tp(&dir, &["--wc", "1"]);
     // 3 lines (last line has no trailing newline but still counts)
     let count: usize = stdout(&out).trim().parse().unwrap();
-    assert!(count >= 2 && count <= 3, "expected 2-3 lines, got {}", count);
+    assert!(
+        (2..=3).contains(&count),
+        "expected 2-3 lines, got {}",
+        count
+    );
 }
 
 // ── Size edge cases ─────────────────────────────────────
@@ -3551,7 +3678,7 @@ fn sort_preserves_content() {
     let dir = setup_clean_env();
     run_tp_stdin(&dir, &[], "medium!!"); // 8 bytes
     tick();
-    run_tp_stdin(&dir, &[], "z");        // 1 byte
+    run_tp_stdin(&dir, &[], "z"); // 1 byte
     tick();
     run_tp_stdin(&dir, &[], "very long content here"); // 22 bytes
     run_tp(&dir, &["--sort", "size"]);
@@ -3568,12 +3695,15 @@ fn sort_then_reverse() {
     let dir = setup_clean_env();
     run_tp_stdin(&dir, &[], "medium!!"); // 8 bytes
     tick();
-    run_tp_stdin(&dir, &[], "z");        // 1 byte
+    run_tp_stdin(&dir, &[], "z"); // 1 byte
     tick();
     run_tp_stdin(&dir, &[], "very long content here"); // 22 bytes
     run_tp(&dir, &["--sort", "size"]); // z, medium!!, very long...
     run_tp(&dir, &["--rev"]); // reverse: very long..., medium!!, z
-    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "very long content here");
+    assert_eq!(
+        stdout(&run_tp(&dir, &["-o", "1"])),
+        "very long content here"
+    );
     assert_eq!(stdout(&run_tp(&dir, &["-o", "3"])), "z");
 }
 
@@ -3640,7 +3770,10 @@ fn remove_named_by_index_clears_name() {
     run_tp_stdin(&dir, &[], "stay");
     run_tp(&dir, &["-r", "1"]);
     let out = run_tp(&dir, &["-o", "gone"]);
-    assert!(!out.status.success(), "removed named file should not resolve");
+    assert!(
+        !out.status.success(),
+        "removed named file should not resolve"
+    );
 }
 
 #[test]
@@ -3712,7 +3845,10 @@ fn append_multiline() {
     let dir = setup_clean_env();
     run_tp_stdin(&dir, &[], "header\n");
     run_tp_stdin(&dir, &["-A", "1"], "line1\nline2\nline3\n");
-    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "header\nline1\nline2\nline3\n");
+    assert_eq!(
+        stdout(&run_tp(&dir, &["-o", "1"])),
+        "header\nline1\nline2\nline3\n"
+    );
 }
 
 #[test]
@@ -3784,9 +3920,9 @@ fn workflow_push_name_sort_grep() {
     let dir = setup_clean_env();
     run_tp_stdin(&dir, &["-w", "big"], "xxxxxxxxxx"); // 10 bytes
     tick();
-    run_tp_stdin(&dir, &["-w", "small"], "x");         // 1 byte
+    run_tp_stdin(&dir, &["-w", "small"], "x"); // 1 byte
     tick();
-    run_tp_stdin(&dir, &["-w", "medium"], "xxxxx");     // 5 bytes
+    run_tp_stdin(&dir, &["-w", "medium"], "xxxxx"); // 5 bytes
     run_tp(&dir, &["--sort", "size"]);
     // after sort by size: small(1), medium(5), big(10)
     assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "x");
@@ -3906,7 +4042,10 @@ fn stress_push_twenty_items() {
     }
     assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "20");
     for i in 1..=20 {
-        assert_eq!(stdout(&run_tp(&dir, &["-o", &i.to_string()])), format!("item_{}", i));
+        assert_eq!(
+            stdout(&run_tp(&dir, &["-o", &i.to_string()])),
+            format!("item_{}", i)
+        );
     }
 }
 
@@ -3957,7 +4096,7 @@ fn edit_negative_index() {
     let out = Command::new(bin())
         .env("TEMPRS_DIR", &dir)
         .env("EDITOR", "true")
-        .args(&["-e", "-1"])
+        .args(["-e", "-1"])
         .output()
         .expect("failed to execute tp");
     assert!(out.status.success());
@@ -3970,7 +4109,7 @@ fn edit_preserves_content_when_editor_is_noop() {
     Command::new(bin())
         .env("TEMPRS_DIR", &dir)
         .env("EDITOR", "true")
-        .args(&["-e", "1"])
+        .args(["-e", "1"])
         .output()
         .expect("failed to execute tp");
     assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "keep this");
@@ -4080,9 +4219,9 @@ fn count_after_sort() {
     let dir = setup_clean_env();
     run_tp_stdin(&dir, &[], "bbb"); // 3 bytes
     tick();
-    run_tp_stdin(&dir, &[], "a");   // 1 byte
+    run_tp_stdin(&dir, &[], "a"); // 1 byte
     tick();
-    run_tp_stdin(&dir, &[], "cc");  // 2 bytes
+    run_tp_stdin(&dir, &[], "cc"); // 2 bytes
     run_tp(&dir, &["--sort", "size"]);
     assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "3");
 }

@@ -167,9 +167,44 @@ mod tests {
     #[test]
     fn flag_constants_are_unique() {
         let flags = vec![
-            DIRECTORY, INPUT, OUTPUT, ADD, REMOVE, POP, UNSHIFT,
-            ARGFILE, MASTER, VERBOSE, LIST_FILES, LIST_FILES_NUMBERED,
-            LIST_CONTENTS, LIST_CONTENTS_NUMBERED, CLEAR, SHIFT, SILENT, EDIT, TAG, RENAME, INFO, GREP, CAT, COUNT, DIFF, MOVE, DUP, SWAP, APPEND, REVERSE, EXPIRE, HEAD, TAIL, WC, SIZE, SORT, REPLACE, PATH,
+            DIRECTORY,
+            INPUT,
+            OUTPUT,
+            ADD,
+            REMOVE,
+            POP,
+            UNSHIFT,
+            ARGFILE,
+            MASTER,
+            VERBOSE,
+            LIST_FILES,
+            LIST_FILES_NUMBERED,
+            LIST_CONTENTS,
+            LIST_CONTENTS_NUMBERED,
+            CLEAR,
+            SHIFT,
+            SILENT,
+            EDIT,
+            TAG,
+            RENAME,
+            INFO,
+            GREP,
+            CAT,
+            COUNT,
+            DIFF,
+            MOVE,
+            DUP,
+            SWAP,
+            APPEND,
+            REVERSE,
+            EXPIRE,
+            HEAD,
+            TAIL,
+            WC,
+            SIZE,
+            SORT,
+            REPLACE,
+            PATH,
         ];
         let mut sorted = flags.clone();
         sorted.sort();
@@ -180,9 +215,44 @@ mod tests {
     #[test]
     fn flag_constants_are_lowercase() {
         let flags = vec![
-            DIRECTORY, INPUT, OUTPUT, ADD, REMOVE, POP, UNSHIFT,
-            ARGFILE, MASTER, VERBOSE, LIST_FILES, LIST_FILES_NUMBERED,
-            LIST_CONTENTS, LIST_CONTENTS_NUMBERED, CLEAR, SHIFT, SILENT, EDIT, TAG, RENAME, INFO, GREP, CAT, COUNT, DIFF, MOVE, DUP, SWAP, APPEND, REVERSE, EXPIRE, HEAD, TAIL, WC, SIZE, SORT, REPLACE, PATH,
+            DIRECTORY,
+            INPUT,
+            OUTPUT,
+            ADD,
+            REMOVE,
+            POP,
+            UNSHIFT,
+            ARGFILE,
+            MASTER,
+            VERBOSE,
+            LIST_FILES,
+            LIST_FILES_NUMBERED,
+            LIST_CONTENTS,
+            LIST_CONTENTS_NUMBERED,
+            CLEAR,
+            SHIFT,
+            SILENT,
+            EDIT,
+            TAG,
+            RENAME,
+            INFO,
+            GREP,
+            CAT,
+            COUNT,
+            DIFF,
+            MOVE,
+            DUP,
+            SWAP,
+            APPEND,
+            REVERSE,
+            EXPIRE,
+            HEAD,
+            TAIL,
+            WC,
+            SIZE,
+            SORT,
+            REPLACE,
+            PATH,
         ];
         for f in flags {
             assert_eq!(f, f.to_lowercase(), "flag '{}' should be lowercase", f);
@@ -399,9 +469,44 @@ mod tests {
     #[test]
     fn flag_constants_no_spaces() {
         let flags = vec![
-            DIRECTORY, INPUT, OUTPUT, ADD, REMOVE, POP, UNSHIFT,
-            ARGFILE, MASTER, VERBOSE, LIST_FILES, LIST_FILES_NUMBERED,
-            LIST_CONTENTS, LIST_CONTENTS_NUMBERED, CLEAR, SHIFT, SILENT, EDIT, TAG, RENAME, INFO, GREP, CAT, COUNT, DIFF, MOVE, DUP, SWAP, APPEND, REVERSE, EXPIRE, HEAD, TAIL, WC, SIZE, SORT, REPLACE, PATH,
+            DIRECTORY,
+            INPUT,
+            OUTPUT,
+            ADD,
+            REMOVE,
+            POP,
+            UNSHIFT,
+            ARGFILE,
+            MASTER,
+            VERBOSE,
+            LIST_FILES,
+            LIST_FILES_NUMBERED,
+            LIST_CONTENTS,
+            LIST_CONTENTS_NUMBERED,
+            CLEAR,
+            SHIFT,
+            SILENT,
+            EDIT,
+            TAG,
+            RENAME,
+            INFO,
+            GREP,
+            CAT,
+            COUNT,
+            DIFF,
+            MOVE,
+            DUP,
+            SWAP,
+            APPEND,
+            REVERSE,
+            EXPIRE,
+            HEAD,
+            TAIL,
+            WC,
+            SIZE,
+            SORT,
+            REPLACE,
+            PATH,
         ];
         for f in flags {
             assert!(!f.contains(' '), "flag '{}' should not contain spaces", f);
@@ -413,9 +518,44 @@ mod tests {
     #[test]
     fn flag_constants_not_empty() {
         let flags = vec![
-            DIRECTORY, INPUT, OUTPUT, ADD, REMOVE, POP, UNSHIFT,
-            ARGFILE, MASTER, VERBOSE, LIST_FILES, LIST_FILES_NUMBERED,
-            LIST_CONTENTS, LIST_CONTENTS_NUMBERED, CLEAR, SHIFT, SILENT, EDIT, TAG, RENAME, INFO, GREP, CAT, COUNT, DIFF, MOVE, DUP, SWAP, APPEND, REVERSE, EXPIRE, HEAD, TAIL, WC, SIZE, SORT, REPLACE, PATH,
+            DIRECTORY,
+            INPUT,
+            OUTPUT,
+            ADD,
+            REMOVE,
+            POP,
+            UNSHIFT,
+            ARGFILE,
+            MASTER,
+            VERBOSE,
+            LIST_FILES,
+            LIST_FILES_NUMBERED,
+            LIST_CONTENTS,
+            LIST_CONTENTS_NUMBERED,
+            CLEAR,
+            SHIFT,
+            SILENT,
+            EDIT,
+            TAG,
+            RENAME,
+            INFO,
+            GREP,
+            CAT,
+            COUNT,
+            DIFF,
+            MOVE,
+            DUP,
+            SWAP,
+            APPEND,
+            REVERSE,
+            EXPIRE,
+            HEAD,
+            TAIL,
+            WC,
+            SIZE,
+            SORT,
+            REPLACE,
+            PATH,
         ];
         for f in flags {
             assert!(!f.is_empty(), "flag constant should not be empty");
@@ -427,9 +567,44 @@ mod tests {
     #[test]
     fn flag_constants_are_ascii() {
         let flags = vec![
-            DIRECTORY, INPUT, OUTPUT, ADD, REMOVE, POP, UNSHIFT,
-            ARGFILE, MASTER, VERBOSE, LIST_FILES, LIST_FILES_NUMBERED,
-            LIST_CONTENTS, LIST_CONTENTS_NUMBERED, CLEAR, SHIFT, SILENT, EDIT, TAG, RENAME, INFO, GREP, CAT, COUNT, DIFF, MOVE, DUP, SWAP, APPEND, REVERSE, EXPIRE, HEAD, TAIL, WC, SIZE, SORT, REPLACE, PATH,
+            DIRECTORY,
+            INPUT,
+            OUTPUT,
+            ADD,
+            REMOVE,
+            POP,
+            UNSHIFT,
+            ARGFILE,
+            MASTER,
+            VERBOSE,
+            LIST_FILES,
+            LIST_FILES_NUMBERED,
+            LIST_CONTENTS,
+            LIST_CONTENTS_NUMBERED,
+            CLEAR,
+            SHIFT,
+            SILENT,
+            EDIT,
+            TAG,
+            RENAME,
+            INFO,
+            GREP,
+            CAT,
+            COUNT,
+            DIFF,
+            MOVE,
+            DUP,
+            SWAP,
+            APPEND,
+            REVERSE,
+            EXPIRE,
+            HEAD,
+            TAIL,
+            WC,
+            SIZE,
+            SORT,
+            REPLACE,
+            PATH,
         ];
         for f in flags {
             assert!(f.is_ascii(), "flag '{}' should be ASCII", f);
@@ -441,9 +616,44 @@ mod tests {
     #[test]
     fn total_flag_count_is_17() {
         let flags = vec![
-            DIRECTORY, INPUT, OUTPUT, ADD, REMOVE, POP, UNSHIFT,
-            ARGFILE, MASTER, VERBOSE, LIST_FILES, LIST_FILES_NUMBERED,
-            LIST_CONTENTS, LIST_CONTENTS_NUMBERED, CLEAR, SHIFT, SILENT, EDIT, TAG, RENAME, INFO, GREP, CAT, COUNT, DIFF, MOVE, DUP, SWAP, APPEND, REVERSE, EXPIRE, HEAD, TAIL, WC, SIZE, SORT, REPLACE, PATH,
+            DIRECTORY,
+            INPUT,
+            OUTPUT,
+            ADD,
+            REMOVE,
+            POP,
+            UNSHIFT,
+            ARGFILE,
+            MASTER,
+            VERBOSE,
+            LIST_FILES,
+            LIST_FILES_NUMBERED,
+            LIST_CONTENTS,
+            LIST_CONTENTS_NUMBERED,
+            CLEAR,
+            SHIFT,
+            SILENT,
+            EDIT,
+            TAG,
+            RENAME,
+            INFO,
+            GREP,
+            CAT,
+            COUNT,
+            DIFF,
+            MOVE,
+            DUP,
+            SWAP,
+            APPEND,
+            REVERSE,
+            EXPIRE,
+            HEAD,
+            TAIL,
+            WC,
+            SIZE,
+            SORT,
+            REPLACE,
+            PATH,
         ];
         assert_eq!(flags.len(), 38);
     }
@@ -475,12 +685,22 @@ mod tests {
     #[test]
     fn error_messages_start_with_uppercase() {
         let errors = vec![
-            ERR_NO_FILE, ERR_PARSE, ERR_INVALID_RM, ERR_INVALID_IDX,
-            ERR_INVALID_FILE, ERR_LOGGER, ERR_FILE_READ, ERR_CLOCK,
+            ERR_NO_FILE,
+            ERR_PARSE,
+            ERR_INVALID_RM,
+            ERR_INVALID_IDX,
+            ERR_INVALID_FILE,
+            ERR_LOGGER,
+            ERR_FILE_READ,
+            ERR_CLOCK,
         ];
         for e in errors {
             let first = e.chars().next().unwrap();
-            assert!(first.is_uppercase(), "error '{}' should start with uppercase", e);
+            assert!(
+                first.is_uppercase(),
+                "error '{}' should start with uppercase",
+                e
+            );
         }
     }
 
@@ -489,11 +709,21 @@ mod tests {
     #[test]
     fn error_messages_no_trailing_period() {
         let errors = vec![
-            ERR_NO_FILE, ERR_PARSE, ERR_INVALID_RM, ERR_INVALID_IDX,
-            ERR_INVALID_FILE, ERR_LOGGER, ERR_FILE_READ, ERR_CLOCK,
+            ERR_NO_FILE,
+            ERR_PARSE,
+            ERR_INVALID_RM,
+            ERR_INVALID_IDX,
+            ERR_INVALID_FILE,
+            ERR_LOGGER,
+            ERR_FILE_READ,
+            ERR_CLOCK,
         ];
         for e in errors {
-            assert!(!e.ends_with('.'), "error '{}' should not end with period", e);
+            assert!(
+                !e.ends_with('.'),
+                "error '{}' should not end with period",
+                e
+            );
         }
     }
 

@@ -1,9 +1,9 @@
-use std::fs::{read_to_string, remove_file, rename, OpenOptions};
 #[cfg(test)]
 use std::fs::File;
+use std::fs::{OpenOptions, read_to_string, remove_file, rename};
+use std::io::{self, IsTerminal, Write};
 #[cfg(test)]
 use std::io::{BufRead, BufReader};
-use std::io::{self, IsTerminal, Write};
 use std::path::{Path, PathBuf};
 use std::process::exit;
 use std::time::SystemTime;
@@ -11,7 +11,6 @@ use std::time::SystemTime;
 use log::{debug, error, warn};
 
 use crate::util::consts::*;
-
 
 // ── Cyberpunk terminal output helpers ────────────────
 
@@ -21,10 +20,7 @@ fn is_tty() -> bool {
 
 pub fn cyber_hr() {
     if is_tty() {
-        println!(
-            "\x1b[36m ░▒▓{}▓▒░\x1b[0m",
-            "█".repeat(50)
-        );
+        println!("\x1b[36m ░▒▓{}▓▒░\x1b[0m", "█".repeat(50));
     } else {
         println!("{}", HR_CHAR.repeat(80));
     }
@@ -99,15 +95,11 @@ pub fn cyber_idx_content_named(i: usize, path: &Path, text: &str, name: &Option<
 
 pub fn cyber_print_content(text: &str) {
     if is_tty() {
-        println!(
-            "\x1b[36m ┌──────────────────────────────────────────────────────┐\x1b[0m"
-        );
+        println!("\x1b[36m ┌──────────────────────────────────────────────────────┐\x1b[0m");
         for line in text.trim_end().lines() {
             println!("\x1b[36m │\x1b[0m \x1b[32m{}\x1b[0m", line);
         }
-        println!(
-            "\x1b[36m └──────────────────────────────────────────────────────┘\x1b[0m"
-        );
+        println!("\x1b[36m └──────────────────────────────────────────────────────┘\x1b[0m");
     } else {
         print!("{}", text);
     }
@@ -122,7 +114,6 @@ pub fn cyber_single_path(path: &Path) {
     }
 }
 
-
 pub fn util_file_to_paths(path: &Path) -> Vec<PathBuf> {
     let (paths, _names) = util_file_to_paths_and_names(path);
     paths
@@ -131,7 +122,10 @@ pub fn util_file_to_paths(path: &Path) -> Vec<PathBuf> {
 pub fn util_file_to_paths_and_names(path: &Path) -> (Vec<PathBuf>, Vec<Option<String>>) {
     let data = match read_to_string(path) {
         Ok(s) => s,
-        Err(_) => { util_terminate_error(ERR_NO_FILE); unreachable!() }
+        Err(_) => {
+            util_terminate_error(ERR_NO_FILE);
+            unreachable!()
+        }
     };
     let mut paths = Vec::new();
     let mut names = Vec::new();
@@ -144,11 +138,18 @@ pub fn util_file_to_paths_and_names(path: &Path) -> (Vec<PathBuf>, Vec<Option<St
         }
         if let Some((p, n)) = record.split_once(MASTER_FIELD_DELIM) {
             if p.is_empty() {
-                warn!("skipping record {} with empty path in master record", rec_num + 1);
+                warn!(
+                    "skipping record {} with empty path in master record",
+                    rec_num + 1
+                );
                 continue;
             }
             paths.push(PathBuf::from(p));
-            names.push(if n.is_empty() { None } else { Some(n.to_string()) });
+            names.push(if n.is_empty() {
+                None
+            } else {
+                Some(n.to_string())
+            });
         } else {
             paths.push(PathBuf::from(record));
             names.push(None);
@@ -163,13 +164,17 @@ pub fn util_paths_to_file(paths: Vec<PathBuf>, out: &Path) {
 }
 
 pub fn util_paths_and_names_to_file(paths: Vec<PathBuf>, names: &[Option<String>], out: &Path) {
-    let records: Vec<String> = paths.iter().zip(names.iter()).map(|(p, n)| {
-        let ps = util_path_to_string(p);
-        match n {
-            Some(name) => format!("{}{}{}", ps, MASTER_FIELD_DELIM, name),
-            None => ps,
-        }
-    }).collect();
+    let records: Vec<String> = paths
+        .iter()
+        .zip(names.iter())
+        .map(|(p, n)| {
+            let ps = util_path_to_string(p);
+            match n {
+                Some(name) => format!("{}{}{}", ps, MASTER_FIELD_DELIM, name),
+                None => ps,
+            }
+        })
+        .collect();
     let buf = if records.is_empty() {
         String::new()
     } else {
@@ -185,12 +190,10 @@ pub fn util_paths_and_names_to_file(paths: Vec<PathBuf>, names: &[Option<String>
     debug!("atomic write master record '{}'", util_path_to_string(out));
 }
 
-
 pub fn util_terminate_error(msg: &str) {
     error!("{}", msg);
     exit(1)
 }
-
 
 pub fn util_transform_idx(idx: i32, len: usize) -> usize {
     if idx < 0 {
@@ -211,7 +214,6 @@ pub fn util_transform_idx(idx: i32, len: usize) -> usize {
     }
 }
 
-
 pub fn util_lines_to_file(out: &Path, lines: Vec<String>) {
     let mut buf: String = lines.join("\n");
     if !buf.is_empty() {
@@ -220,7 +222,6 @@ pub fn util_lines_to_file(out: &Path, lines: Vec<String>) {
     debug!("append lines: '{}'", buf);
     util_append_file(out, &buf);
 }
-
 
 #[cfg(test)]
 pub fn util_file_to_lines(path: &Path) -> Vec<String> {
@@ -238,14 +239,15 @@ pub fn util_remove_file(f: &Path) {
     }
 }
 
-
 pub fn util_path_to_string(path: &Path) -> String {
     match path.as_os_str().to_str() {
         Some(s) => s.to_owned(),
-        None => { util_terminate_error(ERR_NO_FILE); unreachable!() }
+        None => {
+            util_terminate_error(ERR_NO_FILE);
+            unreachable!()
+        }
     }
 }
-
 
 pub fn util_file_contents_to_string(filename: &Path) -> String {
     match read_to_string(filename) {
@@ -256,7 +258,6 @@ pub fn util_file_contents_to_string(filename: &Path) -> String {
         }
     }
 }
-
 
 pub fn util_append_file(path: &Path, buffer: &str) {
     match OpenOptions::new().create(true).append(true).open(path) {
@@ -269,11 +270,9 @@ pub fn util_append_file(path: &Path, buffer: &str) {
     }
 }
 
-
 pub fn util_horiz_rule() {
     println!("{}", HR_CHAR.repeat(80))
 }
-
 
 pub fn util_overwrite_file(path: &Path, buffer: &str) {
     match OpenOptions::new()
@@ -291,11 +290,13 @@ pub fn util_overwrite_file(path: &Path, buffer: &str) {
     }
 }
 
-
 pub fn util_time_ms() -> String {
     match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
         Ok(d) => d.as_millis().to_string(),
-        Err(_) => { util_terminate_error(ERR_CLOCK); unreachable!() }
+        Err(_) => {
+            util_terminate_error(ERR_CLOCK);
+            unreachable!()
+        }
     }
 }
 
@@ -394,7 +395,7 @@ mod tests {
 
     #[test]
     fn horiz_rule_length() {
-        let rule: String = std::iter::repeat(HR_CHAR).take(80).collect();
+        let rule: String = HR_CHAR.repeat(80);
         assert_eq!(rule.len(), 80);
         assert!(rule.chars().all(|c| c == '-'));
     }
@@ -520,11 +521,14 @@ mod tests {
         // extra \0\0 creates empty records between valid ones
         fs::write(&master, "/tmp/a\0\0\0\0/tmp/b\0\0\0\0/tmp/c\0\0").unwrap();
         let paths = util_file_to_paths(master.as_path());
-        assert_eq!(paths, vec![
-            PathBuf::from("/tmp/a"),
-            PathBuf::from("/tmp/b"),
-            PathBuf::from("/tmp/c"),
-        ]);
+        assert_eq!(
+            paths,
+            vec![
+                PathBuf::from("/tmp/a"),
+                PathBuf::from("/tmp/b"),
+                PathBuf::from("/tmp/c"),
+            ]
+        );
         fs::remove_dir_all(&dir).unwrap();
     }
 
@@ -534,11 +538,14 @@ mod tests {
         let master = dir.join("master");
         fs::write(&master, "/tmp/a\0\0\0\0/tmp/b\0\0\0\0/tmp/c\0\0").unwrap();
         let paths = util_file_to_paths(master.as_path());
-        assert_eq!(paths, vec![
-            PathBuf::from("/tmp/a"),
-            PathBuf::from("/tmp/b"),
-            PathBuf::from("/tmp/c"),
-        ]);
+        assert_eq!(
+            paths,
+            vec![
+                PathBuf::from("/tmp/a"),
+                PathBuf::from("/tmp/b"),
+                PathBuf::from("/tmp/c"),
+            ]
+        );
         fs::remove_dir_all(&dir).unwrap();
     }
 
@@ -548,7 +555,10 @@ mod tests {
         let master = dir.join("master");
         fs::write(&master, "/tmp/a\0foo\0\0\0bar\0\0/tmp/b\0\0").unwrap();
         let (paths, names) = util_file_to_paths_and_names(master.as_path());
-        assert_eq!(paths, vec![PathBuf::from("/tmp/a"), PathBuf::from("/tmp/b")]);
+        assert_eq!(
+            paths,
+            vec![PathBuf::from("/tmp/a"), PathBuf::from("/tmp/b")]
+        );
         assert_eq!(names, vec![Some("foo".to_string()), None]);
         fs::remove_dir_all(&dir).unwrap();
     }
@@ -584,10 +594,13 @@ mod tests {
         let master = dir.join("master");
         fs::write(&master, "/tmp/file\nwith\nnewlines\0\0/tmp/normal\0\0").unwrap();
         let paths = util_file_to_paths(master.as_path());
-        assert_eq!(paths, vec![
-            PathBuf::from("/tmp/file\nwith\nnewlines"),
-            PathBuf::from("/tmp/normal"),
-        ]);
+        assert_eq!(
+            paths,
+            vec![
+                PathBuf::from("/tmp/file\nwith\nnewlines"),
+                PathBuf::from("/tmp/normal"),
+            ]
+        );
         fs::remove_dir_all(&dir).unwrap();
     }
 
@@ -705,7 +718,7 @@ mod tests {
     fn overwrite_file_empty_string() {
         let dir = tmp_dir();
         let file = dir.join("test.txt");
-        util_overwrite_file(&file, &String::from(""));
+        util_overwrite_file(&file, "");
         assert_eq!(fs::read_to_string(&file).unwrap(), "");
         fs::remove_dir_all(&dir).unwrap();
     }
@@ -757,7 +770,7 @@ mod tests {
         let dir = tmp_dir();
         let file = dir.join("test.txt");
         util_append_file(&file, &String::from("start"));
-        util_append_file(&file, &String::from(""));
+        util_append_file(&file, "");
         assert_eq!(fs::read_to_string(&file).unwrap(), "start");
         fs::remove_dir_all(&dir).unwrap();
     }
@@ -912,7 +925,9 @@ mod tests {
     fn paths_to_file_many_paths() {
         let dir = tmp_dir();
         let master = dir.join("master");
-        let paths: Vec<PathBuf> = (0..20).map(|i| PathBuf::from(format!("/tmp/f{}", i))).collect();
+        let paths: Vec<PathBuf> = (0..20)
+            .map(|i| PathBuf::from(format!("/tmp/f{}", i)))
+            .collect();
         util_paths_to_file(paths.clone(), &master);
         let loaded = util_file_to_paths(master.as_path());
         assert_eq!(loaded, paths);
@@ -983,7 +998,8 @@ mod tests {
                 util_transform_idx(i, 4),
                 util_transform_idx(neg, 4),
                 "idx {} and {} should be equivalent for len 4",
-                i, neg
+                i,
+                neg
             );
         }
     }
@@ -1076,7 +1092,10 @@ mod tests {
         let file = dir.join("grow.txt");
         util_overwrite_file(&file, &String::from("short"));
         util_overwrite_file(&file, &String::from("much longer content here now"));
-        assert_eq!(fs::read_to_string(&file).unwrap(), "much longer content here now");
+        assert_eq!(
+            fs::read_to_string(&file).unwrap(),
+            "much longer content here now"
+        );
         fs::remove_dir_all(&dir).unwrap();
     }
 
@@ -1187,7 +1206,10 @@ mod tests {
     fn file_to_lines_many_lines() {
         let dir = tmp_dir();
         let file = dir.join("many.txt");
-        let content: String = (0..100).map(|i| format!("line{}", i)).collect::<Vec<_>>().join("\n");
+        let content: String = (0..100)
+            .map(|i| format!("line{}", i))
+            .collect::<Vec<_>>()
+            .join("\n");
         fs::write(&file, &content).unwrap();
         let lines = util_file_to_lines(file.as_path());
         assert_eq!(lines.len(), 100);
@@ -1202,7 +1224,11 @@ mod tests {
     fn lines_to_file_unicode_lines() {
         let dir = tmp_dir();
         let file = dir.join("uni.txt");
-        let lines = vec!["日本語".to_string(), "中文".to_string(), "한국어".to_string()];
+        let lines = vec![
+            "日本語".to_string(),
+            "中文".to_string(),
+            "한국어".to_string(),
+        ];
         util_lines_to_file(&file, lines);
         let content = fs::read_to_string(&file).unwrap();
         assert_eq!(content, "日本語\n中文\n한국어\n");
@@ -1349,7 +1375,13 @@ mod tests {
         for i in 1..=10i32 {
             let pos = util_transform_idx(i, len);
             let neg = util_transform_idx(-(10 - i + 1), len);
-            assert_eq!(pos, neg, "positive {} and negative {} should map to same index", i, -(10 - i + 1));
+            assert_eq!(
+                pos,
+                neg,
+                "positive {} and negative {} should map to same index",
+                i,
+                -(10 - i + 1)
+            );
         }
     }
 
@@ -1392,7 +1424,10 @@ mod tests {
 
     #[test]
     fn path_to_string_hidden_file() {
-        assert_eq!(util_path_to_string(Path::new("/tmp/.hidden")), "/tmp/.hidden");
+        assert_eq!(
+            util_path_to_string(Path::new("/tmp/.hidden")),
+            "/tmp/.hidden"
+        );
     }
 
     #[test]
@@ -1415,7 +1450,12 @@ mod tests {
         let second = util_time_ms();
         let a: u128 = first.parse().unwrap();
         let b: u128 = second.parse().unwrap();
-        assert!(b > a, "second call {} should be strictly greater than first {}", b, a);
+        assert!(
+            b > a,
+            "second call {} should be strictly greater than first {}",
+            b,
+            a
+        );
     }
 
     #[test]
@@ -1615,8 +1655,13 @@ mod tests {
     fn file_to_paths_preserves_order() {
         let dir = tmp_dir();
         let file = dir.join("ordered.txt");
-        let expected: Vec<PathBuf> = (0..10).map(|i| PathBuf::from(format!("/path/{}", i))).collect();
-        let content: String = expected.iter().map(|p| format!("{}\0\0", p.display())).collect();
+        let expected: Vec<PathBuf> = (0..10)
+            .map(|i| PathBuf::from(format!("/path/{}", i)))
+            .collect();
+        let content: String = expected
+            .iter()
+            .map(|p| format!("{}\0\0", p.display()))
+            .collect();
         fs::write(&file, &content).unwrap();
         let paths = util_file_to_paths(file.as_path());
         assert_eq!(paths, expected);
@@ -1630,7 +1675,10 @@ mod tests {
         let deep: Vec<PathBuf> = (0..3)
             .map(|i| PathBuf::from(format!("/a/b/c/d/e/f/g/h/i/j/file{}", i)))
             .collect();
-        let content: String = deep.iter().map(|p| format!("{}\0\0", p.display())).collect();
+        let content: String = deep
+            .iter()
+            .map(|p| format!("{}\0\0", p.display()))
+            .collect();
         fs::write(&file, &content).unwrap();
         let paths = util_file_to_paths(file.as_path());
         assert_eq!(paths, deep);
@@ -1643,7 +1691,10 @@ mod tests {
         let file = dir.join("rel.txt");
         fs::write(&file, "foo/bar\0\0baz/qux\0\0").unwrap();
         let paths = util_file_to_paths(file.as_path());
-        assert_eq!(paths, vec![PathBuf::from("foo/bar"), PathBuf::from("baz/qux")]);
+        assert_eq!(
+            paths,
+            vec![PathBuf::from("foo/bar"), PathBuf::from("baz/qux")]
+        );
         fs::remove_dir_all(&dir).unwrap();
     }
 
@@ -1671,7 +1722,9 @@ mod tests {
     fn paths_to_file_fifty_paths() {
         let dir = tmp_dir();
         let master = dir.join("master");
-        let paths: Vec<PathBuf> = (0..50).map(|i| PathBuf::from(format!("/dir/file{}", i))).collect();
+        let paths: Vec<PathBuf> = (0..50)
+            .map(|i| PathBuf::from(format!("/dir/file{}", i)))
+            .collect();
         util_paths_to_file(paths.clone(), &master);
         let loaded = util_file_to_paths(master.as_path());
         assert_eq!(loaded, paths);

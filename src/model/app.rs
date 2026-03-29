@@ -6,11 +6,11 @@ use std::fs::File;
 use std::io;
 use std::io::Read;
 use std::path::PathBuf;
-use std::process::{exit, Command as ProcessCommand};
+use std::process::{Command as ProcessCommand, exit};
 
-use std::io::IsTerminal;
 use fs2::FileExt;
-use log::{debug, Level};
+use log::{Level, debug};
+use std::io::IsTerminal;
 
 use crate::model::opts::parse_opts;
 use crate::model::state::TempState;
@@ -29,13 +29,11 @@ impl Default for TempApp {
 }
 
 impl TempApp {
-
     pub fn run(&mut self) {
         self.parse_opts();
         self.input();
         self.output()
     }
-
 
     fn input(&mut self) {
         if !stdin().is_terminal() {
@@ -44,7 +42,6 @@ impl TempApp {
             self.read_stdin_terminal();
         }
     }
-
 
     pub fn new() -> Self {
         if simple_logger::init_with_level(TEMP_LOG_LEVEL).is_err() {
@@ -73,7 +70,10 @@ impl TempApp {
         let lock_path = temprs_dir.join(format!("{}.lock", MASTER_RECORD_FILENAME));
         let lock_file = match File::create(&lock_path) {
             Ok(f) => f,
-            Err(_) => { util_terminate_error(ERR_MASTER_LOCK); unreachable!() }
+            Err(_) => {
+                util_terminate_error(ERR_MASTER_LOCK);
+                unreachable!()
+            }
         };
         if lock_file.lock_exclusive().is_err() {
             util_terminate_error(ERR_MASTER_LOCK);
@@ -92,7 +92,8 @@ impl TempApp {
             (Vec::new(), Vec::new())
         } else {
             let (paths, names) = util_file_to_paths_and_names(master_file.as_path());
-            let (exist, exist_names): (Vec<PathBuf>, Vec<Option<String>>) = paths.into_iter()
+            let (exist, exist_names): (Vec<PathBuf>, Vec<Option<String>>) = paths
+                .into_iter()
                 .zip(names)
                 .filter(|(p, _)| p.exists())
                 .unzip();
@@ -115,14 +116,15 @@ impl TempApp {
             String::new(),
         );
 
-        Self { state, _lock_file: lock_file }
+        Self {
+            state,
+            _lock_file: lock_file,
+        }
     }
-
 
     pub fn state(&mut self) -> &mut TempState {
         &mut self.state
     }
-
 
     fn read_stdin_terminal(&mut self) {
         debug!("stdin term");
@@ -151,7 +153,6 @@ impl TempApp {
         }
     }
 
-
     fn output(&mut self) {
         if !io::stdout().is_terminal() {
             self.write_stdout_pipe();
@@ -160,18 +161,15 @@ impl TempApp {
         }
     }
 
-
     fn write_stdout_terminal(&mut self) {
         debug!("stdout term");
         self.cyber_print_buffer_or_stack_file();
     }
 
-
     fn write_stdout_pipe(&mut self) {
         debug!("stdout pipe");
         self.print_buffer_or_stack_file();
     }
-
 
     fn add_idx_in_stack(&mut self, f: String) {
         match f.parse::<i32>() {
@@ -185,7 +183,11 @@ impl TempApp {
                 };
                 cur_files.insert(insert_pos, self.state().new_temp_file().clone());
                 cur_names.insert(insert_pos, self.state().name().clone());
-                util_paths_and_names_to_file(cur_files, &cur_names, self.state().master_record_file());
+                util_paths_and_names_to_file(
+                    cur_files,
+                    &cur_names,
+                    self.state().master_record_file(),
+                );
             }
             Err(_error) => {
                 util_terminate_error(ERR_INVALID_IDX);
@@ -199,11 +201,11 @@ impl TempApp {
                 let stk = self.state.temp_file_stack();
                 Some(util_transform_idx(idx, stk.len()))
             }
-            Err(_) => {
-                self.state.temp_file_names().iter().position(|n| {
-                    n.as_deref() == Some(f)
-                })
-            }
+            Err(_) => self
+                .state
+                .temp_file_names()
+                .iter()
+                .position(|n| n.as_deref() == Some(f)),
         }
     }
 
@@ -217,14 +219,17 @@ impl TempApp {
         }
     }
 
-
     fn resolve_output_path(&self) -> Option<PathBuf> {
-        self.state.output_temp_file().as_ref().map(|stk_idx| {
-            match self.resolve_idx(stk_idx) {
+        self.state
+            .output_temp_file()
+            .as_ref()
+            .map(|stk_idx| match self.resolve_idx(stk_idx) {
                 Some(idx) => self.state.temp_file_stack()[idx].clone(),
-                None => { util_terminate_error(ERR_INVALID_IDX); unreachable!() }
-            }
-        })
+                None => {
+                    util_terminate_error(ERR_INVALID_IDX);
+                    unreachable!()
+                }
+            })
     }
 
     fn print_buffer_or_stack_file(&self) {
@@ -243,7 +248,6 @@ impl TempApp {
         }
     }
 
-
     fn read_stdin_pipe(&mut self) {
         debug!("stdin pipe");
         let mut input = String::new();
@@ -258,7 +262,6 @@ impl TempApp {
 
         self.overwrite_idx_or_write_new_tempfile()
     }
-
 
     fn overwrite_idx_or_write_new_tempfile(&mut self) {
         let file_contents = String::from(self.state.holding_buffer());
@@ -278,21 +281,18 @@ impl TempApp {
                     util_overwrite_file(f, &file_contents);
                 }
             }
-            None => {
-                match insert_idx {
-                    Some(idx) => {
-                        self.add_idx_in_stack(idx);
-                        util_overwrite_file(self.state().new_temp_file(), &file_contents);
-                    }
-                    None => {
-                        self.append_to_master_list();
-                        util_overwrite_file(self.state().new_temp_file(), &file_contents);
-                    }
+            None => match insert_idx {
+                Some(idx) => {
+                    self.add_idx_in_stack(idx);
+                    util_overwrite_file(self.state().new_temp_file(), &file_contents);
                 }
-            }
+                None => {
+                    self.append_to_master_list();
+                    util_overwrite_file(self.state().new_temp_file(), &file_contents);
+                }
+            },
         }
     }
-
 
     fn append_to_master_list(&mut self) {
         debug!(
@@ -344,7 +344,12 @@ impl TempApp {
                 util_terminate_error(ERR_NAME_NUL);
             }
             let name = n.clone();
-            if self.state().temp_file_names().iter().any(|existing| existing.as_deref() == Some(&name)) {
+            if self
+                .state()
+                .temp_file_names()
+                .iter()
+                .any(|existing| existing.as_deref() == Some(&name))
+            {
                 util_terminate_error(ERR_INVALID_NAME);
             }
             self.state().set_name(Some(name));
@@ -516,7 +521,10 @@ impl TempApp {
                 let path = &self.state.temp_file_stack()[idx];
                 let meta = match fs::metadata(path) {
                     Ok(m) => m,
-                    Err(_) => { util_terminate_error(ERR_FILE_READ); unreachable!() }
+                    Err(_) => {
+                        util_terminate_error(ERR_FILE_READ);
+                        unreachable!()
+                    }
                 };
                 println!("{}", meta.len());
                 exit(0)
@@ -528,7 +536,8 @@ impl TempApp {
     fn wc_tempfile(&mut self, stk_idx: String) {
         match self.resolve_idx(&stk_idx) {
             Some(idx) => {
-                let content = util_file_contents_to_string(self.state.temp_file_stack()[idx].as_path());
+                let content =
+                    util_file_contents_to_string(self.state.temp_file_stack()[idx].as_path());
                 println!("{}", content.lines().count());
                 exit(0)
             }
@@ -539,11 +548,15 @@ impl TempApp {
     fn head_tempfile(&mut self, stk_idx: String, n_str: String) {
         let n: usize = match n_str.parse() {
             Ok(v) => v,
-            Err(_) => { util_terminate_error(ERR_INVALID_IDX); unreachable!() }
+            Err(_) => {
+                util_terminate_error(ERR_INVALID_IDX);
+                unreachable!()
+            }
         };
         match self.resolve_idx(&stk_idx) {
             Some(idx) => {
-                let content = util_file_contents_to_string(self.state.temp_file_stack()[idx].as_path());
+                let content =
+                    util_file_contents_to_string(self.state.temp_file_stack()[idx].as_path());
                 let lines: String = content.lines().take(n).collect::<Vec<&str>>().join("\n");
                 if !lines.is_empty() {
                     if io::stdout().is_terminal() {
@@ -561,11 +574,15 @@ impl TempApp {
     fn tail_tempfile(&mut self, stk_idx: String, n_str: String) {
         let n: usize = match n_str.parse() {
             Ok(v) => v,
-            Err(_) => { util_terminate_error(ERR_INVALID_IDX); unreachable!() }
+            Err(_) => {
+                util_terminate_error(ERR_INVALID_IDX);
+                unreachable!()
+            }
         };
         match self.resolve_idx(&stk_idx) {
             Some(idx) => {
-                let content = util_file_contents_to_string(self.state.temp_file_stack()[idx].as_path());
+                let content =
+                    util_file_contents_to_string(self.state.temp_file_stack()[idx].as_path());
                 let all_lines: Vec<&str> = content.lines().collect();
                 let start = all_lines.len().saturating_sub(n);
                 let lines: String = all_lines[start..].join("\n");
@@ -585,7 +602,10 @@ impl TempApp {
     fn expire_tempfiles(&mut self, hours_str: String) {
         let hours: f64 = match hours_str.parse() {
             Ok(h) => h,
-            Err(_) => { util_terminate_error(ERR_INVALID_IDX); unreachable!() }
+            Err(_) => {
+                util_terminate_error(ERR_INVALID_IDX);
+                unreachable!()
+            }
         };
         let cutoff_secs = (hours * 3600.0) as u64;
         let now = std::time::SystemTime::now();
@@ -596,12 +616,12 @@ impl TempApp {
         let mut removed = 0usize;
 
         for (p, n) in paths.into_iter().zip(names.into_iter()) {
-            let dominated = fs::metadata(&p).ok().and_then(|m| {
-                m.modified().ok()
-            }).and_then(|mtime| {
-                now.duration_since(mtime).ok()
-            }).map(|age| age.as_secs() >= cutoff_secs)
-            .unwrap_or(true);
+            let dominated = fs::metadata(&p)
+                .ok()
+                .and_then(|m| m.modified().ok())
+                .and_then(|mtime| now.duration_since(mtime).ok())
+                .map(|age| age.as_secs() >= cutoff_secs)
+                .unwrap_or(true);
 
             if dominated {
                 util_remove_file(&p);
@@ -624,18 +644,18 @@ impl TempApp {
 
         match key.as_str() {
             "name" => {
-                indices.sort_by(|&a, &b| {
-                    paths[a].file_name().cmp(&paths[b].file_name())
-                });
+                indices.sort_by(|&a, &b| paths[a].file_name().cmp(&paths[b].file_name()));
             }
             "size" => {
-                let sizes: Vec<u64> = paths.iter()
+                let sizes: Vec<u64> = paths
+                    .iter()
                     .map(|p| fs::metadata(p).map(|m| m.len()).unwrap_or(0))
                     .collect();
                 indices.sort_by(|&a, &b| sizes[a].cmp(&sizes[b]));
             }
             "mtime" => {
-                let mtimes: Vec<Option<std::time::SystemTime>> = paths.iter()
+                let mtimes: Vec<Option<std::time::SystemTime>> = paths
+                    .iter()
                     .map(|p| fs::metadata(p).ok().and_then(|m| m.modified().ok()))
                     .collect();
                 indices.sort_by(|&a, &b| mtimes[a].cmp(&mtimes[b]));
@@ -663,7 +683,10 @@ impl TempApp {
     fn clear_all(&mut self) {
         let parent = match self.state().master_record_file().as_path().parent() {
             Some(p) => p.to_path_buf(),
-            None => { util_terminate_error(ERR_NO_FILE); unreachable!() }
+            None => {
+                util_terminate_error(ERR_NO_FILE);
+                unreachable!()
+            }
         };
         if let Err(_e) = remove_dir_all(&parent) {
             util_terminate_error(ERR_NO_FILE);
@@ -674,7 +697,8 @@ impl TempApp {
     fn dup_tempfile(&mut self, stk_idx: String) {
         match self.resolve_idx(&stk_idx) {
             Some(idx) => {
-                let content = util_file_contents_to_string(self.state.temp_file_stack()[idx].as_path());
+                let content =
+                    util_file_contents_to_string(self.state.temp_file_stack()[idx].as_path());
                 self.append_to_master_list();
                 util_overwrite_file(self.state.new_temp_file(), &content);
                 exit(0)
@@ -686,11 +710,17 @@ impl TempApp {
     fn swap_tempfiles(&mut self, a: String, b: String) {
         let idx_a = match self.resolve_idx(&a) {
             Some(idx) => idx,
-            None => { util_terminate_error(ERR_INVALID_IDX); unreachable!() }
+            None => {
+                util_terminate_error(ERR_INVALID_IDX);
+                unreachable!()
+            }
         };
         let idx_b = match self.resolve_idx(&b) {
             Some(idx) => idx,
-            None => { util_terminate_error(ERR_INVALID_IDX); unreachable!() }
+            None => {
+                util_terminate_error(ERR_INVALID_IDX);
+                unreachable!()
+            }
         };
         let mut paths = self.state().temp_file_stack().clone();
         let mut names = self.state().temp_file_names().clone();
@@ -703,17 +733,27 @@ impl TempApp {
     fn move_tempfile(&mut self, from: String, to: String) {
         let from_idx = match self.resolve_idx(&from) {
             Some(idx) => idx,
-            None => { util_terminate_error(ERR_INVALID_IDX); unreachable!() }
+            None => {
+                util_terminate_error(ERR_INVALID_IDX);
+                unreachable!()
+            }
         };
         let to_idx = match to.parse::<i32>() {
             Ok(idx) => util_transform_idx(idx, self.state().temp_file_stack().len()),
-            Err(_) => { util_terminate_error(ERR_INVALID_IDX); unreachable!() }
+            Err(_) => {
+                util_terminate_error(ERR_INVALID_IDX);
+                unreachable!()
+            }
         };
         let mut paths = self.state().temp_file_stack().clone();
         let mut names = self.state().temp_file_names().clone();
         let path = paths.remove(from_idx);
         let name = names.remove(from_idx);
-        let insert_at = if to_idx > paths.len() { paths.len() } else { to_idx };
+        let insert_at = if to_idx > paths.len() {
+            paths.len()
+        } else {
+            to_idx
+        };
         paths.insert(insert_at, path);
         names.insert(insert_at, name);
         util_paths_and_names_to_file(paths, &names, self.state().master_record_file());
@@ -723,11 +763,17 @@ impl TempApp {
     fn diff_tempfiles(&mut self, a: String, b: String) {
         let path_a = match self.resolve_idx(&a) {
             Some(idx) => self.state().temp_file_stack()[idx].clone(),
-            None => { util_terminate_error(ERR_INVALID_IDX); unreachable!() }
+            None => {
+                util_terminate_error(ERR_INVALID_IDX);
+                unreachable!()
+            }
         };
         let path_b = match self.resolve_idx(&b) {
             Some(idx) => self.state().temp_file_stack()[idx].clone(),
-            None => { util_terminate_error(ERR_INVALID_IDX); unreachable!() }
+            None => {
+                util_terminate_error(ERR_INVALID_IDX);
+                unreachable!()
+            }
         };
         let status = ProcessCommand::new("diff")
             .arg("-u")
@@ -736,7 +782,9 @@ impl TempApp {
             .status();
         match status {
             Ok(s) => exit(s.code().unwrap_or(2)),
-            Err(_) => { util_terminate_error(ERR_FILE_READ); }
+            Err(_) => {
+                util_terminate_error(ERR_FILE_READ);
+            }
         }
     }
 
@@ -811,14 +859,18 @@ impl TempApp {
                 };
                 println!(
                     "\x1b[33m [{:02}]\x1b[0m \x1b[36m>\x1b[0m \x1b[35m{}\x1b[0m{}",
-                    i + 1, p.display(), tag
+                    i + 1,
+                    p.display(),
+                    tag
                 );
                 for (ln, line) in &matching_lines {
-                    let highlighted = line.replace(
-                        &pattern,
-                        &format!("\x1b[31;1m{}\x1b[0;32m", pattern),
+                    let highlighted =
+                        line.replace(&pattern, &format!("\x1b[31;1m{}\x1b[0;32m", pattern));
+                    println!(
+                        "\x1b[33m  {}:\x1b[0m \x1b[32m{}\x1b[0m",
+                        ln + 1,
+                        highlighted
                     );
-                    println!("\x1b[33m  {}:\x1b[0m \x1b[32m{}\x1b[0m", ln + 1, highlighted);
                 }
             } else {
                 let tag = match n {
@@ -845,12 +897,18 @@ impl TempApp {
                 let name = self.state().temp_file_names()[idx].clone();
                 let meta = match fs::metadata(&path) {
                     Ok(m) => m,
-                    Err(_) => { util_terminate_error(ERR_FILE_READ); unreachable!() }
+                    Err(_) => {
+                        util_terminate_error(ERR_FILE_READ);
+                        unreachable!()
+                    }
                 };
                 let size = meta.len();
-                let modified = meta.modified().ok().and_then(|t| {
-                    t.duration_since(std::time::UNIX_EPOCH).ok()
-                }).map(|d| d.as_secs()).unwrap_or(0);
+                let modified = meta
+                    .modified()
+                    .ok()
+                    .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                    .map(|d| d.as_secs())
+                    .unwrap_or(0);
 
                 let size_str = if size < 1024 {
                     format!("{} B", size)
@@ -889,7 +947,12 @@ impl TempApp {
         if new.contains(MASTER_FIELD_DELIM) {
             util_terminate_error(ERR_NAME_NUL);
         }
-        if self.state().temp_file_names().iter().any(|n| n.as_deref() == Some(&new)) {
+        if self
+            .state()
+            .temp_file_names()
+            .iter()
+            .any(|n| n.as_deref() == Some(&new))
+        {
             util_terminate_error(ERR_INVALID_NAME);
         }
         match self.resolve_idx(&old) {

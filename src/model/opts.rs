@@ -15,23 +15,29 @@ const CYBERPUNK_TEMPLATE: &str = "
 {after-help}";
 
 const BANNER: &str = concat!(
- "\x1b[36m ████████╗███████╗███╗   ███╗██████╗ ██████╗ ███████╗\x1b[0m\n",
- "\x1b[36m ╚══██╔══╝██╔════╝████╗ ████║██╔══██╗██╔══██╗██╔════╝\x1b[0m\n",
- "\x1b[35m    ██║   █████╗  ██╔████╔██║██████╔╝██████╔╝███████╗\x1b[0m\n",
- "\x1b[35m    ██║   ██╔══╝  ██║╚██╔╝██║██╔═══╝ ██╔══██╗╚════██║\x1b[0m\n",
- "\x1b[31m    ██║   ███████╗██║ ╚═╝ ██║██║     ██║  ██║███████║\x1b[0m\n",
- "\x1b[31m    ╚═╝   ╚══════╝╚═╝     ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝\x1b[0m\n",
- "\x1b[36m ┌──────────────────────────────────────────────────────┐\x1b[0m\n",
- "\x1b[36m │ STATUS: ONLINE  // SIGNAL: ████████░░ // v", env!("CARGO_PKG_VERSION"), "\x1b[36m   │\x1b[0m\n",
- "\x1b[36m └──────────────────────────────────────────────────────┘\x1b[0m\n",
- "\x1b[35m  >> TEMPORARY FILE STACK MANAGER // FULL SPECTRUM <<\x1b[0m");
+    "\x1b[36m ████████╗███████╗███╗   ███╗██████╗ ██████╗ ███████╗\x1b[0m\n",
+    "\x1b[36m ╚══██╔══╝██╔════╝████╗ ████║██╔══██╗██╔══██╗██╔════╝\x1b[0m\n",
+    "\x1b[35m    ██║   █████╗  ██╔████╔██║██████╔╝██████╔╝███████╗\x1b[0m\n",
+    "\x1b[35m    ██║   ██╔══╝  ██║╚██╔╝██║██╔═══╝ ██╔══██╗╚════██║\x1b[0m\n",
+    "\x1b[31m    ██║   ███████╗██║ ╚═╝ ██║██║     ██║  ██║███████║\x1b[0m\n",
+    "\x1b[31m    ╚═╝   ╚══════╝╚═╝     ╚═╝╚═╝     ╚═╝  ╚═╝╚══════╝\x1b[0m\n",
+    "\x1b[36m ┌──────────────────────────────────────────────────────┐\x1b[0m\n",
+    "\x1b[36m │ STATUS: ONLINE  // SIGNAL: ████████░░ // v",
+    env!("CARGO_PKG_VERSION"),
+    "\x1b[36m   │\x1b[0m\n",
+    "\x1b[36m └──────────────────────────────────────────────────────┘\x1b[0m\n",
+    "\x1b[35m  >> TEMPORARY FILE STACK MANAGER // FULL SPECTRUM <<\x1b[0m"
+);
 
 const AFTER: &str = concat!(
-"\x1b[36m  ── SYSTEM ─────────────────────────────────────────\x1b[0m\n",
-"\x1b[35m  v", env!("CARGO_PKG_VERSION"), " \x1b[0m// \x1b[33m(c) Jacob Menke and contributors\x1b[0m\n",
-"\x1b[35m  The stack is vast and infinite.\x1b[0m\n",
-"\x1b[33m  >>> JACK IN. PUSH YOUR DATA. OWN YOUR TEMP FILES. <<<\x1b[0m\n",
-"\x1b[36m ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░\x1b[0m");
+    "\x1b[36m  ── SYSTEM ─────────────────────────────────────────\x1b[0m\n",
+    "\x1b[35m  v",
+    env!("CARGO_PKG_VERSION"),
+    " \x1b[0m// \x1b[33m(c) Jacob Menke and contributors\x1b[0m\n",
+    "\x1b[35m  The stack is vast and infinite.\x1b[0m\n",
+    "\x1b[33m  >>> JACK IN. PUSH YOUR DATA. OWN YOUR TEMP FILES. <<<\x1b[0m\n",
+    "\x1b[36m ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░\x1b[0m"
+);
 
 pub fn parse_opts() -> Command {
     Command::new(NAME)
@@ -505,13 +511,19 @@ mod tests {
     #[test]
     fn recognizes_positional_argfile() {
         let m = parse_opts().get_matches_from(vec!["tp", "myfile.txt"]);
-        assert_eq!(m.get_one::<String>(ARGFILE).map(|s| s.as_str()), Some("myfile.txt"));
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("myfile.txt")
+        );
     }
 
     #[test]
     fn positional_argfile_with_path() {
         let m = parse_opts().get_matches_from(vec!["tp", "/tmp/data.txt"]);
-        assert_eq!(m.get_one::<String>(ARGFILE).map(|s| s.as_str()), Some("/tmp/data.txt"));
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("/tmp/data.txt")
+        );
     }
 
     // ── combined flags ──────────────────────────────────
@@ -634,13 +646,25 @@ mod tests {
     #[test]
     fn command_has_all_expected_args() {
         let app = parse_opts();
-        let arg_ids: Vec<&str> = app.get_arguments()
-            .map(|a| a.get_id().as_str())
-            .collect();
+        let arg_ids: Vec<&str> = app.get_arguments().map(|a| a.get_id().as_str()).collect();
         for expected in &[
-            INPUT, OUTPUT, ADD, REMOVE, POP, UNSHIFT, SHIFT,
-            ARGFILE, DIRECTORY, MASTER, LIST_FILES, LIST_FILES_NUMBERED,
-            LIST_CONTENTS, LIST_CONTENTS_NUMBERED, SILENT, CLEAR, VERBOSE,
+            INPUT,
+            OUTPUT,
+            ADD,
+            REMOVE,
+            POP,
+            UNSHIFT,
+            SHIFT,
+            ARGFILE,
+            DIRECTORY,
+            MASTER,
+            LIST_FILES,
+            LIST_FILES_NUMBERED,
+            LIST_CONTENTS,
+            LIST_CONTENTS_NUMBERED,
+            SILENT,
+            CLEAR,
+            VERBOSE,
         ] {
             assert!(arg_ids.contains(expected), "missing arg: {}", expected);
         }
@@ -650,7 +674,8 @@ mod tests {
     fn command_has_17_custom_args() {
         let app = parse_opts();
         // clap adds --help and --version automatically
-        let custom_count = app.get_arguments()
+        let custom_count = app
+            .get_arguments()
             .filter(|a| a.get_id() != "help" && a.get_id() != "version")
             .count();
         assert_eq!(custom_count, 38);
@@ -661,8 +686,7 @@ mod tests {
     #[test]
     fn all_boolean_flags_independent() {
         let m = parse_opts().get_matches_from(vec![
-            "tp", "-p", "-u", "-s", "-d", "-m", "-l", "-n",
-            "-L", "-N", "-q", "-c", "-v",
+            "tp", "-p", "-u", "-s", "-d", "-m", "-l", "-n", "-L", "-N", "-q", "-c", "-v",
         ]);
         assert!(m.get_flag(POP));
         assert!(m.get_flag(UNSHIFT));
@@ -713,7 +737,10 @@ mod tests {
     #[test]
     fn output_accepts_negative_large() {
         let m = parse_opts().get_matches_from(vec!["tp", "-o", "-999"]);
-        assert_eq!(m.get_one::<String>(OUTPUT).map(|s| s.as_str()), Some("-999"));
+        assert_eq!(
+            m.get_one::<String>(OUTPUT).map(|s| s.as_str()),
+            Some("-999")
+        );
     }
 
     #[test]
@@ -725,7 +752,10 @@ mod tests {
     #[test]
     fn remove_accepts_large_value() {
         let m = parse_opts().get_matches_from(vec!["tp", "-r", "99999"]);
-        assert_eq!(m.get_one::<String>(REMOVE).map(|s| s.as_str()), Some("99999"));
+        assert_eq!(
+            m.get_one::<String>(REMOVE).map(|s| s.as_str()),
+            Some("99999")
+        );
     }
 
     // ── positional with flags combined ──────────────────
@@ -734,21 +764,30 @@ mod tests {
     fn positional_with_pop() {
         let m = parse_opts().get_matches_from(vec!["tp", "-p", "somefile"]);
         assert!(m.get_flag(POP));
-        assert_eq!(m.get_one::<String>(ARGFILE).map(|s| s.as_str()), Some("somefile"));
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("somefile")
+        );
     }
 
     #[test]
     fn positional_with_verbose() {
         let m = parse_opts().get_matches_from(vec!["tp", "-v", "myfile"]);
         assert!(m.get_count(VERBOSE) > 0);
-        assert_eq!(m.get_one::<String>(ARGFILE).map(|s| s.as_str()), Some("myfile"));
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("myfile")
+        );
     }
 
     #[test]
     fn positional_with_quiet() {
         let m = parse_opts().get_matches_from(vec!["tp", "-q", "file.txt"]);
         assert!(m.get_flag(SILENT));
-        assert_eq!(m.get_one::<String>(ARGFILE).map(|s| s.as_str()), Some("file.txt"));
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("file.txt")
+        );
     }
 
     // ── multiple verbose levels ─────────────────────────
@@ -800,7 +839,10 @@ mod tests {
     #[test]
     fn double_dash_stops_parsing() {
         let m = parse_opts().get_matches_from(vec!["tp", "--", "--not-a-flag"]);
-        assert_eq!(m.get_one::<String>(ARGFILE).map(|s| s.as_str()), Some("--not-a-flag"));
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("--not-a-flag")
+        );
     }
 
     // ── long form with equals sign ──────────────────────
@@ -833,9 +875,8 @@ mod tests {
 
     #[test]
     fn all_value_args_together() {
-        let m = parse_opts().get_matches_from(vec![
-            "tp", "-i", "1", "-o", "2", "-a", "3", "-r", "4",
-        ]);
+        let m =
+            parse_opts().get_matches_from(vec!["tp", "-i", "1", "-o", "2", "-a", "3", "-r", "4"]);
         assert_eq!(m.get_one::<String>(INPUT).map(|s| s.as_str()), Some("1"));
         assert_eq!(m.get_one::<String>(OUTPUT).map(|s| s.as_str()), Some("2"));
         assert_eq!(m.get_one::<String>(ADD).map(|s| s.as_str()), Some("3"));
@@ -844,9 +885,7 @@ mod tests {
 
     #[test]
     fn value_args_with_boolean_flags() {
-        let m = parse_opts().get_matches_from(vec![
-            "tp", "-i", "1", "-q", "-v", "-d",
-        ]);
+        let m = parse_opts().get_matches_from(vec!["tp", "-i", "1", "-q", "-v", "-d"]);
         assert_eq!(m.get_one::<String>(INPUT).map(|s| s.as_str()), Some("1"));
         assert!(m.get_flag(SILENT));
         assert!(m.get_count(VERBOSE) > 0);
@@ -932,13 +971,19 @@ mod tests {
     #[test]
     fn positional_with_spaces_in_name() {
         let m = parse_opts().get_matches_from(vec!["tp", "my file.txt"]);
-        assert_eq!(m.get_one::<String>(ARGFILE).map(|s| s.as_str()), Some("my file.txt"));
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("my file.txt")
+        );
     }
 
     #[test]
     fn positional_with_unicode() {
         let m = parse_opts().get_matches_from(vec!["tp", "日本語.txt"]);
-        assert_eq!(m.get_one::<String>(ARGFILE).map(|s| s.as_str()), Some("日本語.txt"));
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("日本語.txt")
+        );
     }
 
     #[test]
@@ -956,7 +1001,10 @@ mod tests {
     #[test]
     fn positional_hidden_file() {
         let m = parse_opts().get_matches_from(vec!["tp", ".hidden"]);
-        assert_eq!(m.get_one::<String>(ARGFILE).map(|s| s.as_str()), Some(".hidden"));
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some(".hidden")
+        );
     }
 
     // ── negative index for output via long flag ─────────

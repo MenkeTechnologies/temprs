@@ -24,7 +24,6 @@ pub struct TempState {
 }
 
 impl TempState {
-
     #[cfg(test)]
     pub fn set_new_temp_file(&mut self, new_temp_file: PathBuf) {
         self.new_temp_file = new_temp_file;
@@ -91,7 +90,6 @@ impl TempState {
 }
 
 impl TempState {
-
     pub fn new_temp_file(&self) -> &PathBuf {
         &self.new_temp_file
     }
@@ -155,7 +153,6 @@ impl TempState {
 }
 
 impl TempState {
-
     pub fn new(
         out_file: PathBuf,
         master_record_file: PathBuf,
@@ -186,11 +183,9 @@ impl TempState {
 }
 
 impl TempState {
-
     pub fn out_file_path_str(&self) -> String {
         util_path_to_string(self.new_temp_file())
     }
-
 
     #[cfg(test)]
     pub fn master_file_path_str(&self) -> String {
