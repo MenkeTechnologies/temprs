@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::util::utils::util_path_to_string;
+use crate::util::utils::{util_path_to_string, util_paths_and_names_to_file};
 
 #[cfg(test)]
 mod tests;
@@ -106,6 +106,10 @@ impl TempState {
         &self.temp_file_stack
     }
 
+    pub fn temp_file_stack_mut(&mut self) -> &mut Vec<PathBuf> {
+        &mut self.temp_file_stack
+    }
+
     pub fn arg_file(&self) -> &Option<PathBuf> {
         &self.arg_file
     }
@@ -116,6 +120,10 @@ impl TempState {
 
     pub fn holding_buffer(&self) -> &str {
         &self.holding_buffer
+    }
+
+    pub fn holding_buffer_mut(&mut self) -> &mut String {
+        &mut self.holding_buffer
     }
 
     pub fn output_buffer(&self) -> &str {
@@ -149,6 +157,10 @@ impl TempState {
 
     pub fn temp_file_names(&self) -> &Vec<Option<String>> {
         &self.temp_file_names
+    }
+
+    pub fn temp_file_names_mut(&mut self) -> &mut Vec<Option<String>> {
+        &mut self.temp_file_names
     }
 }
 
@@ -190,5 +202,13 @@ impl TempState {
     #[cfg(test)]
     pub fn master_file_path_str(&self) -> String {
         util_path_to_string(self.master_record_file())
+    }
+
+    pub fn write_master(&self) {
+        util_paths_and_names_to_file(
+            &self.temp_file_stack,
+            &self.temp_file_names,
+            &self.master_record_file,
+        );
     }
 }

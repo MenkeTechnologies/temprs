@@ -15,7 +15,18 @@ use crate::util::consts::*;
 // ── Cyberpunk terminal output helpers ────────────────
 
 fn is_tty() -> bool {
-    io::stdout().is_terminal()
+    use std::cell::Cell;
+    thread_local! {
+        static CACHED: Cell<Option<bool>> = const { Cell::new(None) };
+    }
+    CACHED.with(|c| match c.get() {
+        Some(v) => v,
+        None => {
+            let v = io::stdout().is_terminal();
+            c.set(Some(v));
+            v
+        }
+    })
 }
 
 pub fn cyber_hr() {
@@ -158,12 +169,12 @@ pub fn util_file_to_paths_and_names(path: &Path) -> (Vec<PathBuf>, Vec<Option<St
     (paths, names)
 }
 
-pub fn util_paths_to_file(paths: Vec<PathBuf>, out: &Path) {
+pub fn util_paths_to_file(paths: &[PathBuf], out: &Path) {
     let names: Vec<Option<String>> = vec![None; paths.len()];
     util_paths_and_names_to_file(paths, &names, out);
 }
 
-pub fn util_paths_and_names_to_file(paths: Vec<PathBuf>, names: &[Option<String>], out: &Path) {
+pub fn util_paths_and_names_to_file(paths: &[PathBuf], names: &[Option<String>], out: &Path) {
     let records: Vec<String> = paths
         .iter()
         .zip(names.iter())
@@ -482,7 +493,7 @@ mod tests {
             PathBuf::from("/tmp/b"),
             PathBuf::from("/tmp/c"),
         ];
-        util_paths_to_file(paths.clone(), &master);
+        util_paths_to_file(&paths, &master);
         let loaded = util_file_to_paths(master.as_path());
         assert_eq!(loaded, paths);
         fs::remove_dir_all(&dir).unwrap();
@@ -494,8 +505,8 @@ mod tests {
         let master = dir.join("master");
         let paths1 = vec![PathBuf::from("/tmp/old")];
         let paths2 = vec![PathBuf::from("/tmp/new1"), PathBuf::from("/tmp/new2")];
-        util_paths_to_file(paths1, &master);
-        util_paths_to_file(paths2.clone(), &master);
+        util_paths_to_file(&paths1, &master);
+        util_paths_to_file(&paths2, &master);
         let loaded = util_file_to_paths(master.as_path());
         assert_eq!(loaded, paths2);
         fs::remove_dir_all(&dir).unwrap();
@@ -568,7 +579,7 @@ mod tests {
         let dir = tmp_dir();
         let master = dir.join("master");
         let paths = vec![PathBuf::from("/tmp/a"), PathBuf::from("/tmp/b")];
-        util_paths_to_file(paths, &master);
+        util_paths_to_file(&paths, &master);
         assert!(master.exists());
         assert!(!master.with_extension("tmp").exists());
         fs::remove_dir_all(&dir).unwrap();
@@ -579,9 +590,9 @@ mod tests {
         let dir = tmp_dir();
         let master = dir.join("master");
         let paths1 = vec![PathBuf::from("/tmp/old")];
-        util_paths_to_file(paths1, &master);
+        util_paths_to_file(&paths1, &master);
         let paths2 = vec![PathBuf::from("/tmp/new1"), PathBuf::from("/tmp/new2")];
-        util_paths_to_file(paths2.clone(), &master);
+        util_paths_to_file(&paths2, &master);
         let loaded = util_file_to_paths(master.as_path());
         assert_eq!(loaded, paths2);
         assert!(!master.with_extension("tmp").exists());
@@ -613,7 +624,7 @@ mod tests {
             PathBuf::from("/tmp/line\ntwo\nthree"),
             PathBuf::from("/tmp/normal"),
         ];
-        util_paths_to_file(paths.clone(), &master);
+        util_paths_to_file(&paths, &master);
         let loaded = util_file_to_paths(master.as_path());
         assert_eq!(loaded, paths);
         fs::remove_dir_all(&dir).unwrap();
@@ -628,7 +639,7 @@ mod tests {
             PathBuf::from("/tmp/normal"),
         ];
         let names = vec![Some("tagged".to_string()), None];
-        util_paths_and_names_to_file(paths.clone(), &names, &master);
+        util_paths_and_names_to_file(&paths, &names, &master);
         let (loaded_paths, loaded_names) = util_file_to_paths_and_names(master.as_path());
         assert_eq!(loaded_paths, paths);
         assert_eq!(loaded_names, names);
@@ -904,7 +915,7 @@ mod tests {
     fn paths_to_file_empty_vec() {
         let dir = tmp_dir();
         let master = dir.join("master");
-        util_paths_to_file(vec![], &master);
+        util_paths_to_file(&vec![], &master);
         let content = fs::read_to_string(&master).unwrap_or_default();
         assert!(content.is_empty());
         fs::remove_dir_all(&dir).unwrap();
@@ -915,7 +926,7 @@ mod tests {
         let dir = tmp_dir();
         let master = dir.join("master");
         let paths = vec![PathBuf::from("/tmp/single")];
-        util_paths_to_file(paths.clone(), &master);
+        util_paths_to_file(&paths, &master);
         let loaded = util_file_to_paths(master.as_path());
         assert_eq!(loaded, paths);
         fs::remove_dir_all(&dir).unwrap();
@@ -928,7 +939,7 @@ mod tests {
         let paths: Vec<PathBuf> = (0..20)
             .map(|i| PathBuf::from(format!("/tmp/f{}", i)))
             .collect();
-        util_paths_to_file(paths.clone(), &master);
+        util_paths_to_file(&paths, &master);
         let loaded = util_file_to_paths(master.as_path());
         assert_eq!(loaded, paths);
         fs::remove_dir_all(&dir).unwrap();
@@ -1294,7 +1305,7 @@ mod tests {
             PathBuf::from("/tmp/日本語/file"),
             PathBuf::from("/tmp/café/data"),
         ];
-        util_paths_to_file(paths.clone(), &master);
+        util_paths_to_file(&paths, &master);
         let loaded = util_file_to_paths(master.as_path());
         assert_eq!(loaded, paths);
         fs::remove_dir_all(&dir).unwrap();
@@ -1304,9 +1315,9 @@ mod tests {
     fn paths_to_file_overwrite_three_times() {
         let dir = tmp_dir();
         let master = dir.join("master");
-        util_paths_to_file(vec![PathBuf::from("/a")], &master);
-        util_paths_to_file(vec![PathBuf::from("/b"), PathBuf::from("/c")], &master);
-        util_paths_to_file(vec![PathBuf::from("/d")], &master);
+        util_paths_to_file(&[PathBuf::from("/a")], &master);
+        util_paths_to_file(&[PathBuf::from("/b"), PathBuf::from("/c")], &master);
+        util_paths_to_file(&[PathBuf::from("/d")], &master);
         let loaded = util_file_to_paths(master.as_path());
         assert_eq!(loaded, vec![PathBuf::from("/d")]);
         fs::remove_dir_all(&dir).unwrap();
@@ -1361,7 +1372,7 @@ mod tests {
             PathBuf::from("/tmp/b"),
             PathBuf::from("/tmp/c"),
         ];
-        util_paths_to_file(paths.clone(), &file);
+        util_paths_to_file(&paths, &file);
         let loaded = util_file_to_paths(file.as_path());
         assert_eq!(loaded, paths);
         fs::remove_dir_all(&dir).unwrap();
@@ -1709,10 +1720,10 @@ mod tests {
             PathBuf::from("/b"),
             PathBuf::from("/c"),
         ];
-        util_paths_to_file(original, &master);
+        util_paths_to_file(&original, &master);
         let mut loaded = util_file_to_paths(master.as_path());
         loaded.retain(|p| p != &PathBuf::from("/b"));
-        util_paths_to_file(loaded.clone(), &master);
+        util_paths_to_file(&loaded, &master);
         let final_paths = util_file_to_paths(master.as_path());
         assert_eq!(final_paths, vec![PathBuf::from("/a"), PathBuf::from("/c")]);
         fs::remove_dir_all(&dir).unwrap();
@@ -1725,7 +1736,7 @@ mod tests {
         let paths: Vec<PathBuf> = (0..50)
             .map(|i| PathBuf::from(format!("/dir/file{}", i)))
             .collect();
-        util_paths_to_file(paths.clone(), &master);
+        util_paths_to_file(&paths, &master);
         let loaded = util_file_to_paths(master.as_path());
         assert_eq!(loaded, paths);
         fs::remove_dir_all(&dir).unwrap();
@@ -1739,7 +1750,7 @@ mod tests {
             PathBuf::from("/a/b/c/d/e/f/g/h"),
             PathBuf::from("/i/j/k/l/m/n/o/p"),
         ];
-        util_paths_to_file(paths.clone(), &master);
+        util_paths_to_file(&paths, &master);
         let loaded = util_file_to_paths(master.as_path());
         assert_eq!(loaded, paths);
         fs::remove_dir_all(&dir).unwrap();
@@ -1762,8 +1773,8 @@ mod tests {
     fn paths_to_file_empty_then_nonempty() {
         let dir = tmp_dir();
         let master = dir.join("master");
-        util_paths_to_file(vec![], &master);
-        util_paths_to_file(vec![PathBuf::from("/x"), PathBuf::from("/y")], &master);
+        util_paths_to_file(&vec![], &master);
+        util_paths_to_file(&[PathBuf::from("/x"), PathBuf::from("/y")], &master);
         let loaded = util_file_to_paths(master.as_path());
         assert_eq!(loaded, vec![PathBuf::from("/x"), PathBuf::from("/y")]);
         fs::remove_dir_all(&dir).unwrap();
@@ -1806,7 +1817,7 @@ mod tests {
             PathBuf::from("/café/résumé"),
             PathBuf::from("/path with spaces/and 日本語"),
         ];
-        util_paths_to_file(paths.clone(), &master);
+        util_paths_to_file(&paths, &master);
         let loaded = util_file_to_paths(master.as_path());
         assert_eq!(loaded, paths);
         fs::remove_dir_all(&dir).unwrap();
