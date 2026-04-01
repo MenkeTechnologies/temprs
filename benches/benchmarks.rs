@@ -60,7 +60,7 @@ fn bench_paths_to_file(c: &mut Criterion) {
         .collect();
 
     c.bench_function("paths_to_file_100", |b| {
-        b.iter(|| util_paths_to_file(black_box(paths.clone()), black_box(&out)))
+        b.iter(|| util_paths_to_file(black_box(&paths), black_box(&out)))
     });
 
     let _ = fs::remove_dir_all(&dir);
