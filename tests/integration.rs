@@ -5850,3 +5850,22 @@ fn negative_output_minus_one_is_top_after_two_pushes() {
     run_tp_stdin(&dir, &[], "top");
     assert_eq!(stdout(&run_tp(&dir, &["-o", "-1"])).trim(), "top");
 }
+
+#[test]
+fn output_negative_two_is_bottom_after_two_pushes() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "bottom");
+    tick();
+    run_tp_stdin(&dir, &[], "top");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "-2"])).trim(), "bottom");
+}
+
+#[test]
+fn size_top_of_stack_matches_bytes_written() {
+    let dir = setup_clean_env();
+    let body = "hello";
+    run_tp_stdin(&dir, &[], body);
+    let out = stdout(&run_tp(&dir, &["--size", "1"]));
+    let sz = out.trim();
+    assert_eq!(sz.parse::<usize>().unwrap(), body.len());
+}
