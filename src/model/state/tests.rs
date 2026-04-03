@@ -1933,3 +1933,48 @@ fn new_with_maximal_stack_and_names_length_match() {
     assert_eq!(s.temp_file_stack().len(), n);
     assert_eq!(s.temp_file_names().len(), n);
 }
+
+#[test]
+fn verbose_roundtrip_set_clear() {
+    let mut s = make_state();
+    for v in [1u32, 7, 42, 0] {
+        s.set_verbose(v);
+        assert_eq!(s.verbose(), v);
+    }
+}
+
+#[test]
+fn silent_toggle_twice() {
+    let mut s = make_state();
+    s.set_silent(true);
+    assert!(s.silent());
+    s.set_silent(false);
+    assert!(!s.silent());
+    s.set_silent(true);
+    assert!(s.silent());
+}
+
+#[test]
+fn holding_buffer_clear_after_set() {
+    let mut s = make_state();
+    s.set_holding_buffer("full".to_string());
+    assert_eq!(s.holding_buffer(), "full");
+    s.set_holding_buffer(String::new());
+    assert!(s.holding_buffer().is_empty());
+}
+
+#[test]
+fn arg_file_set_and_clear() {
+    let mut s = make_state();
+    s.set_arg_file(Some(PathBuf::from("/tmp/x")));
+    assert_eq!(s.arg_file(), &Some(PathBuf::from("/tmp/x")));
+    s.set_arg_file(None);
+    assert!(s.arg_file().is_none());
+}
+
+#[test]
+fn name_set_unicode() {
+    let mut s = make_state();
+    s.set_name(Some("タグ".to_string()));
+    assert_eq!(s.name(), &Some("タグ".to_string()));
+}

@@ -5669,3 +5669,62 @@ fn sort_name_on_single_file_exits_ok() {
     let out = run_tp(&dir, &["--sort", "name"]);
     assert!(out.status.success());
 }
+
+#[test]
+fn count_remains_consistent_after_failed_grep() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "solo");
+    let out = run_tp(&dir, &["--grep", "nomatchzzz"]);
+    assert!(!out.status.success());
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "1");
+}
+
+#[test]
+fn three_pushes_output_middle_index() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a");
+    tick();
+    run_tp_stdin(&dir, &[], "b");
+    tick();
+    run_tp_stdin(&dir, &[], "c");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])).trim(), "b");
+}
+
+#[test]
+fn negative_two_outputs_bottom_three_items() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "bottom");
+    tick();
+    run_tp_stdin(&dir, &[], "mid");
+    tick();
+    run_tp_stdin(&dir, &[], "top");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "-2"])).trim(), "mid");
+}
+
+#[test]
+fn move_stack_item_exits_ok_two_files() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "x");
+    tick();
+    run_tp_stdin(&dir, &[], "y");
+    let out = run_tp(&dir, &["--mv", "1", "2"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn path_and_wc_same_top_index() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "one\ntwo\n");
+    let wc = run_tp(&dir, &["--wc", "1"]);
+    assert!(stdout(&wc).contains('2'));
+    let path_out = run_tp(&dir, &["--path", "1"]);
+    assert!(path_out.status.success());
+}
+
+#[test]
+fn edit_invalid_index_reports_error() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "only");
+    let out = run_tp(&dir, &["-e", "99"]);
+    assert!(!out.status.success());
+}

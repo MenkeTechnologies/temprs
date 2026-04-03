@@ -402,3 +402,32 @@ fn apply_permutation_n6_derangement_one() {
     apply_permutation(&mut v, &[1, 0, 3, 2]);
     assert_eq!(v, vec!['b', 'a', 'd', 'c']);
 }
+
+#[test]
+fn apply_permutation_n11_identity_forward() {
+    let n = 11;
+    let perm: Vec<usize> = (0..n).collect();
+    let mut v: Vec<i8> = (0..n as i8).collect();
+    apply_permutation(&mut v, &perm);
+    assert_eq!(v, (0..n as i8).collect::<Vec<_>>());
+}
+
+#[test]
+fn apply_permutation_n15_reverse_halves() {
+    let n = 15;
+    let mut perm: Vec<usize> = (0..n).collect();
+    let half = n / 2;
+    perm[..half].reverse();
+    perm[half..].reverse();
+    let mut v: Vec<usize> = (0..n).collect();
+    let expected = perm.clone();
+    apply_permutation(&mut v, &perm);
+    assert_eq!(v, expected);
+}
+
+#[test]
+fn apply_permutation_u128_five_reverse() {
+    let mut v: Vec<u128> = vec![1, 2, 3, 4, 5];
+    apply_permutation(&mut v, &[4, 3, 2, 1, 0]);
+    assert_eq!(v, vec![5, 4, 3, 2, 1]);
+}

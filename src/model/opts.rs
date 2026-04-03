@@ -2817,4 +2817,212 @@ mod tests {
         let v: Vec<String> = m.get_many(DIFF).unwrap().cloned().collect();
         assert_eq!(v, vec!["a", "b"]);
     }
+
+    // ── clap coverage round 6 ──────────────────────────────
+
+    #[test]
+    fn recognizes_positional_equals_sign_in_filename() {
+        let m = parse_opts().get_matches_from(vec!["tp", "a=b.txt"]);
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("a=b.txt")
+        );
+    }
+
+    #[test]
+    fn recognizes_positional_at_sign_prefix() {
+        let m = parse_opts().get_matches_from(vec!["tp", "@config"]);
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("@config")
+        );
+    }
+
+    #[test]
+    fn recognizes_input_equals_embedded_plus() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--input=+1"]);
+        assert_eq!(m.get_one::<String>(INPUT).map(|s| s.as_str()), Some("+1"));
+    }
+
+    #[test]
+    fn recognizes_output_equals_leading_zeros() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--output=007"]);
+        assert_eq!(m.get_one::<String>(OUTPUT).map(|s| s.as_str()), Some("007"));
+    }
+
+    #[test]
+    fn recognizes_append_long_space_negative_three() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--append", "-3"]);
+        assert_eq!(m.get_one::<String>(APPEND).map(|s| s.as_str()), Some("-3"));
+    }
+
+    #[test]
+    fn recognizes_remove_long_space_max_i32_string() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--remove", "2147483647"]);
+        assert_eq!(
+            m.get_one::<String>(REMOVE).map(|s| s.as_str()),
+            Some("2147483647")
+        );
+    }
+
+    #[test]
+    fn recognizes_edit_long_space_name_like() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--edit", "my-tag"]);
+        assert_eq!(
+            m.get_one::<String>(EDIT).map(|s| s.as_str()),
+            Some("my-tag")
+        );
+    }
+
+    #[test]
+    fn recognizes_grep_equals_empty_via_space_not_equals() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--grep", ""]);
+        assert_eq!(m.get_one::<String>(GREP).map(|s| s.as_str()), Some(""));
+    }
+
+    #[test]
+    fn recognizes_head_long_two_numeric_strings() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--head", "3", "100"]);
+        let v: Vec<String> = m.get_many(HEAD).unwrap().cloned().collect();
+        assert_eq!(v, vec!["3", "100"]);
+    }
+
+    #[test]
+    fn recognizes_tail_long_two_numeric_strings() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--tail", "2", "50"]);
+        let v: Vec<String> = m.get_many(TAIL).unwrap().cloned().collect();
+        assert_eq!(v, vec!["2", "50"]);
+    }
+
+    #[test]
+    fn recognizes_replace_pattern_with_slash() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--replace", "1", "a/b", "c"]);
+        let v: Vec<String> = m.get_many::<String>(REPLACE).unwrap().cloned().collect();
+        assert_eq!(v, vec!["1", "a/b", "c"]);
+    }
+
+    #[test]
+    fn recognizes_mv_from_to_zero_strings() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--mv", "0", "0"]);
+        let v: Vec<String> = m.get_many(MOVE).unwrap().cloned().collect();
+        assert_eq!(v, vec!["0", "0"]);
+    }
+
+    #[test]
+    fn recognizes_swap_both_zero() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--swap", "0", "0"]);
+        let v: Vec<String> = m.get_many(SWAP).unwrap().cloned().collect();
+        assert_eq!(v, vec!["0", "0"]);
+    }
+
+    #[test]
+    fn recognizes_diff_both_zero() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--diff", "0", "0"]);
+        let v: Vec<String> = m.get_many(DIFF).unwrap().cloned().collect();
+        assert_eq!(v, vec!["0", "0"]);
+    }
+
+    #[test]
+    fn recognizes_rename_unicode_tags_two_args() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--rename", "旧", "新"]);
+        let v: Vec<String> = m.get_many(RENAME).unwrap().cloned().collect();
+        assert_eq!(v, vec!["旧", "新"]);
+    }
+
+    #[test]
+    fn recognizes_sort_mtime_space() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--sort", "mtime"]);
+        assert_eq!(m.get_one::<String>(SORT).map(|s| s.as_str()), Some("mtime"));
+    }
+
+    #[test]
+    fn recognizes_expire_negative_string_equals_form() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--expire=-1"]);
+        assert_eq!(m.get_one::<String>(EXPIRE).map(|s| s.as_str()), Some("-1"));
+    }
+
+    #[test]
+    fn recognizes_wc_path_size_same_line_three_flags() {
+        let m =
+            parse_opts().get_matches_from(vec!["tp", "--wc", "1", "--path", "1", "--size", "1"]);
+        assert_eq!(m.get_one::<String>(WC).map(|s| s.as_str()), Some("1"));
+        assert_eq!(m.get_one::<String>(PATH).map(|s| s.as_str()), Some("1"));
+        assert_eq!(m.get_one::<String>(SIZE).map(|s| s.as_str()), Some("1"));
+    }
+
+    #[test]
+    fn recognizes_pop_shift_order_reversed_argv() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-s", "-p"]);
+        assert!(m.get_flag(SHIFT));
+        assert!(m.get_flag(POP));
+    }
+
+    #[test]
+    fn recognizes_list_ln_ln_flags() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-l", "-n", "-L", "-N"]);
+        assert!(m.get_flag(LIST_FILES));
+        assert!(m.get_flag(LIST_FILES_NUMBERED));
+        assert!(m.get_flag(LIST_CONTENTS));
+        assert!(m.get_flag(LIST_CONTENTS_NUMBERED));
+    }
+
+    #[test]
+    fn recognizes_verbose_five_short_mixed_long() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-vv", "--verbose", "-vv"]);
+        assert_eq!(m.get_count(VERBOSE), 5);
+    }
+
+    #[test]
+    fn recognizes_quiet_with_expire_and_clear() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-q", "--expire", "24", "-c"]);
+        assert!(m.get_flag(SILENT));
+        assert_eq!(m.get_one::<String>(EXPIRE).map(|s| s.as_str()), Some("24"));
+        assert!(m.get_flag(CLEAR));
+    }
+
+    #[test]
+    fn recognizes_input_output_only_no_positional() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-i", "1", "-o", "2"]);
+        assert!(m.get_one::<String>(ARGFILE).is_none());
+    }
+
+    #[test]
+    fn recognizes_positional_trailing_after_all_flags() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-v", "-q", "readme.md"]);
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("readme.md")
+        );
+    }
+
+    #[test]
+    fn recognizes_cat_eight_indices() {
+        let m = parse_opts()
+            .get_matches_from(vec!["tp", "--cat", "1", "2", "3", "4", "5", "6", "7", "8"]);
+        let v: Vec<&str> = m
+            .get_many::<String>(CAT)
+            .unwrap()
+            .map(|s| s.as_str())
+            .collect();
+        assert_eq!(v, vec!["1", "2", "3", "4", "5", "6", "7", "8"]);
+    }
+
+    #[test]
+    fn recognizes_dup_cat_chain() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-x", "2", "-C", "1", "2"]);
+        assert_eq!(m.get_one::<String>(DUP).map(|s| s.as_str()), Some("2"));
+        let c: Vec<&str> = m
+            .get_many::<String>(CAT)
+            .unwrap()
+            .map(|s| s.as_str())
+            .collect();
+        assert_eq!(c, vec!["1", "2"]);
+    }
+
+    #[test]
+    fn recognizes_reverse_sort_name_order() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--rev", "--sort", "name"]);
+        assert!(m.get_flag(REVERSE));
+        assert_eq!(m.get_one::<String>(SORT).map(|s| s.as_str()), Some("name"));
+    }
 }

@@ -399,7 +399,16 @@ cargo clippy --all-targets -- -D warnings
 cargo test
 ```
 
-The crate includes library unit tests, integration tests against the `tp` / `temprs` binaries, and extensive CLI parsing tests for [`clap`](https://docs.rs/clap/) option coverage.
+Run subsets when iterating:
+
+```sh
+cargo test --lib              # unit tests only (library + model + util)
+cargo test --test integration # integration tests only (spawns tp/temprs)
+```
+
+The workflow uses **`permissions: contents: read`** (least privilege for the `GITHUB_TOKEN`). Test and release-build matrices use **`fail-fast: false`** so every OS/target runs to completion even if another variant fails.
+
+The crate includes library unit tests, integration tests against the `tp` / `temprs` binaries, and extensive CLI parsing tests for [`clap`](https://docs.rs/clap/) option coverage. List discovered tests with `cargo test -- --list` (output format is unstable; use for local discovery only).
 
 ---
 
