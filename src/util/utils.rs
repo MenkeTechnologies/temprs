@@ -2105,4 +2105,25 @@ mod tests {
         assert_eq!(util_file_contents_to_string(&f), s);
         fs::remove_dir_all(&dir).unwrap();
     }
+
+    #[test]
+    fn util_append_file_twice_concatenates() {
+        let dir = tmp_dir();
+        let f = dir.join("app.txt");
+        util_overwrite_file(&f, "A");
+        util_append_file(&f, "B");
+        util_append_file(&f, "C");
+        assert_eq!(fs::read_to_string(&f).unwrap(), "ABC");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn util_paths_to_file_twenty_paths_round_trip() {
+        let dir = tmp_dir();
+        let master = dir.join("m20");
+        let paths: Vec<PathBuf> = (0..20).map(|i| PathBuf::from(format!("/p/{i}"))).collect();
+        util_paths_to_file(&paths, &master);
+        assert_eq!(util_file_to_paths(master.as_path()), paths);
+        fs::remove_dir_all(&dir).unwrap();
+    }
 }

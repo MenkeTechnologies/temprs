@@ -387,18 +387,20 @@ Concurrent runs for the same branch are **cancelled** (only the latest run matte
 
 | Job | What it runs |
 |-----|----------------|
-| **Check** | `cargo check --all-targets` (Ubuntu) |
-| **Test** | `cargo test` on Ubuntu and macOS |
-| **Format** | `cargo fmt --all --check` |
-| **Clippy** | `cargo clippy --all-targets -- -D warnings` |
-| **Release Build** | `cargo build --release` for Linux x86_64, macOS x86_64, and macOS aarch64 (after the jobs above pass) |
+| **Check** | `cargo check --all-targets --locked` (Ubuntu) |
+| **Test** | `cargo test --locked` on Ubuntu and macOS |
+| **Format** | `cargo fmt --all --check` (no `--locked`; unsupported on this subcommand) |
+| **Clippy** | `cargo clippy --all-targets --locked -- -D warnings` |
+| **Release Build** | `cargo build --release --locked` for Linux x86_64, macOS x86_64, and macOS aarch64 (after the jobs above pass) |
+
+`--locked` fails the job if `Cargo.lock` is out of sync with `Cargo.toml` — same resolution as locally: run `cargo update` or refresh the lockfile intentionally, then commit.
 
 Local checks (match CI):
 
 ```sh
 cargo fmt --all --check
-cargo clippy --all-targets -- -D warnings
-cargo test
+cargo clippy --all-targets --locked -- -D warnings
+cargo test --locked
 ```
 
 Run subsets when iterating:

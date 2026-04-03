@@ -452,3 +452,12 @@ fn apply_permutation_array_string_four() {
     apply_permutation(&mut v, &[3, 2, 1, 0]);
     assert_eq!(v, vec!["z", "y", "x", "w"]);
 }
+
+#[test]
+fn apply_permutation_n21_full_reverse() {
+    let n = 21;
+    let perm: Vec<usize> = (0..n).rev().collect();
+    let mut v: Vec<u8> = (0..n as u8).collect();
+    apply_permutation(&mut v, &perm);
+    assert_eq!(v, (0..n as u8).rev().collect::<Vec<_>>());
+}

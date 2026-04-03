@@ -5819,3 +5819,14 @@ fn list_files_numbered_two_files_shows_indices() {
     let text = stdout(&out);
     assert!(text.contains('1') && text.contains('2'));
 }
+
+#[test]
+fn output_index_three_three_pushes() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "bottom");
+    tick();
+    run_tp_stdin(&dir, &[], "mid");
+    tick();
+    run_tp_stdin(&dir, &[], "top");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "3"])).trim(), "top");
+}
