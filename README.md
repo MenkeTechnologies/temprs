@@ -426,7 +426,7 @@ The **Test** job sets **`RUST_BACKTRACE=1`** so panics in CI include stack trace
 | Symptom | What to do |
 |---------|------------|
 | **Check** job failed | Run `cargo check --all-targets --locked` locally and fix compile errors (same as the first CI step). |
-| **Format** job failed | Run `cargo fmt --all` locally, then commit. |
+| **Format** job failed | Run `cargo fmt --all` locally, then commit. If only line endings differ, check `core.autocrlf` on Windows or normalize with `cargo fmt --all` on Linux/macOS. |
 | **Clippy** job failed | Fix warnings or run `cargo clippy --all-targets --locked -- -D warnings` and address each `-D warnings` denial. |
 | **Doc** job failed | Run `RUSTDOCFLAGS='-D warnings' cargo doc --no-deps --locked` locally and fix rustdoc issues (broken links, etc.). |
 | **Test** failed on one OS only | Re-run the workflow; if it repeats, run `cargo test --locked --no-fail-fast` on that platform or inspect the job log (backtraces are enabled). |
