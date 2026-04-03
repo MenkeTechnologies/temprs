@@ -1822,4 +1822,44 @@ mod tests {
         assert_eq!(loaded, paths);
         fs::remove_dir_all(&dir).unwrap();
     }
+
+    #[test]
+    fn paths_and_names_round_trip_unicode_tag() {
+        let dir = tmp_dir();
+        let master = dir.join("master");
+        let paths = vec![PathBuf::from("/tmp/文件")];
+        let names = vec![Some("标签".to_string())];
+        util_paths_and_names_to_file(&paths, &names, &master);
+        let (p, n) = util_file_to_paths_and_names(master.as_path());
+        assert_eq!(p, paths);
+        assert_eq!(n, names);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn paths_and_names_mixed_none_some_round_trip() {
+        let dir = tmp_dir();
+        let master = dir.join("master");
+        let paths = vec![
+            PathBuf::from("/a"),
+            PathBuf::from("/b"),
+            PathBuf::from("/c"),
+        ];
+        let names = vec![None, Some("mid".to_string()), None];
+        util_paths_and_names_to_file(&paths, &names, &master);
+        let (p, n) = util_file_to_paths_and_names(master.as_path());
+        assert_eq!(p, paths);
+        assert_eq!(n, names);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn transform_idx_boundary_positive_one() {
+        assert_eq!(util_transform_idx(1, 1000), 0);
+    }
+
+    #[test]
+    fn transform_idx_boundary_negative_one() {
+        assert_eq!(util_transform_idx(-1, 1000), 999);
+    }
 }

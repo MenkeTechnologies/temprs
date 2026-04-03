@@ -5031,3 +5031,130 @@ fn triple_push_equals_count_matches() {
     run_tp_stdin(&dir, &[], "c");
     assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "3");
 }
+
+// ── list modes and stack edge cases ───────────────────
+
+#[test]
+fn list_files_after_double_push() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "one");
+    tick();
+    run_tp_stdin(&dir, &[], "two");
+    let out = run_tp(&dir, &["-l"]);
+    let text = stdout(&out);
+    assert_eq!(text.trim().lines().count(), 2);
+}
+
+#[test]
+fn list_files_numbered_two_items_present() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a");
+    tick();
+    run_tp_stdin(&dir, &[], "b");
+    let out = run_tp(&dir, &["-n"]);
+    let text = stdout(&out);
+    assert!(text.contains('[') || text.contains("0") || text.contains("1"));
+    assert!(text.lines().count() >= 2);
+}
+
+#[test]
+fn list_contents_shows_both() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "first");
+    tick();
+    run_tp_stdin(&dir, &[], "second");
+    let out = run_tp(&dir, &["-L"]);
+    let t = stdout(&out);
+    assert!(t.contains("first"));
+    assert!(t.contains("second"));
+}
+
+#[test]
+fn pop_then_count_one() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a");
+    tick();
+    run_tp_stdin(&dir, &[], "b");
+    run_tp(&dir, &["-p"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "1");
+}
+
+#[test]
+fn shift_bottom_then_output() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "bottom");
+    tick();
+    run_tp_stdin(&dir, &[], "top");
+    run_tp(&dir, &["-s"]);
+    let out = run_tp(&dir, &["-o", "1"]);
+    assert_eq!(stdout(&out).trim(), "top");
+}
+
+#[test]
+fn unshift_second_index_is_original_top() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "first");
+    tick();
+    run_tp_stdin(&dir, &["-u"], "second");
+    let out = run_tp(&dir, &["-o", "2"]);
+    assert_eq!(stdout(&out).trim(), "first");
+}
+
+#[test]
+fn replace_substring_in_tempfile() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "hello world");
+    let out = run_tp(&dir, &["--replace", "1", "world", "Rust"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])).trim(), "hello Rust");
+}
+
+#[test]
+fn cat_two_indices_concat() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "aa");
+    tick();
+    run_tp_stdin(&dir, &[], "bb");
+    let out = run_tp(&dir, &["--cat", "1", "2"]);
+    let t = stdout(&out);
+    assert!(t.contains("aa"));
+    assert!(t.contains("bb"));
+}
+
+#[test]
+fn head_first_two_lines() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "l1\nl2\nl3\n");
+    let out = run_tp(&dir, &["--head", "1", "2"]);
+    let t = stdout(&out);
+    assert!(t.contains("l1"));
+    assert!(t.contains("l2"));
+    assert!(!t.contains("l3"));
+}
+
+#[test]
+fn tail_last_line_only() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a\nb\nc\n");
+    let out = run_tp(&dir, &["--tail", "1", "1"]);
+    assert_eq!(stdout(&out).trim(), "c");
+}
+
+#[test]
+fn info_exits_success_with_one_file() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["--info", "1"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn reverse_two_items_swaps_output_order() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "x");
+    tick();
+    run_tp_stdin(&dir, &[], "y");
+    run_tp(&dir, &["--rev"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])).trim(), "y");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])).trim(), "x");
+}

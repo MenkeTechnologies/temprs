@@ -748,4 +748,56 @@ mod tests {
     fn log_level_is_not_trace() {
         assert_ne!(TEMP_LOG_LEVEL, Level::Trace);
     }
+
+    // ── additional error strings ─────────────────────────
+
+    #[test]
+    fn err_invalid_name_not_empty() {
+        assert!(!ERR_INVALID_NAME.is_empty());
+    }
+
+    #[test]
+    fn err_editor_not_empty() {
+        assert!(!ERR_EDITOR.is_empty());
+    }
+
+    #[test]
+    fn err_invalid_name_mentions_name() {
+        assert!(ERR_INVALID_NAME.to_lowercase().contains("name"));
+    }
+
+    #[test]
+    fn err_name_nul_mentions_null() {
+        assert!(ERR_NAME_NUL.to_lowercase().contains("null"));
+    }
+
+    #[test]
+    fn err_master_write_mentions_write_or_record() {
+        let l = ERR_MASTER_WRITE.to_lowercase();
+        assert!(l.contains("write") || l.contains("record"));
+    }
+
+    #[test]
+    fn err_master_lock_mentions_lock() {
+        assert!(ERR_MASTER_LOCK.to_lowercase().contains("lock"));
+    }
+
+    #[test]
+    fn err_editor_mentions_editor() {
+        assert!(ERR_EDITOR.to_lowercase().contains("editor"));
+    }
+
+    #[test]
+    fn extended_errors_start_uppercase() {
+        for e in [ERR_INVALID_NAME, ERR_NAME_NUL, ERR_MASTER_WRITE, ERR_MASTER_LOCK, ERR_EDITOR] {
+            assert!(e.chars().next().unwrap().is_uppercase(), "{}", e);
+        }
+    }
+
+    #[test]
+    fn extended_errors_no_trailing_period() {
+        for e in [ERR_INVALID_NAME, ERR_NAME_NUL, ERR_MASTER_WRITE, ERR_MASTER_LOCK, ERR_EDITOR] {
+            assert!(!e.ends_with('.'), "{}", e);
+        }
+    }
 }

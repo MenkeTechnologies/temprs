@@ -264,3 +264,26 @@ fn apply_permutation_boxed_integers() {
     assert_eq!(*v[1], 2);
     assert_eq!(*v[2], 1);
 }
+
+#[test]
+fn apply_permutation_n10_sample_permutations() {
+    let n = 10;
+    let samples: &[&[usize]] = &[
+        &[9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+        &[1, 0, 3, 2, 5, 4, 7, 6, 9, 8],
+        &[5, 4, 3, 2, 1, 0, 9, 8, 7, 6],
+        &[0, 2, 4, 6, 8, 1, 3, 5, 7, 9],
+    ];
+    for perm in samples {
+        let mut v: Vec<usize> = (0..n).collect();
+        apply_permutation(&mut v, perm);
+        assert_eq!(v, *perm);
+    }
+}
+
+#[test]
+fn apply_permutation_u16_values() {
+    let mut v: Vec<u16> = vec![100, 200, 300, 400];
+    apply_permutation(&mut v, &[3, 0, 2, 1]);
+    assert_eq!(v, vec![400, 100, 300, 200]);
+}

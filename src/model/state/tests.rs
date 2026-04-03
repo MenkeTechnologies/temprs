@@ -1764,3 +1764,78 @@ fn holding_buffer_mut_replace_range() {
     s.holding_buffer_mut().replace_range(1..4, "XYZ");
     assert_eq!(s.holding_buffer(), "aXYZef");
 }
+
+#[test]
+fn temp_file_stack_mut_dedup_paths_allowed() {
+    let mut s = make_state();
+    let p = PathBuf::from("/same");
+    s.set_temp_file_stack(vec![p.clone(), p.clone()]);
+    assert_eq!(s.temp_file_stack()[0], s.temp_file_stack()[1]);
+}
+
+#[test]
+fn all_optional_setters_roundtrip_twice() {
+    let mut s = make_state();
+    for _ in 0..2 {
+        s.set_name(Some("n".to_string()));
+        s.set_append_temp_file(Some("1".to_string()));
+        assert!(s.name().is_some());
+        assert!(s.append_temp_file().is_some());
+        s.set_name(None);
+        s.set_append_temp_file(None);
+        assert!(s.name().is_none());
+        assert!(s.append_temp_file().is_none());
+    }
+}
+
+#[test]
+fn temp_file_names_all_some() {
+    let mut s = make_state();
+    s.set_temp_file_names(vec![
+        Some("a".to_string()),
+        Some("b".to_string()),
+    ]);
+    assert!(s.temp_file_names().iter().all(|n| n.is_some()));
+}
+
+#[test]
+fn write_master_empty_stack_writes_file() {
+    let dir = state_test_tmp_dir();
+    let master = dir.join("empty-stack");
+    let s = TempState::new(
+        PathBuf::from("/out"),
+        master.clone(),
+        dir.clone(),
+        vec![],
+        vec![],
+        None,
+        String::new(),
+    );
+    s.write_master();
+    let (p, n) = util_file_to_paths_and_names(&master);
+    assert!(p.is_empty());
+    assert!(n.is_empty());
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+#[test]
+fn write_master_single_named_entry() {
+    let dir = state_test_tmp_dir();
+    let master = dir.join("m");
+    let paths = vec![PathBuf::from("/only")];
+    let names = vec![Some("solo".to_string())];
+    let s = TempState::new(
+        PathBuf::from("/out"),
+        master.clone(),
+        dir.clone(),
+        paths.clone(),
+        names.clone(),
+        None,
+        String::new(),
+    );
+    s.write_master();
+    let (p, n) = util_file_to_paths_and_names(&master);
+    assert_eq!(p, paths);
+    assert_eq!(n, names);
+    std::fs::remove_dir_all(&dir).unwrap();
+}
