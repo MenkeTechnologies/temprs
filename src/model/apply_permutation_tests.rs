@@ -229,3 +229,38 @@ fn apply_permutation_preserves_length() {
     apply_permutation(&mut v, &[4, 3, 2, 1, 0]);
     assert_eq!(v.len(), 5);
 }
+
+#[test]
+fn apply_permutation_all_permutations_n8_identity_values() {
+    let n = 8;
+    let perms = all_permutations(n);
+    assert_eq!(perms.len(), factorial(n));
+    for perm in perms {
+        let mut v: Vec<usize> = (0..n).collect();
+        apply_permutation(&mut v, &perm);
+        assert_eq!(v, perm);
+    }
+}
+
+#[test]
+fn apply_permutation_shift_right_cyclic_three() {
+    let mut v = vec![10_u64, 20, 30];
+    apply_permutation(&mut v, &[2, 0, 1]);
+    assert_eq!(v, vec![30, 10, 20]);
+}
+
+#[test]
+fn apply_permutation_f32() {
+    let mut v = vec![1.5_f32, 2.5, 3.5];
+    apply_permutation(&mut v, &[1, 0, 2]);
+    assert_eq!(v, vec![2.5, 1.5, 3.5]);
+}
+
+#[test]
+fn apply_permutation_boxed_integers() {
+    let mut v: Vec<Box<i32>> = vec![Box::new(1), Box::new(2), Box::new(3)];
+    apply_permutation(&mut v, &[2, 1, 0]);
+    assert_eq!(*v[0], 3);
+    assert_eq!(*v[1], 2);
+    assert_eq!(*v[2], 1);
+}

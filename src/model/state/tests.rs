@@ -1727,3 +1727,40 @@ fn temp_file_names_mut_truncate_with_stack() {
     assert_eq!(s.temp_file_stack().len(), 1);
     assert_eq!(s.temp_file_names().len(), 1);
 }
+
+#[test]
+fn temp_file_stack_mut_swap_elements() {
+    let mut s = make_state();
+    let stk = s.temp_file_stack_mut();
+    if stk.len() >= 2 {
+        stk.swap(0, 1);
+    }
+    assert_eq!(s.temp_file_stack()[0], PathBuf::from("/tmp/temprs/f2"));
+    assert_eq!(s.temp_file_stack()[1], PathBuf::from("/tmp/temprs/f1"));
+}
+
+#[test]
+fn temp_file_names_mut_extend_from_slice() {
+    let mut s = make_state();
+    s.temp_file_names_mut().extend([Some("n3".to_string()), None]);
+    s.temp_file_stack_mut()
+        .extend([PathBuf::from("/p3"), PathBuf::from("/p4")]);
+    assert_eq!(s.temp_file_stack().len(), 4);
+    assert_eq!(s.temp_file_names().len(), 4);
+}
+
+#[test]
+fn holding_buffer_mut_clear_via_truncate() {
+    let mut s = make_state();
+    s.set_holding_buffer("truncate me".to_string());
+    s.holding_buffer_mut().truncate(0);
+    assert!(s.holding_buffer().is_empty());
+}
+
+#[test]
+fn holding_buffer_mut_replace_range() {
+    let mut s = make_state();
+    s.set_holding_buffer("abcdef".to_string());
+    s.holding_buffer_mut().replace_range(1..4, "XYZ");
+    assert_eq!(s.holding_buffer(), "aXYZef");
+}

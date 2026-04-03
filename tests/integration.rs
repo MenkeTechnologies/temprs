@@ -4911,3 +4911,123 @@ fn long_flag_quiet() {
     let out = run_tp_stdin(&dir, &["--quiet"], "data");
     assert!(out.status.success());
 }
+
+// ── equals-style long flags (--flag=value) ────────────
+
+#[test]
+fn equals_output_reads_stack() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "hello-equals\n");
+    let out = run_tp(&dir, &["--output=1"]);
+    assert_eq!(stdout(&out), "hello-equals\n");
+}
+
+#[test]
+fn equals_input_writes_stack() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "first");
+    tick();
+    let out = run_tp_stdin(&dir, &["--input=1"], "replaced");
+    assert!(out.status.success());
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "replaced");
+}
+
+#[test]
+fn equals_grep_filters() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "alpha\nbeta\nalpha\n");
+    let out = run_tp(&dir, &["--grep=alpha"]);
+    assert!(stdout(&out).contains("alpha"));
+    assert!(!stdout(&out).contains("beta"));
+}
+
+#[test]
+fn equals_path_prints_file_path() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["--path=1"]);
+    let text = stdout(&out);
+    let p = text.trim();
+    assert!(!p.is_empty());
+    assert!(std::path::Path::new(p).exists());
+}
+
+#[test]
+fn equals_dup_copies_top() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "solo");
+    run_tp(&dir, &["--dup=1"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "2");
+}
+
+#[test]
+fn equals_expire_zero_exits_ok() {
+    let dir = setup_clean_env();
+    let out = run_tp(&dir, &["--expire=0"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn equals_sort_name_succeeds() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a");
+    tick();
+    run_tp_stdin(&dir, &[], "b");
+    let out = run_tp(&dir, &["--sort=name"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn equals_sort_mtime_succeeds() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "x");
+    tick();
+    run_tp_stdin(&dir, &[], "y");
+    let out = run_tp(&dir, &["--sort=mtime"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn equals_wc_line_count() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "one\ntwo\nthree\n");
+    let out = run_tp(&dir, &["--wc=1"]);
+    assert!(stdout(&out).contains('3'));
+}
+
+#[test]
+fn equals_size_reports_bytes() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "12345");
+    let out = run_tp(&dir, &["--size=1"]);
+    assert_eq!(stdout(&out).trim(), "5");
+}
+
+#[test]
+fn equals_append_stdin() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "base");
+    let out = run_tp_stdin(&dir, &["--append=1"], "+tail");
+    assert!(out.status.success());
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "base+tail");
+}
+
+#[test]
+fn equals_and_short_flags_combined() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "stored");
+    let out = run_tp(&dir, &["-q", "--output=1"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&out).trim(), "stored");
+}
+
+#[test]
+fn triple_push_equals_count_matches() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a");
+    tick();
+    run_tp_stdin(&dir, &[], "b");
+    tick();
+    run_tp_stdin(&dir, &[], "c");
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "3");
+}
