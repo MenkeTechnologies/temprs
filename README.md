@@ -429,7 +429,7 @@ The **Test** job sets **`RUST_BACKTRACE=1`** so panics in CI include stack trace
 | **Format** job failed | Run `cargo fmt --all` locally, then commit. |
 | **Clippy** job failed | Fix warnings or run `cargo clippy --all-targets --locked -- -D warnings` and address each `-D warnings` denial. |
 | **Doc** job failed | Run `RUSTDOCFLAGS='-D warnings' cargo doc --no-deps --locked` locally and fix rustdoc issues (broken links, etc.). |
-| **Test** failed on one OS only | Re-run the workflow; if it repeats, run `cargo test` on that platform or inspect the job log (backtraces are enabled). |
+| **Test** failed on one OS only | Re-run the workflow; if it repeats, run `cargo test --locked --no-fail-fast` on that platform or inspect the job log (backtraces are enabled). |
 | **Release Build** failed | Usually a cross-target issue; confirm `rustup target add <triple>` works locally for the failing matrix entry. If the compile step passed but **upload-artifact** failed, confirm the workflow still has **`permissions: actions: write`** (required for artifact uploads). |
 
 ---
