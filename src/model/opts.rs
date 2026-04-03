@@ -9490,4 +9490,319 @@ mod tests {
             vec!["left", "right"]
         );
     }
+
+    // ── clap coverage round 30 ─────────────────────────────
+
+    #[test]
+    fn recognizes_clap30_positional_wss_uri() {
+        let m = parse_opts().get_matches_from(vec!["tp", "wss://secure.example/ws"]);
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("wss://secure.example/ws")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap30_positional_redis_url() {
+        let m = parse_opts().get_matches_from(vec!["tp", "redis://:secret@localhost:6379/0"]);
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("redis://:secret@localhost:6379/0")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap30_output_short_zero() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-o", "0"]);
+        assert_eq!(m.get_one::<String>(OUTPUT).map(|s| s.as_str()), Some("0"));
+    }
+
+    #[test]
+    fn recognizes_clap30_input_long_equals_empty() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--input="]);
+        assert_eq!(m.get_one::<String>(INPUT).map(|s| s.as_str()), Some(""));
+    }
+
+    #[test]
+    fn recognizes_clap30_cat_twenty_five_indices_long() {
+        let m = parse_opts().get_matches_from(vec![
+            "tp", "--cat", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13",
+            "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25",
+        ]);
+        let v: Vec<&str> = m
+            .get_many::<String>(CAT)
+            .unwrap()
+            .map(|s| s.as_str())
+            .collect();
+        assert_eq!(
+            v,
+            vec![
+                "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
+                "16", "17", "18", "19", "20", "21", "22", "23", "24", "25"
+            ]
+        );
+    }
+
+    #[test]
+    fn recognizes_clap30_grep_comment_pattern() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-g", "(?#comment)^foo"]);
+        assert_eq!(
+            m.get_one::<String>(GREP).map(|s| s.as_str()),
+            Some("(?#comment)^foo")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap30_expire_plus_infinity() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--expire", "+∞"]);
+        assert_eq!(m.get_one::<String>(EXPIRE).map(|s| s.as_str()), Some("+∞"));
+    }
+
+    #[test]
+    fn recognizes_clap30_sort_size_positional_rev() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--sort", "size", "--rev", "big.dat"]);
+        assert_eq!(m.get_one::<String>(SORT).map(|s| s.as_str()), Some("size"));
+        assert!(m.get_flag(REVERSE));
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("big.dat")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap30_pop_unshift_clear_short() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-p", "-u", "-c"]);
+        assert!(m.get_flag(POP));
+        assert!(m.get_flag(UNSHIFT));
+        assert!(m.get_flag(CLEAR));
+    }
+
+    #[test]
+    fn recognizes_clap30_add_remove_output_short() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-a", "3", "-r", "4", "-o", "5"]);
+        assert_eq!(m.get_one::<String>(ADD).map(|s| s.as_str()), Some("3"));
+        assert_eq!(m.get_one::<String>(REMOVE).map(|s| s.as_str()), Some("4"));
+        assert_eq!(m.get_one::<String>(OUTPUT).map(|s| s.as_str()), Some("5"));
+    }
+
+    #[test]
+    fn recognizes_clap30_replace_three_args_mixed_quotes() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--replace", "1", "'", "\""]);
+        let v: Vec<String> = m.get_many(REPLACE).unwrap().cloned().collect();
+        assert_eq!(v, vec!["1", "'", "\""]);
+    }
+
+    #[test]
+    fn recognizes_clap30_diff_move_swap_long_chain() {
+        let m = parse_opts().get_matches_from(vec![
+            "tp", "--diff", "a", "b", "--mv", "c", "d", "--swap", "e", "f",
+        ]);
+        assert_eq!(
+            m.get_many(DIFF).unwrap().cloned().collect::<Vec<String>>(),
+            vec!["a", "b"]
+        );
+        assert_eq!(
+            m.get_many(MOVE).unwrap().cloned().collect::<Vec<String>>(),
+            vec!["c", "d"]
+        );
+        assert_eq!(
+            m.get_many(SWAP).unwrap().cloned().collect::<Vec<String>>(),
+            vec!["e", "f"]
+        );
+    }
+
+    #[test]
+    fn recognizes_clap30_verbose_twenty_nine_short() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-vvvvvvvvvvvvvvvvvvvvvvvvvvvvv"]);
+        assert_eq!(m.get_count(VERBOSE), 29);
+    }
+
+    #[test]
+    fn recognizes_clap30_double_dash_positional_dotdot() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--", ".."]);
+        assert_eq!(m.get_one::<String>(ARGFILE).map(|s| s.as_str()), Some(".."));
+    }
+
+    #[test]
+    fn recognizes_clap30_grep_append_short() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-g", "rx", "-A", "0"]);
+        assert_eq!(m.get_one::<String>(GREP).map(|s| s.as_str()), Some("rx"));
+        assert_eq!(m.get_one::<String>(APPEND).map(|s| s.as_str()), Some("0"));
+    }
+
+    #[test]
+    fn recognizes_clap30_wc_path_head_long() {
+        let m = parse_opts()
+            .get_matches_from(vec!["tp", "--wc", "6", "--path", "6", "--head", "6", "20"]);
+        assert_eq!(m.get_one::<String>(WC).map(|s| s.as_str()), Some("6"));
+        assert_eq!(m.get_one::<String>(PATH).map(|s| s.as_str()), Some("6"));
+        assert_eq!(
+            m.get_many::<String>(HEAD)
+                .unwrap()
+                .cloned()
+                .collect::<Vec<_>>(),
+            vec!["6", "20"]
+        );
+    }
+
+    #[test]
+    fn recognizes_clap30_tail_size_long() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--tail", "1", "15", "--size", "1"]);
+        assert_eq!(
+            m.get_many::<String>(TAIL)
+                .unwrap()
+                .cloned()
+                .collect::<Vec<_>>(),
+            vec!["1", "15"]
+        );
+        assert_eq!(m.get_one::<String>(SIZE).map(|s| s.as_str()), Some("1"));
+    }
+
+    #[test]
+    fn recognizes_clap30_cat_short_fourteen_indices() {
+        let m = parse_opts().get_matches_from(vec![
+            "tp", "-C", "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67",
+            "68", "69",
+        ]);
+        let v: Vec<&str> = m
+            .get_many::<String>(CAT)
+            .unwrap()
+            .map(|s| s.as_str())
+            .collect();
+        assert_eq!(
+            v,
+            vec![
+                "56", "57", "58", "59", "60", "61", "62", "63", "64", "65", "66", "67", "68", "69"
+            ]
+        );
+    }
+
+    #[test]
+    fn recognizes_clap30_sort_name_equals_long() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--sort=name"]);
+        assert_eq!(m.get_one::<String>(SORT).map(|s| s.as_str()), Some("name"));
+    }
+
+    #[test]
+    fn recognizes_clap30_dup_append_long_equals() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--dup=3", "--append=4"]);
+        assert_eq!(m.get_one::<String>(DUP).map(|s| s.as_str()), Some("3"));
+        assert_eq!(m.get_one::<String>(APPEND).map(|s| s.as_str()), Some("4"));
+    }
+
+    #[test]
+    fn recognizes_clap30_rename_diff_short_long_mix() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-R", "x", "y", "--diff", "0", "1"]);
+        assert_eq!(
+            m.get_many(RENAME)
+                .unwrap()
+                .cloned()
+                .collect::<Vec<String>>(),
+            vec!["x", "y"]
+        );
+        assert_eq!(
+            m.get_many(DIFF).unwrap().cloned().collect::<Vec<String>>(),
+            vec!["0", "1"]
+        );
+    }
+
+    #[test]
+    fn recognizes_clap30_master_verbose_short() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-m", "-v"]);
+        assert!(m.get_flag(MASTER));
+        assert_eq!(m.get_count(VERBOSE), 1);
+    }
+
+    #[test]
+    fn recognizes_clap30_rev_quiet_expire_long() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--rev", "--quiet", "--expire", "168"]);
+        assert!(m.get_flag(REVERSE));
+        assert!(m.get_flag(SILENT));
+        assert_eq!(m.get_one::<String>(EXPIRE).map(|s| s.as_str()), Some("168"));
+    }
+
+    #[test]
+    fn recognizes_clap30_head_tail_wc_short_long() {
+        let m = parse_opts().get_matches_from(vec![
+            "tp", "--head", "2", "8", "--tail", "3", "9", "--wc", "2",
+        ]);
+        assert_eq!(
+            m.get_many::<String>(HEAD)
+                .unwrap()
+                .cloned()
+                .collect::<Vec<_>>(),
+            vec!["2", "8"]
+        );
+        assert_eq!(
+            m.get_many::<String>(TAIL)
+                .unwrap()
+                .cloned()
+                .collect::<Vec<_>>(),
+            vec!["3", "9"]
+        );
+        assert_eq!(m.get_one::<String>(WC).map(|s| s.as_str()), Some("2"));
+    }
+
+    #[test]
+    fn recognizes_clap30_edit_info_cat_short() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-e", "1", "-I", "2", "-C", "1", "2"]);
+        assert_eq!(m.get_one::<String>(EDIT).map(|s| s.as_str()), Some("1"));
+        assert_eq!(m.get_one::<String>(INFO).map(|s| s.as_str()), Some("2"));
+        let v: Vec<&str> = m
+            .get_many::<String>(CAT)
+            .unwrap()
+            .map(|s| s.as_str())
+            .collect();
+        assert_eq!(v, vec!["1", "2"]);
+    }
+
+    #[test]
+    fn recognizes_clap30_positional_curly_brace_glob() {
+        let m = parse_opts().get_matches_from(vec!["tp", "file.{a,b,c}"]);
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("file.{a,b,c}")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap30_program_name_temprs_with_list_numbered() {
+        let m = parse_opts().get_matches_from(vec!["temprs", "-n"]);
+        assert!(m.get_flag(LIST_FILES_NUMBERED));
+    }
+
+    #[test]
+    fn recognizes_clap30_tag_short_equals_comma() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-w=a,b"]);
+        assert_eq!(m.get_one::<String>(TAG).map(|s| s.as_str()), Some("a,b"));
+    }
+
+    #[test]
+    fn recognizes_clap30_list_contents_only_numbered_short() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-N"]);
+        assert!(m.get_flag(LIST_CONTENTS_NUMBERED));
+    }
+
+    #[test]
+    fn recognizes_clap30_shift_pop_quiet_short() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-s", "-p", "-q"]);
+        assert!(m.get_flag(SHIFT));
+        assert!(m.get_flag(POP));
+        assert!(m.get_flag(SILENT));
+    }
+
+    #[test]
+    fn recognizes_clap30_count_only_short() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-k"]);
+        assert!(m.get_flag(COUNT));
+    }
+
+    #[test]
+    fn recognizes_clap30_swap_only_long_pair() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--swap", "first", "second"]);
+        assert_eq!(
+            m.get_many(SWAP).unwrap().cloned().collect::<Vec<String>>(),
+            vec!["first", "second"]
+        );
+    }
 }
