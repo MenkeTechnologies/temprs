@@ -1957,4 +1957,74 @@ mod tests {
         fs::remove_dir_all(&dir).unwrap();
     }
 
+    // ── util_file_to_paths_and_names edge cases ───────────
+
+    #[test]
+    fn file_to_paths_and_names_name_with_embedded_null_becomes_suffix() {
+        let dir = tmp_dir();
+        let master = dir.join("m");
+        // One record: path "\0" name-part (first split only; extra NULs stay in "name")
+        let p = PathBuf::from("/safe");
+        let raw = format!(
+            "{}{}{}\0\0",
+            p.display(),
+            crate::util::consts::MASTER_FIELD_DELIM,
+            "tag\0extra"
+        );
+        fs::write(&master, raw).unwrap();
+        let (paths, names) = util_file_to_paths_and_names(master.as_path());
+        assert_eq!(paths, vec![p]);
+        assert_eq!(names, vec![Some("tag\0extra".to_string())]);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn file_to_paths_and_names_three_records_trailing_only_delim() {
+        let dir = tmp_dir();
+        let master = dir.join("m");
+        fs::write(&master, "/a\0\0/b\0\0/c\0\0").unwrap();
+        let (paths, names) = util_file_to_paths_and_names(master.as_path());
+        assert_eq!(
+            paths,
+            vec![
+                PathBuf::from("/a"),
+                PathBuf::from("/b"),
+                PathBuf::from("/c")
+            ]
+        );
+        assert_eq!(names, vec![None, None, None]);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn paths_and_names_round_trip_name_with_newlines() {
+        let dir = tmp_dir();
+        let master = dir.join("m");
+        let paths = vec![PathBuf::from("/p")];
+        let names = vec![Some("line1\nline2".to_string())];
+        util_paths_and_names_to_file(&paths, &names, &master);
+        let (p, n) = util_file_to_paths_and_names(master.as_path());
+        assert_eq!(p, paths);
+        assert_eq!(n, names);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn util_path_to_string_unc_path_style_double_prefix() {
+        assert_eq!(
+            util_path_to_string(Path::new("//server/share/dir")),
+            "//server/share/dir"
+        );
+    }
+
+    #[test]
+    fn util_time_ms_monotonic_across_many_calls() {
+        let mut prev: u128 = 0;
+        for _ in 0..25 {
+            let t: u128 = util_time_ms().parse().unwrap();
+            assert!(t >= prev, "time_ms should not go backwards");
+            prev = t;
+        }
+    }
+
 }

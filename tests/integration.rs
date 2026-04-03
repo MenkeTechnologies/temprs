@@ -5364,3 +5364,220 @@ fn cat_three_files_in_order() {
     let t = stdout(&out);
     assert!(t.contains('1') && t.contains('2') && t.contains('3'));
 }
+
+// ── additional integration smoke tests ─────────────────
+
+#[test]
+fn sort_by_name_three_files_exits_ok() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "z");
+    tick();
+    run_tp_stdin(&dir, &[], "a");
+    tick();
+    run_tp_stdin(&dir, &[], "m");
+    let out = run_tp(&dir, &["--sort", "name"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn sort_by_mtime_two_files_exits_ok() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "first");
+    tick();
+    run_tp_stdin(&dir, &[], "second");
+    let out = run_tp(&dir, &["--sort", "mtime"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn info_top_of_stack_exits_ok() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "meta");
+    let out = run_tp(&dir, &["--info", "1"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn head_two_lines_of_top_file() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a\nb\nc\nd\n");
+    let out = run_tp(&dir, &["--head", "1", "2"]);
+    let t = stdout(&out);
+    assert!(t.contains('a') && t.contains('b'));
+}
+
+#[test]
+fn tail_two_lines_of_top_file() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a\nb\nc\nd\n");
+    let out = run_tp(&dir, &["--tail", "1", "2"]);
+    let t = stdout(&out);
+    assert!(t.contains('c') && t.contains('d'));
+}
+
+#[test]
+fn mv_bottom_to_top_two_items() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "bottom");
+    tick();
+    run_tp_stdin(&dir, &[], "top");
+    let out = run_tp(&dir, &["--mv", "2", "1"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn tag_then_output_by_name() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "mine"], "tagged-data");
+    let out = run_tp(&dir, &["-o", "mine"]);
+    assert_eq!(stdout(&out).trim(), "tagged-data");
+}
+
+#[test]
+fn rename_tag_and_read_by_new_name() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &["-w", "oldname"], "payload");
+    run_tp(&dir, &["--rename", "oldname", "newname"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "newname"])).trim(), "payload");
+}
+
+#[test]
+fn diff_two_identical_stack_slots_exits_ok() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "same-bytes");
+    tick();
+    run_tp_stdin(&dir, &[], "same-bytes");
+    let out = run_tp(&dir, &["--diff", "1", "2"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn count_stack_after_five_pushes() {
+    let dir = setup_clean_env();
+    for i in 0..5 {
+        tick();
+        run_tp_stdin(&dir, &[], &format!("n{}", i));
+    }
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "5");
+}
+
+#[test]
+fn reverse_stack_three_items_index_one_is_old_top() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "first");
+    tick();
+    run_tp_stdin(&dir, &[], "mid");
+    tick();
+    run_tp_stdin(&dir, &[], "last");
+    run_tp(&dir, &["--rev"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])).trim(), "last");
+}
+
+#[test]
+fn append_to_top_preserves_prior_content() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "base");
+    run_tp_stdin(&dir, &["--append", "1"], "\nmore");
+    let t = stdout(&run_tp(&dir, &["-o", "1"]));
+    assert!(t.contains("base") && t.contains("more"));
+}
+
+#[test]
+fn pop_then_count_decrements() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a");
+    tick();
+    run_tp_stdin(&dir, &[], "b");
+    run_tp(&dir, &["-p"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "1");
+}
+
+#[test]
+fn unshift_adds_bottom_then_output_negative_one_is_prior_top() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "top");
+    tick();
+    run_tp_stdin(&dir, &["-u"], "bottom");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "-1"])).trim(), "top");
+}
+
+#[test]
+fn shift_removes_bottom_two_item_stack() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "lose-bottom");
+    tick();
+    run_tp_stdin(&dir, &[], "keep-top");
+    run_tp(&dir, &["-s"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "1");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])).trim(), "keep-top");
+}
+
+#[test]
+fn grep_match_succeeds() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "needle in haystack");
+    let out = run_tp(&dir, &["--grep", "needle"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn list_numbered_shows_indices() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "x");
+    let out = run_tp(&dir, &["-n"]);
+    let t = stdout(&out);
+    assert!(t.contains('1'));
+}
+
+#[test]
+fn list_contents_numbered_includes_index() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "body");
+    let out = run_tp(&dir, &["-N"]);
+    assert!(out.status.success());
+    let t = stdout(&out);
+    assert!(t.contains('1'));
+}
+
+#[test]
+fn output_negative_one_two_files() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "older");
+    tick();
+    run_tp_stdin(&dir, &[], "newer");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "-1"])).trim(), "newer");
+}
+
+#[test]
+fn remove_first_leaves_second_at_index_one() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "gone");
+    tick();
+    run_tp_stdin(&dir, &[], "stays");
+    run_tp(&dir, &["-r", "1"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])).trim(), "stays");
+}
+
+#[test]
+fn add_inserts_at_negative_index_relative() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a");
+    tick();
+    run_tp_stdin(&dir, &[], "b");
+    run_tp_stdin(&dir, &["-a", "-1"], "inserted");
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "3");
+}
+
+#[test]
+fn verbose_push_shows_extra_output() {
+    let dir = setup_clean_env();
+    let out = run_tp_stdin(&dir, &["-v"], "v-data");
+    assert!(out.status.success());
+}
+
+#[test]
+fn quiet_push_suppresses_creation_noise() {
+    let dir = setup_clean_env();
+    let out = run_tp_stdin(&dir, &["-q"], "q-data");
+    assert!(out.status.success());
+}

@@ -329,3 +329,84 @@ fn apply_permutation_string_slices_reorder() {
     );
 }
 
+#[test]
+fn apply_permutation_f64_values() {
+    let mut v = vec![std::f64::consts::PI, 2.718, -1.0];
+    apply_permutation(&mut v, &[2, 0, 1]);
+    assert_eq!(v, vec![-1.0, std::f64::consts::PI, 2.718]);
+}
+
+#[test]
+fn apply_permutation_n9_identity_reverse() {
+    let n = 9;
+    let perm: Vec<usize> = (0..n).rev().collect();
+    let mut v: Vec<u8> = (0..n as u8).collect();
+    apply_permutation(&mut v, &perm);
+    assert_eq!(v, vec![8, 7, 6, 5, 4, 3, 2, 1, 0]);
+}
+
+#[test]
+fn apply_permutation_n14_even_odd_split() {
+    let n = 14;
+    let mut perm: Vec<usize> = (0..n).collect();
+    let evens: Vec<usize> = (0..n).step_by(2).collect();
+    let odds: Vec<usize> = (1..n).step_by(2).collect();
+    perm.clear();
+    perm.extend(evens.iter().chain(odds.iter()).copied());
+    let mut v: Vec<usize> = (100..100 + n).collect();
+    let expected: Vec<usize> = perm.iter().map(|&i| 100 + i).collect();
+    apply_permutation(&mut v, &perm);
+    assert_eq!(v, expected);
+}
+
+#[test]
+fn apply_permutation_vec_of_vecs() {
+    let mut v = vec![vec![1], vec![2, 2], vec![3, 3, 3]];
+    apply_permutation(&mut v, &[2, 0, 1]);
+    assert_eq!(v, vec![vec![3, 3, 3], vec![1], vec![2, 2]]);
+}
+
+#[test]
+fn apply_permutation_n20_rotate_by_five() {
+    let n = 20;
+    let mut perm: Vec<usize> = (0..n).collect();
+    perm.rotate_left(5);
+    let mut v: Vec<i16> = (0..n as i16).collect();
+    let expected: Vec<i16> = perm.iter().map(|&i| i as i16).collect();
+    apply_permutation(&mut v, &perm);
+    assert_eq!(v, expected);
+}
+
+#[test]
+fn apply_permutation_n32_identity_forward() {
+    let n = 32;
+    let perm: Vec<usize> = (0..n).collect();
+    let mut v: Vec<u32> = (0..n as u32).collect();
+    apply_permutation(&mut v, &perm);
+    assert_eq!(v, (0..n as u32).collect::<Vec<_>>());
+}
+
+#[test]
+fn apply_permutation_three_non_copy_strings_long() {
+    let mut v: Vec<String> = (0..3).map(|i| format!("record-{i}-{}", "x".repeat(20))).collect();
+    let orig = v.clone();
+    apply_permutation(&mut v, &[2, 1, 0]);
+    assert_eq!(v, vec![orig[2].clone(), orig[1].clone(), orig[0].clone()]);
+}
+
+#[test]
+fn apply_permutation_tuple_pairs() {
+    let mut v: Vec<(i32, i32)> = vec![(0, 10), (1, 11), (2, 12)];
+    apply_permutation(&mut v, &[2, 0, 1]);
+    assert_eq!(v, vec![(2, 12), (0, 10), (1, 11)]);
+}
+
+#[test]
+fn apply_permutation_n6_derangement_one() {
+    // Derangement: no element in original position (cycle 0->1->2->0, 3->4->5->3 is wrong)
+    // Simple derangement for n=4: [1,0,3,2]
+    let mut v = vec!['a', 'b', 'c', 'd'];
+    apply_permutation(&mut v, &[1, 0, 3, 2]);
+    assert_eq!(v, vec!['b', 'a', 'd', 'c']);
+}
+
