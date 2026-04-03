@@ -1624,10 +1624,7 @@ fn set_get_name() {
 fn write_master_round_trip_paths_and_names() {
     let dir = state_test_tmp_dir();
     let master = dir.join("temprs-stack");
-    let paths = vec![
-        PathBuf::from("/stack/a"),
-        PathBuf::from("/stack/b"),
-    ];
+    let paths = vec![PathBuf::from("/stack/a"), PathBuf::from("/stack/b")];
     let names = vec![Some("first".to_string()), None];
     let s = TempState::new(
         PathBuf::from("/tmp/out"),
@@ -1681,8 +1678,7 @@ fn holding_buffer_mut_take_and_replace() {
 #[test]
 fn temp_file_stack_mut_push_pop() {
     let mut s = make_state();
-    s.temp_file_stack_mut()
-        .push(PathBuf::from("/tmp/extra"));
+    s.temp_file_stack_mut().push(PathBuf::from("/tmp/extra"));
     assert_eq!(s.temp_file_stack().len(), 3);
     let _ = s.temp_file_stack_mut().pop();
     assert_eq!(s.temp_file_stack().len(), 2);
@@ -1742,7 +1738,8 @@ fn temp_file_stack_mut_swap_elements() {
 #[test]
 fn temp_file_names_mut_extend_from_slice() {
     let mut s = make_state();
-    s.temp_file_names_mut().extend([Some("n3".to_string()), None]);
+    s.temp_file_names_mut()
+        .extend([Some("n3".to_string()), None]);
     s.temp_file_stack_mut()
         .extend([PathBuf::from("/p3"), PathBuf::from("/p4")]);
     assert_eq!(s.temp_file_stack().len(), 4);
@@ -1791,10 +1788,7 @@ fn all_optional_setters_roundtrip_twice() {
 #[test]
 fn temp_file_names_all_some() {
     let mut s = make_state();
-    s.set_temp_file_names(vec![
-        Some("a".to_string()),
-        Some("b".to_string()),
-    ]);
+    s.set_temp_file_names(vec![Some("a".to_string()), Some("b".to_string())]);
     assert!(s.temp_file_names().iter().all(|n| n.is_some()));
 }
 
@@ -1843,7 +1837,11 @@ fn write_master_single_named_entry() {
 #[test]
 fn temp_file_stack_mut_iter_mut_len() {
     let mut s = make_state();
-    let n: usize = s.temp_file_stack_mut().iter().map(|p| p.as_os_str().len()).sum();
+    let n: usize = s
+        .temp_file_stack_mut()
+        .iter()
+        .map(|p| p.as_os_str().len())
+        .sum();
     assert!(n > 0);
     assert_eq!(s.temp_file_stack().len(), 2);
 }
@@ -1852,10 +1850,7 @@ fn temp_file_stack_mut_iter_mut_len() {
 fn temp_file_names_mut_resize_with_default() {
     let mut s = make_state();
     s.temp_file_names_mut().resize(4, None);
-    s.temp_file_stack_mut().resize(
-        4,
-        PathBuf::from("/fill"),
-    );
+    s.temp_file_stack_mut().resize(4, PathBuf::from("/fill"));
     assert_eq!(s.temp_file_names().len(), 4);
     assert_eq!(s.temp_file_stack().len(), 4);
 }

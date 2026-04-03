@@ -377,6 +377,32 @@ The master record is hardened against corruption and concurrent access:
 
 ---
 
+## [0x07] DEVELOPMENT & CI
+
+[![CI](https://github.com/MenkeTechnologies/temprs/actions/workflows/ci.yml/badge.svg)](https://github.com/MenkeTechnologies/temprs/actions/workflows/ci.yml)
+
+Pull requests and pushes to `main` run the workflow in [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
+
+| Job | What it runs |
+|-----|----------------|
+| **Check** | `cargo check --all-targets` (Ubuntu) |
+| **Test** | `cargo test` on Ubuntu and macOS |
+| **Format** | `cargo fmt --all --check` |
+| **Clippy** | `cargo clippy --all-targets -- -D warnings` |
+| **Release Build** | `cargo build --release` for Linux x86_64, macOS x86_64, and macOS aarch64 (after the jobs above pass) |
+
+Local checks (match CI):
+
+```sh
+cargo fmt --all --check
+cargo clippy --all-targets -- -D warnings
+cargo test
+```
+
+The crate includes library unit tests, integration tests against the `tp` / `temprs` binaries, and extensive CLI parsing tests for [`clap`](https://docs.rs/clap/) option coverage.
+
+---
+
 ## [0xFF] LICENSE
 
  ┌──────────────────────────────────────────────────────────┐

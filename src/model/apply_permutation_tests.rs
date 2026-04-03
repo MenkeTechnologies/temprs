@@ -123,7 +123,10 @@ fn apply_permutation_all_six_permutations_n3_explicit() {
 #[test]
 fn apply_permutation_swap_adjacent_pair() {
     let mut v: Vec<u8> = (0..16).collect();
-    apply_permutation(&mut v, &[1, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+    apply_permutation(
+        &mut v,
+        &[1, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    );
     assert_eq!(v[0], 1);
     assert_eq!(v[1], 0);
 }
@@ -148,11 +151,7 @@ fn apply_permutation_pathbufs() {
 
 #[test]
 fn apply_permutation_strings() {
-    let mut v = vec![
-        String::from("x"),
-        String::from("y"),
-        String::from("z"),
-    ];
+    let mut v = vec![String::from("x"), String::from("y"), String::from("z")];
     apply_permutation(&mut v, &[1, 2, 0]);
     assert_eq!(v, vec!["y", "z", "x"]);
 }
@@ -313,27 +312,19 @@ fn apply_permutation_n12_reverse_only() {
 
 #[test]
 fn apply_permutation_string_slices_reorder() {
-    let mut v = vec![
-        "alpha".to_string(),
-        "beta".to_string(),
-        "gamma".to_string(),
-    ];
+    let mut v = vec!["alpha".to_string(), "beta".to_string(), "gamma".to_string()];
     apply_permutation(&mut v, &[1, 2, 0]);
     assert_eq!(
         v,
-        vec![
-            "beta".to_string(),
-            "gamma".to_string(),
-            "alpha".to_string()
-        ]
+        vec!["beta".to_string(), "gamma".to_string(), "alpha".to_string()]
     );
 }
 
 #[test]
 fn apply_permutation_f64_values() {
-    let mut v = vec![std::f64::consts::PI, 2.718, -1.0];
+    let mut v = vec![std::f64::consts::PI, std::f64::consts::E, -1.0];
     apply_permutation(&mut v, &[2, 0, 1]);
-    assert_eq!(v, vec![-1.0, std::f64::consts::PI, 2.718]);
+    assert_eq!(v, vec![-1.0, std::f64::consts::PI, std::f64::consts::E]);
 }
 
 #[test]
@@ -388,7 +379,9 @@ fn apply_permutation_n32_identity_forward() {
 
 #[test]
 fn apply_permutation_three_non_copy_strings_long() {
-    let mut v: Vec<String> = (0..3).map(|i| format!("record-{i}-{}", "x".repeat(20))).collect();
+    let mut v: Vec<String> = (0..3)
+        .map(|i| format!("record-{i}-{}", "x".repeat(20)))
+        .collect();
     let orig = v.clone();
     apply_permutation(&mut v, &[2, 1, 0]);
     assert_eq!(v, vec![orig[2].clone(), orig[1].clone(), orig[0].clone()]);
@@ -409,4 +402,3 @@ fn apply_permutation_n6_derangement_one() {
     apply_permutation(&mut v, &[1, 0, 3, 2]);
     assert_eq!(v, vec!['b', 'a', 'd', 'c']);
 }
-

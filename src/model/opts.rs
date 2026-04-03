@@ -1071,7 +1071,10 @@ mod tests {
     #[test]
     fn recognizes_name_tag_short() {
         let m = parse_opts().get_matches_from(vec!["tp", "-w", "my-alias"]);
-        assert_eq!(m.get_one::<String>(TAG).map(|s| s.as_str()), Some("my-alias"));
+        assert_eq!(
+            m.get_one::<String>(TAG).map(|s| s.as_str()),
+            Some("my-alias")
+        );
     }
 
     #[test]
@@ -1109,33 +1112,51 @@ mod tests {
     #[test]
     fn recognizes_grep_short() {
         let m = parse_opts().get_matches_from(vec!["tp", "-g", "needle"]);
-        assert_eq!(m.get_one::<String>(GREP).map(|s| s.as_str()), Some("needle"));
+        assert_eq!(
+            m.get_one::<String>(GREP).map(|s| s.as_str()),
+            Some("needle")
+        );
     }
 
     #[test]
     fn recognizes_grep_long() {
         let m = parse_opts().get_matches_from(vec!["tp", "--grep", "foo.*bar"]);
-        assert_eq!(m.get_one::<String>(GREP).map(|s| s.as_str()), Some("foo.*bar"));
+        assert_eq!(
+            m.get_one::<String>(GREP).map(|s| s.as_str()),
+            Some("foo.*bar")
+        );
     }
 
     #[test]
     fn recognizes_cat_short_one_index() {
         let m = parse_opts().get_matches_from(vec!["tp", "-C", "1"]);
-        let vals: Vec<&str> = m.get_many::<String>(CAT).unwrap().map(|s| s.as_str()).collect();
+        let vals: Vec<&str> = m
+            .get_many::<String>(CAT)
+            .unwrap()
+            .map(|s| s.as_str())
+            .collect();
         assert_eq!(vals, vec!["1"]);
     }
 
     #[test]
     fn recognizes_cat_short_multiple_indices() {
         let m = parse_opts().get_matches_from(vec!["tp", "-C", "1", "2", "3"]);
-        let vals: Vec<&str> = m.get_many::<String>(CAT).unwrap().map(|s| s.as_str()).collect();
+        let vals: Vec<&str> = m
+            .get_many::<String>(CAT)
+            .unwrap()
+            .map(|s| s.as_str())
+            .collect();
         assert_eq!(vals, vec!["1", "2", "3"]);
     }
 
     #[test]
     fn recognizes_cat_long() {
         let m = parse_opts().get_matches_from(vec!["tp", "--cat", "-1", "2"]);
-        let vals: Vec<&str> = m.get_many::<String>(CAT).unwrap().map(|s| s.as_str()).collect();
+        let vals: Vec<&str> = m
+            .get_many::<String>(CAT)
+            .unwrap()
+            .map(|s| s.as_str())
+            .collect();
         assert_eq!(vals, vec!["-1", "2"]);
     }
 
@@ -1323,7 +1344,10 @@ mod tests {
     #[test]
     fn recognizes_name_long_equals() {
         let m = parse_opts().get_matches_from(vec!["tp", "--name=stack-tag"]);
-        assert_eq!(m.get_one::<String>(TAG).map(|s| s.as_str()), Some("stack-tag"));
+        assert_eq!(
+            m.get_one::<String>(TAG).map(|s| s.as_str()),
+            Some("stack-tag")
+        );
     }
 
     #[test]
@@ -1335,7 +1359,10 @@ mod tests {
     #[test]
     fn recognizes_grep_long_equals() {
         let m = parse_opts().get_matches_from(vec!["tp", "--grep=^start"]);
-        assert_eq!(m.get_one::<String>(GREP).map(|s| s.as_str()), Some("^start"));
+        assert_eq!(
+            m.get_one::<String>(GREP).map(|s| s.as_str()),
+            Some("^start")
+        );
     }
 
     #[test]
@@ -1420,14 +1447,23 @@ mod tests {
     #[test]
     fn recognizes_cat_long_equals_single() {
         let m = parse_opts().get_matches_from(vec!["tp", "--cat=1"]);
-        let vals: Vec<&str> = m.get_many::<String>(CAT).unwrap().map(|s| s.as_str()).collect();
+        let vals: Vec<&str> = m
+            .get_many::<String>(CAT)
+            .unwrap()
+            .map(|s| s.as_str())
+            .collect();
         assert_eq!(vals, vec!["1"]);
     }
 
     #[test]
     fn stack_of_value_flags_equals_and_short() {
         let m = parse_opts().get_matches_from(vec![
-            "tp", "-i", "1", "--output=2", "--append=3", "--grep=x",
+            "tp",
+            "-i",
+            "1",
+            "--output=2",
+            "--append=3",
+            "--grep=x",
         ]);
         assert_eq!(m.get_one::<String>(INPUT).map(|s| s.as_str()), Some("1"));
         assert_eq!(m.get_one::<String>(OUTPUT).map(|s| s.as_str()), Some("2"));
@@ -1464,7 +1500,16 @@ mod tests {
 
     #[test]
     fn recognizes_swap_and_mv_space_args_mixed_with_equals() {
-        let m = parse_opts().get_matches_from(vec!["tp", "--input=1", "--mv", "2", "3", "-S", "1", "2"]);
+        let m = parse_opts().get_matches_from(vec![
+            "tp",
+            "--input=1",
+            "--mv",
+            "2",
+            "3",
+            "-S",
+            "1",
+            "2",
+        ]);
         assert_eq!(m.get_one::<String>(INPUT).map(|s| s.as_str()), Some("1"));
         let mv: Vec<String> = m.get_many(MOVE).unwrap().cloned().collect();
         assert_eq!(mv, vec!["2", "3"]);
@@ -1522,7 +1567,11 @@ mod tests {
     #[test]
     fn recognizes_cat_five_indices() {
         let m = parse_opts().get_matches_from(vec!["tp", "-C", "1", "2", "3", "4", "5"]);
-        let vals: Vec<&str> = m.get_many::<String>(CAT).unwrap().map(|s| s.as_str()).collect();
+        let vals: Vec<&str> = m
+            .get_many::<String>(CAT)
+            .unwrap()
+            .map(|s| s.as_str())
+            .collect();
         assert_eq!(vals, vec!["1", "2", "3", "4", "5"]);
     }
 
@@ -1565,7 +1614,8 @@ mod tests {
 
     #[test]
     fn recognizes_dup_swap_diff_triple() {
-        let m = parse_opts().get_matches_from(vec!["tp", "-x", "1", "-S", "1", "2", "-D", "1", "2"]);
+        let m =
+            parse_opts().get_matches_from(vec!["tp", "-x", "1", "-S", "1", "2", "-D", "1", "2"]);
         assert_eq!(m.get_one::<String>(DUP).map(|s| s.as_str()), Some("1"));
         let sw: Vec<String> = m.get_many(SWAP).unwrap().cloned().collect();
         let df: Vec<String> = m.get_many(DIFF).unwrap().cloned().collect();
@@ -1652,7 +1702,8 @@ mod tests {
 
     #[test]
     fn recognizes_io_add_remove_all_values() {
-        let m = parse_opts().get_matches_from(vec!["tp", "-i", "9", "-o", "8", "-a", "1", "-r", "2"]);
+        let m =
+            parse_opts().get_matches_from(vec!["tp", "-i", "9", "-o", "8", "-a", "1", "-r", "2"]);
         assert_eq!(m.get_one::<String>(INPUT).map(|s| s.as_str()), Some("9"));
         assert_eq!(m.get_one::<String>(OUTPUT).map(|s| s.as_str()), Some("8"));
         assert_eq!(m.get_one::<String>(ADD).map(|s| s.as_str()), Some("1"));
@@ -1702,7 +1753,11 @@ mod tests {
     #[test]
     fn recognizes_cat_long_many_indices() {
         let m = parse_opts().get_matches_from(vec!["tp", "--cat", "1", "2", "3", "4", "5", "6"]);
-        let vals: Vec<&str> = m.get_many::<String>(CAT).unwrap().map(|s| s.as_str()).collect();
+        let vals: Vec<&str> = m
+            .get_many::<String>(CAT)
+            .unwrap()
+            .map(|s| s.as_str())
+            .collect();
         assert_eq!(vals, vec!["1", "2", "3", "4", "5", "6"]);
     }
 
@@ -1737,7 +1792,10 @@ mod tests {
     #[test]
     fn recognizes_grep_pattern_with_spaces_via_equals() {
         let m = parse_opts().get_matches_from(vec!["tp", "--grep=hello world"]);
-        assert_eq!(m.get_one::<String>(GREP).map(|s| s.as_str()), Some("hello world"));
+        assert_eq!(
+            m.get_one::<String>(GREP).map(|s| s.as_str()),
+            Some("hello world")
+        );
     }
 
     #[test]
@@ -1800,7 +1858,10 @@ mod tests {
     #[test]
     fn recognizes_output_positive_large() {
         let m = parse_opts().get_matches_from(vec!["tp", "-o", "1000000"]);
-        assert_eq!(m.get_one::<String>(OUTPUT).map(|s| s.as_str()), Some("1000000"));
+        assert_eq!(
+            m.get_one::<String>(OUTPUT).map(|s| s.as_str()),
+            Some("1000000")
+        );
     }
 
     #[test]
@@ -1812,23 +1873,27 @@ mod tests {
     #[test]
     fn recognizes_remove_positive_max_ish() {
         let m = parse_opts().get_matches_from(vec!["tp", "-r", "2147483647"]);
-        assert_eq!(m.get_one::<String>(REMOVE).map(|s| s.as_str()), Some("2147483647"));
+        assert_eq!(
+            m.get_one::<String>(REMOVE).map(|s| s.as_str()),
+            Some("2147483647")
+        );
     }
 
     #[test]
     fn recognizes_cat_single_negative_index() {
         let m = parse_opts().get_matches_from(vec!["tp", "-C", "-1"]);
-        let vals: Vec<&str> = m.get_many::<String>(CAT).unwrap().map(|s| s.as_str()).collect();
+        let vals: Vec<&str> = m
+            .get_many::<String>(CAT)
+            .unwrap()
+            .map(|s| s.as_str())
+            .collect();
         assert_eq!(vals, vec!["-1"]);
     }
 
     #[test]
     fn recognizes_double_dash_only_positional() {
         let m = parse_opts().get_matches_from(vec!["tp", "--", "-i"]);
-        assert_eq!(
-            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
-            Some("-i")
-        );
+        assert_eq!(m.get_one::<String>(ARGFILE).map(|s| s.as_str()), Some("-i"));
     }
 
     #[test]
@@ -1851,9 +1916,9 @@ mod tests {
     #[test]
     fn recognizes_short_flags_almost_full_alphabet() {
         let m = parse_opts().get_matches_from(vec![
-            "tp", "-i", "1", "-o", "2", "-a", "3", "-r", "4", "-e", "5", "-w", "t",
-            "-I", "6", "-g", "p", "-C", "1", "-D", "1", "2", "-M", "1", "2",
-            "-x", "1", "-S", "1", "2", "-A", "1",
+            "tp", "-i", "1", "-o", "2", "-a", "3", "-r", "4", "-e", "5", "-w", "t", "-I", "6",
+            "-g", "p", "-C", "1", "-D", "1", "2", "-M", "1", "2", "-x", "1", "-S", "1", "2", "-A",
+            "1",
         ]);
         assert_eq!(m.get_one::<String>(INPUT).map(|s| s.as_str()), Some("1"));
         assert_eq!(m.get_one::<String>(OUTPUT).map(|s| s.as_str()), Some("2"));
@@ -1863,7 +1928,11 @@ mod tests {
     #[test]
     fn recognizes_long_expire_wc_size_path_chain() {
         let m = parse_opts().get_matches_from(vec![
-            "tp", "--expire=96", "--wc=3", "--size=3", "--path=3",
+            "tp",
+            "--expire=96",
+            "--wc=3",
+            "--size=3",
+            "--path=3",
         ]);
         assert_eq!(m.get_one::<String>(EXPIRE).map(|s| s.as_str()), Some("96"));
         assert_eq!(m.get_one::<String>(WC).map(|s| s.as_str()), Some("3"));
@@ -1874,19 +1943,37 @@ mod tests {
     #[test]
     fn recognizes_head_tail_replace_long() {
         let m = parse_opts().get_matches_from(vec![
-            "tp", "--head", "1", "20", "--tail", "2", "5",
-            "--replace", "3", "a", "b",
+            "tp",
+            "--head",
+            "1",
+            "20",
+            "--tail",
+            "2",
+            "5",
+            "--replace",
+            "3",
+            "a",
+            "b",
         ]);
         assert_eq!(
-            m.get_many::<String>(HEAD).unwrap().cloned().collect::<Vec<_>>(),
+            m.get_many::<String>(HEAD)
+                .unwrap()
+                .cloned()
+                .collect::<Vec<_>>(),
             vec!["1", "20"]
         );
         assert_eq!(
-            m.get_many::<String>(TAIL).unwrap().cloned().collect::<Vec<_>>(),
+            m.get_many::<String>(TAIL)
+                .unwrap()
+                .cloned()
+                .collect::<Vec<_>>(),
             vec!["2", "5"]
         );
         assert_eq!(
-            m.get_many::<String>(REPLACE).unwrap().cloned().collect::<Vec<_>>(),
+            m.get_many::<String>(REPLACE)
+                .unwrap()
+                .cloned()
+                .collect::<Vec<_>>(),
             vec!["3", "a", "b"]
         );
     }
@@ -1907,7 +1994,10 @@ mod tests {
     #[test]
     fn recognizes_grep_equals_regex_chars() {
         let m = parse_opts().get_matches_from(vec!["tp", "--grep=[0-9]+"]);
-        assert_eq!(m.get_one::<String>(GREP).map(|s| s.as_str()), Some("[0-9]+"));
+        assert_eq!(
+            m.get_one::<String>(GREP).map(|s| s.as_str()),
+            Some("[0-9]+")
+        );
     }
 
     #[test]
@@ -1937,12 +2027,20 @@ mod tests {
 
     #[test]
     fn recognizes_version_long_try_parse_errors() {
-        assert!(parse_opts().try_get_matches_from(vec!["tp", "--version"]).is_err());
+        assert!(
+            parse_opts()
+                .try_get_matches_from(vec!["tp", "--version"])
+                .is_err()
+        );
     }
 
     #[test]
     fn recognizes_help_long_try_parse_errors() {
-        assert!(parse_opts().try_get_matches_from(vec!["tp", "--help"]).is_err());
+        assert!(
+            parse_opts()
+                .try_get_matches_from(vec!["tp", "--help"])
+                .is_err()
+        );
     }
 
     #[test]
@@ -1990,10 +2088,13 @@ mod tests {
 
     #[test]
     fn recognizes_cat_seven_indices() {
-        let m = parse_opts().get_matches_from(vec![
-            "tp", "--cat", "1", "2", "3", "4", "5", "6", "7",
-        ]);
-        let v: Vec<&str> = m.get_many::<String>(CAT).unwrap().map(|s| s.as_str()).collect();
+        let m =
+            parse_opts().get_matches_from(vec!["tp", "--cat", "1", "2", "3", "4", "5", "6", "7"]);
+        let v: Vec<&str> = m
+            .get_many::<String>(CAT)
+            .unwrap()
+            .map(|s| s.as_str())
+            .collect();
         assert_eq!(v, vec!["1", "2", "3", "4", "5", "6", "7"]);
     }
 
@@ -2001,7 +2102,10 @@ mod tests {
     fn recognizes_rename_long_form_two_args() {
         let m = parse_opts().get_matches_from(vec!["tp", "--rename", "from", "to"]);
         assert_eq!(
-            m.get_many::<String>(RENAME).unwrap().cloned().collect::<Vec<_>>(),
+            m.get_many::<String>(RENAME)
+                .unwrap()
+                .cloned()
+                .collect::<Vec<_>>(),
             vec!["from", "to"]
         );
     }
@@ -2010,7 +2114,10 @@ mod tests {
     fn recognizes_move_long_two_args() {
         let m = parse_opts().get_matches_from(vec!["tp", "--mv", "9", "1"]);
         assert_eq!(
-            m.get_many::<String>(MOVE).unwrap().cloned().collect::<Vec<_>>(),
+            m.get_many::<String>(MOVE)
+                .unwrap()
+                .cloned()
+                .collect::<Vec<_>>(),
             vec!["9", "1"]
         );
     }
@@ -2019,7 +2126,10 @@ mod tests {
     fn recognizes_swap_long_two_args() {
         let m = parse_opts().get_matches_from(vec!["tp", "--swap", "9", "1"]);
         assert_eq!(
-            m.get_many::<String>(SWAP).unwrap().cloned().collect::<Vec<_>>(),
+            m.get_many::<String>(SWAP)
+                .unwrap()
+                .cloned()
+                .collect::<Vec<_>>(),
             vec!["9", "1"]
         );
     }
@@ -2028,7 +2138,10 @@ mod tests {
     fn recognizes_diff_long_two_args() {
         let m = parse_opts().get_matches_from(vec!["tp", "--diff", "9", "1"]);
         assert_eq!(
-            m.get_many::<String>(DIFF).unwrap().cloned().collect::<Vec<_>>(),
+            m.get_many::<String>(DIFF)
+                .unwrap()
+                .cloned()
+                .collect::<Vec<_>>(),
             vec!["9", "1"]
         );
     }
@@ -2037,7 +2150,10 @@ mod tests {
     fn recognizes_replace_long_three_args() {
         let m = parse_opts().get_matches_from(vec!["tp", "--replace", "9", "x", "y"]);
         assert_eq!(
-            m.get_many::<String>(REPLACE).unwrap().cloned().collect::<Vec<_>>(),
+            m.get_many::<String>(REPLACE)
+                .unwrap()
+                .cloned()
+                .collect::<Vec<_>>(),
             vec!["9", "x", "y"]
         );
     }
@@ -2091,10 +2207,7 @@ mod tests {
     fn recognizes_all_four_list_flags_order_independent() {
         let a = parse_opts().get_matches_from(vec!["tp", "-l", "-n", "-L", "-N"]);
         let b = parse_opts().get_matches_from(vec!["tp", "-N", "-L", "-n", "-l"]);
-        assert_eq!(
-            a.get_flag(LIST_FILES),
-            b.get_flag(LIST_FILES)
-        );
+        assert_eq!(a.get_flag(LIST_FILES), b.get_flag(LIST_FILES));
         assert_eq!(
             a.get_flag(LIST_FILES_NUMBERED),
             b.get_flag(LIST_FILES_NUMBERED)
@@ -2187,7 +2300,11 @@ mod tests {
     #[test]
     fn recognizes_cat_two_indices_short() {
         let m = parse_opts().get_matches_from(vec!["tp", "-C", "2", "4"]);
-        let v: Vec<&str> = m.get_many::<String>(CAT).unwrap().map(|s| s.as_str()).collect();
+        let v: Vec<&str> = m
+            .get_many::<String>(CAT)
+            .unwrap()
+            .map(|s| s.as_str())
+            .collect();
         assert_eq!(v, vec!["2", "4"]);
     }
 
@@ -2195,11 +2312,17 @@ mod tests {
     fn recognizes_head_tail_minimal() {
         let m = parse_opts().get_matches_from(vec!["tp", "--head", "1", "1", "--tail", "1", "1"]);
         assert_eq!(
-            m.get_many::<String>(HEAD).unwrap().cloned().collect::<Vec<_>>(),
+            m.get_many::<String>(HEAD)
+                .unwrap()
+                .cloned()
+                .collect::<Vec<_>>(),
             vec!["1", "1"]
         );
         assert_eq!(
-            m.get_many::<String>(TAIL).unwrap().cloned().collect::<Vec<_>>(),
+            m.get_many::<String>(TAIL)
+                .unwrap()
+                .cloned()
+                .collect::<Vec<_>>(),
             vec!["1", "1"]
         );
     }
@@ -2212,9 +2335,11 @@ mod tests {
 
     #[test]
     fn recognizes_quiet_long_twice_try_parse_errors() {
-        assert!(parse_opts()
-            .try_get_matches_from(vec!["tp", "--quiet", "--quiet"])
-            .is_err());
+        assert!(
+            parse_opts()
+                .try_get_matches_from(vec!["tp", "--quiet", "--quiet"])
+                .is_err()
+        );
     }
 
     #[test]
@@ -2310,7 +2435,11 @@ mod tests {
     #[test]
     fn recognizes_cat_five_indices_long() {
         let m = parse_opts().get_matches_from(vec!["tp", "--cat", "1", "2", "3", "4", "5"]);
-        let v: Vec<&str> = m.get_many::<String>(CAT).unwrap().map(|s| s.as_str()).collect();
+        let v: Vec<&str> = m
+            .get_many::<String>(CAT)
+            .unwrap()
+            .map(|s| s.as_str())
+            .collect();
         assert_eq!(v, vec!["1", "2", "3", "4", "5"]);
     }
 
@@ -2362,7 +2491,8 @@ mod tests {
 
     #[test]
     fn recognizes_head_tail_negative_index_first_arg() {
-        let m = parse_opts().get_matches_from(vec!["tp", "--head", "-1", "10", "--tail", "-2", "3"]);
+        let m =
+            parse_opts().get_matches_from(vec!["tp", "--head", "-1", "10", "--tail", "-2", "3"]);
         let h: Vec<String> = m.get_many(HEAD).unwrap().cloned().collect();
         let t: Vec<String> = m.get_many(TAIL).unwrap().cloned().collect();
         assert_eq!(h, vec!["-1", "10"]);
@@ -2378,7 +2508,10 @@ mod tests {
     #[test]
     fn recognizes_expire_large_hours() {
         let m = parse_opts().get_matches_from(vec!["tp", "--expire", "8760"]);
-        assert_eq!(m.get_one::<String>(EXPIRE).map(|s| s.as_str()), Some("8760"));
+        assert_eq!(
+            m.get_one::<String>(EXPIRE).map(|s| s.as_str()),
+            Some("8760")
+        );
     }
 
     #[test]
@@ -2410,15 +2543,8 @@ mod tests {
 
     #[test]
     fn recognizes_edit_info_path_chain_long() {
-        let m = parse_opts().get_matches_from(vec![
-            "tp",
-            "--edit",
-            "2",
-            "--info",
-            "1",
-            "--path",
-            "3",
-        ]);
+        let m =
+            parse_opts().get_matches_from(vec!["tp", "--edit", "2", "--info", "1", "--path", "3"]);
         assert_eq!(m.get_one::<String>(EDIT).map(|s| s.as_str()), Some("2"));
         assert_eq!(m.get_one::<String>(INFO).map(|s| s.as_str()), Some("1"));
         assert_eq!(m.get_one::<String>(PATH).map(|s| s.as_str()), Some("3"));
@@ -2459,5 +2585,236 @@ mod tests {
         assert!(m.get_flag(CLEAR));
         assert!(m.get_flag(MASTER));
         assert!(m.get_flag(DIRECTORY));
+    }
+
+    // ── clap coverage round 5 ──────────────────────────────
+
+    #[test]
+    fn recognizes_vvvvv_short_verbose_count_five() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-vvvvv"]);
+        assert_eq!(m.get_count(VERBOSE), 5);
+    }
+
+    #[test]
+    fn recognizes_input_output_both_equals_adjacent() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--input=9", "--output=8"]);
+        assert_eq!(m.get_one::<String>(INPUT).map(|s| s.as_str()), Some("9"));
+        assert_eq!(m.get_one::<String>(OUTPUT).map(|s| s.as_str()), Some("8"));
+    }
+
+    #[test]
+    fn recognizes_remove_equals_long() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--remove=-1"]);
+        assert_eq!(m.get_one::<String>(REMOVE).map(|s| s.as_str()), Some("-1"));
+    }
+
+    #[test]
+    fn recognizes_add_equals_long() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--add=3"]);
+        assert_eq!(m.get_one::<String>(ADD).map(|s| s.as_str()), Some("3"));
+    }
+
+    #[test]
+    fn recognizes_edit_equals_negative() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--edit=-1"]);
+        assert_eq!(m.get_one::<String>(EDIT).map(|s| s.as_str()), Some("-1"));
+    }
+
+    #[test]
+    fn recognizes_info_equals_negative() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--info=-2"]);
+        assert_eq!(m.get_one::<String>(INFO).map(|s| s.as_str()), Some("-2"));
+    }
+
+    #[test]
+    fn recognizes_dup_short_equals_via_equals() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-x=5"]);
+        assert_eq!(m.get_one::<String>(DUP).map(|s| s.as_str()), Some("5"));
+    }
+
+    #[test]
+    fn recognizes_swap_long_space_args_negative() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--swap", "-1", "-2"]);
+        let v: Vec<String> = m.get_many(SWAP).unwrap().cloned().collect();
+        assert_eq!(v, vec!["-1", "-2"]);
+    }
+
+    #[test]
+    fn recognizes_mv_long_two_args() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--mv", "1", "9"]);
+        let v: Vec<String> = m.get_many(MOVE).unwrap().cloned().collect();
+        assert_eq!(v, vec!["1", "9"]);
+    }
+
+    #[test]
+    fn recognizes_replace_all_space_separated() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--replace", "2", "a", "b"]);
+        let v: Vec<String> = m.get_many::<String>(REPLACE).unwrap().cloned().collect();
+        assert_eq!(v, vec!["2", "a", "b"]);
+    }
+
+    #[test]
+    fn recognizes_cat_six_indices_long() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--cat", "1", "2", "3", "4", "5", "6"]);
+        let v: Vec<&str> = m
+            .get_many::<String>(CAT)
+            .unwrap()
+            .map(|s| s.as_str())
+            .collect();
+        assert_eq!(v, vec!["1", "2", "3", "4", "5", "6"]);
+    }
+
+    #[test]
+    fn recognizes_sort_long_only_default_via_flag() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--sort"]);
+        assert_eq!(m.get_one::<String>(SORT).map(|s| s.as_str()), Some("name"));
+    }
+
+    #[test]
+    fn recognizes_expire_decimal_string() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--expire", "0.5"]);
+        assert_eq!(m.get_one::<String>(EXPIRE).map(|s| s.as_str()), Some("0.5"));
+    }
+
+    #[test]
+    fn recognizes_count_long_only() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--count"]);
+        assert!(m.get_flag(COUNT));
+    }
+
+    #[test]
+    fn recognizes_reverse_long_only_rev() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--rev"]);
+        assert!(m.get_flag(REVERSE));
+    }
+
+    #[test]
+    fn recognizes_list_files_short_l_only() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-l"]);
+        assert!(m.get_flag(LIST_FILES));
+    }
+
+    #[test]
+    fn recognizes_list_contents_short_cap_l_only() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-L"]);
+        assert!(m.get_flag(LIST_CONTENTS));
+    }
+
+    #[test]
+    fn recognizes_master_short_m() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-m"]);
+        assert!(m.get_flag(MASTER));
+    }
+
+    #[test]
+    fn recognizes_directory_short_d() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-d"]);
+        assert!(m.get_flag(DIRECTORY));
+    }
+
+    #[test]
+    fn recognizes_clear_short_c() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-c"]);
+        assert!(m.get_flag(CLEAR));
+    }
+
+    #[test]
+    fn recognizes_pop_short_p() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-p"]);
+        assert!(m.get_flag(POP));
+    }
+
+    #[test]
+    fn recognizes_shift_short_s() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-s"]);
+        assert!(m.get_flag(SHIFT));
+    }
+
+    #[test]
+    fn recognizes_unshift_short_u() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-u"]);
+        assert!(m.get_flag(UNSHIFT));
+    }
+
+    #[test]
+    fn recognizes_quiet_short_q() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-q"]);
+        assert!(m.get_flag(SILENT));
+    }
+
+    #[test]
+    fn recognizes_verbose_short_v_single() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-v"]);
+        assert_eq!(m.get_count(VERBOSE), 1);
+    }
+
+    #[test]
+    fn recognizes_diff_short_d_uppercase() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-D", "1", "2"]);
+        let v: Vec<String> = m.get_many(DIFF).unwrap().cloned().collect();
+        assert_eq!(v, vec!["1", "2"]);
+    }
+
+    #[test]
+    fn recognizes_swap_short_s_uppercase() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-S", "1", "2"]);
+        let v: Vec<String> = m.get_many(SWAP).unwrap().cloned().collect();
+        assert_eq!(v, vec!["1", "2"]);
+    }
+
+    #[test]
+    fn recognizes_mv_short_m_uppercase() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-M", "1", "2"]);
+        let v: Vec<String> = m.get_many(MOVE).unwrap().cloned().collect();
+        assert_eq!(v, vec!["1", "2"]);
+    }
+
+    #[test]
+    fn recognizes_dup_short_x() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-x", "1"]);
+        assert_eq!(m.get_one::<String>(DUP).map(|s| s.as_str()), Some("1"));
+    }
+
+    #[test]
+    fn recognizes_append_short_a_uppercase() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-A", "1"]);
+        assert_eq!(m.get_one::<String>(APPEND).map(|s| s.as_str()), Some("1"));
+    }
+
+    #[test]
+    fn recognizes_rename_short_r_uppercase() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-R", "a", "b"]);
+        let v: Vec<String> = m.get_many(RENAME).unwrap().cloned().collect();
+        assert_eq!(v, vec!["a", "b"]);
+    }
+
+    #[test]
+    fn recognizes_info_short_i_uppercase() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-I", "1"]);
+        assert_eq!(m.get_one::<String>(INFO).map(|s| s.as_str()), Some("1"));
+    }
+
+    #[test]
+    fn recognizes_grep_short_g() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-g", "x"]);
+        assert_eq!(m.get_one::<String>(GREP).map(|s| s.as_str()), Some("x"));
+    }
+
+    #[test]
+    fn recognizes_cat_short_c_uppercase() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-C", "1", "2"]);
+        let v: Vec<&str> = m
+            .get_many::<String>(CAT)
+            .unwrap()
+            .map(|s| s.as_str())
+            .collect();
+        assert_eq!(v, vec!["1", "2"]);
+    }
+
+    #[test]
+    fn recognizes_diff_short_d_uppercase_two_names() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-D", "a", "b"]);
+        let v: Vec<String> = m.get_many(DIFF).unwrap().cloned().collect();
+        assert_eq!(v, vec!["a", "b"]);
     }
 }

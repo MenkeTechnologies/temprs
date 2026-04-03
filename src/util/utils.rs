@@ -1942,7 +1942,9 @@ mod tests {
     fn util_paths_to_file_round_trip_ten_paths() {
         let dir = tmp_dir();
         let master = dir.join("m10");
-        let paths: Vec<PathBuf> = (0..10).map(|i| PathBuf::from(format!("/p/{}", i))).collect();
+        let paths: Vec<PathBuf> = (0..10)
+            .map(|i| PathBuf::from(format!("/p/{}", i)))
+            .collect();
         util_paths_to_file(&paths, &master);
         assert_eq!(util_file_to_paths(master.as_path()), paths);
         fs::remove_dir_all(&dir).unwrap();
@@ -2027,4 +2029,51 @@ mod tests {
         }
     }
 
+    #[test]
+    fn util_path_to_string_root_only() {
+        assert_eq!(util_path_to_string(Path::new("/")), "/");
+    }
+
+    #[test]
+    fn util_path_to_string_single_component() {
+        assert_eq!(util_path_to_string(Path::new("file.txt")), "file.txt");
+    }
+
+    #[test]
+    fn paths_and_names_round_trip_ten_named_records() {
+        let dir = tmp_dir();
+        let master = dir.join("m10n");
+        let paths: Vec<PathBuf> = (0..10)
+            .map(|i| PathBuf::from(format!("/tmp/f{i}")))
+            .collect();
+        let names: Vec<Option<String>> = (0..10).map(|i| Some(format!("n{i}"))).collect();
+        util_paths_and_names_to_file(&paths, &names, &master);
+        let (p, n) = util_file_to_paths_and_names(master.as_path());
+        assert_eq!(p, paths);
+        assert_eq!(n, names);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn util_file_to_paths_skips_empty_path_record_with_warning_behavior() {
+        let dir = tmp_dir();
+        let f = dir.join("bad");
+        fs::write(&f, "\0name\0\0/ok\0\0").unwrap();
+        let (paths, names) = util_file_to_paths_and_names(f.as_path());
+        assert_eq!(paths, vec![PathBuf::from("/ok")]);
+        assert_eq!(names, vec![None]);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn util_paths_to_file_single_path_round_trip() {
+        let dir = tmp_dir();
+        let m = dir.join("one");
+        util_paths_to_file(&[PathBuf::from("/solo")], &m);
+        assert_eq!(
+            util_file_to_paths(m.as_path()),
+            vec![PathBuf::from("/solo")]
+        );
+        fs::remove_dir_all(&dir).unwrap();
+    }
 }

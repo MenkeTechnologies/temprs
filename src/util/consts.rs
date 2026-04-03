@@ -789,14 +789,26 @@ mod tests {
 
     #[test]
     fn extended_errors_start_uppercase() {
-        for e in [ERR_INVALID_NAME, ERR_NAME_NUL, ERR_MASTER_WRITE, ERR_MASTER_LOCK, ERR_EDITOR] {
+        for e in [
+            ERR_INVALID_NAME,
+            ERR_NAME_NUL,
+            ERR_MASTER_WRITE,
+            ERR_MASTER_LOCK,
+            ERR_EDITOR,
+        ] {
             assert!(e.chars().next().unwrap().is_uppercase(), "{}", e);
         }
     }
 
     #[test]
     fn extended_errors_no_trailing_period() {
-        for e in [ERR_INVALID_NAME, ERR_NAME_NUL, ERR_MASTER_WRITE, ERR_MASTER_LOCK, ERR_EDITOR] {
+        for e in [
+            ERR_INVALID_NAME,
+            ERR_NAME_NUL,
+            ERR_MASTER_WRITE,
+            ERR_MASTER_LOCK,
+            ERR_EDITOR,
+        ] {
             assert!(!e.ends_with('.'), "{}", e);
         }
     }

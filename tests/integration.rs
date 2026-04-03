@@ -5581,3 +5581,91 @@ fn quiet_push_suppresses_creation_noise() {
     let out = run_tp_stdin(&dir, &["-q"], "q-data");
     assert!(out.status.success());
 }
+
+// ── CI-oriented smoke tests (additional) ─────────────────
+
+#[test]
+fn stack_count_zero_on_fresh_dir() {
+    let dir = setup_clean_env();
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "0");
+}
+
+#[test]
+fn double_push_count_two() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "x");
+    tick();
+    run_tp_stdin(&dir, &[], "y");
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "2");
+}
+
+#[test]
+fn output_index_two_after_two_pushes() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "bottom");
+    tick();
+    run_tp_stdin(&dir, &[], "top");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])).trim(), "top");
+}
+
+#[test]
+fn list_files_after_push_exits_ok() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "data");
+    let out = run_tp(&dir, &["-l"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn list_contents_after_push_exits_ok() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "line");
+    let out = run_tp(&dir, &["-L"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn master_flag_after_push_exits_ok() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "m");
+    let out = run_tp(&dir, &["-m"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn pop_one_of_three_leaves_two() {
+    let dir = setup_clean_env();
+    for _ in 0..3 {
+        tick();
+        run_tp_stdin(&dir, &[], "p");
+    }
+    run_tp(&dir, &["-p"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "2");
+}
+
+#[test]
+fn swap_adjacent_indices_one_and_two() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "low");
+    tick();
+    run_tp_stdin(&dir, &[], "high");
+    run_tp(&dir, &["--swap", "1", "2"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])).trim(), "high");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])).trim(), "low");
+}
+
+#[test]
+fn dup_once_creates_two_stack_entries() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "once");
+    run_tp(&dir, &["--dup", "1"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "2");
+}
+
+#[test]
+fn sort_name_on_single_file_exits_ok() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "only");
+    let out = run_tp(&dir, &["--sort", "name"]);
+    assert!(out.status.success());
+}
