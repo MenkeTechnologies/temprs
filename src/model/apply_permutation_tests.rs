@@ -431,3 +431,24 @@ fn apply_permutation_u128_five_reverse() {
     apply_permutation(&mut v, &[4, 3, 2, 1, 0]);
     assert_eq!(v, vec![5, 4, 3, 2, 1]);
 }
+
+#[test]
+fn apply_permutation_n18_full_reverse() {
+    let n = 18;
+    let perm: Vec<usize> = (0..n).rev().collect();
+    let mut v: Vec<u16> = (0..n as u16).collect();
+    apply_permutation(&mut v, &perm);
+    assert_eq!(v, (0..n as u16).rev().collect::<Vec<_>>());
+}
+
+#[test]
+fn apply_permutation_array_string_four() {
+    let mut v = vec![
+        "w".to_string(),
+        "x".to_string(),
+        "y".to_string(),
+        "z".to_string(),
+    ];
+    apply_permutation(&mut v, &[3, 2, 1, 0]);
+    assert_eq!(v, vec!["z", "y", "x", "w"]);
+}

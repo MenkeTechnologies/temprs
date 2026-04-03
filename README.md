@@ -412,6 +412,17 @@ The workflow sets **`permissions: contents: read`** plus **`actions: write`** so
 
 The crate includes library unit tests, integration tests against the `tp` / `temprs` binaries, and extensive CLI parsing tests for [`clap`](https://docs.rs/clap/) option coverage. List discovered tests with `cargo test -- --list` (output format is unstable; use for local discovery only).
 
+The **Test** job sets **`RUST_BACKTRACE=1`** so panics in CI include stack traces in the log.
+
+#### Troubleshooting CI failures
+
+| Symptom | What to do |
+|---------|------------|
+| **Format** job failed | Run `cargo fmt --all` locally, then commit. |
+| **Clippy** job failed | Fix warnings or run `cargo clippy --all-targets -- -D warnings` and address each `-D warnings` denial. |
+| **Test** failed on one OS only | Re-run the workflow; if it repeats, run `cargo test` on that platform or inspect the job log (backtraces are enabled). |
+| **Release Build** failed | Usually a cross-target issue; confirm `rustup target add <triple>` works locally for the failing matrix entry. |
+
 ---
 
 ## [0xFF] LICENSE

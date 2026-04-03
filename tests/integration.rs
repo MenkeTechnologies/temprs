@@ -5776,3 +5776,46 @@ fn tail_last_line_only_three_line_file() {
     let t = stdout(&out);
     assert!(t.contains('c'));
 }
+
+#[test]
+fn four_pushes_count_four() {
+    let dir = setup_clean_env();
+    for i in 0..4 {
+        tick();
+        run_tp_stdin(&dir, &[], &format!("v{i}"));
+    }
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "4");
+}
+
+#[test]
+fn remove_bottom_only_one_remains() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a");
+    tick();
+    run_tp_stdin(&dir, &[], "b");
+    run_tp(&dir, &["-r", "1"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "1");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])).trim(), "b");
+}
+
+#[test]
+fn add_at_top_negative_one_inserts() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "old");
+    tick();
+    run_tp_stdin(&dir, &[], "mid");
+    run_tp_stdin(&dir, &["-a", "-1"], "newtop");
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "3");
+}
+
+#[test]
+fn list_files_numbered_two_files_shows_indices() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a");
+    tick();
+    run_tp_stdin(&dir, &[], "b");
+    let out = run_tp(&dir, &["-n"]);
+    assert!(out.status.success());
+    let text = stdout(&out);
+    assert!(text.contains('1') && text.contains('2'));
+}
