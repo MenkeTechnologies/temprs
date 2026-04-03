@@ -5869,3 +5869,12 @@ fn size_top_of_stack_matches_bytes_written() {
     let sz = out.trim();
     assert_eq!(sz.parse::<usize>().unwrap(), body.len());
 }
+
+#[test]
+fn path_top_of_stack_is_nonempty_string() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "x");
+    let out = stdout(&run_tp(&dir, &["--path", "1"]));
+    let p = out.trim();
+    assert!(!p.is_empty());
+}

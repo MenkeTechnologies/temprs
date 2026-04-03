@@ -388,7 +388,7 @@ Concurrent runs for the same branch are **cancelled** (only the latest run matte
 | Job | What it runs |
 |-----|----------------|
 | **Check** | `cargo check --all-targets --locked` (Ubuntu) |
-| **Test** | `cargo test --locked` on Ubuntu and macOS |
+| **Test** | `cargo test --locked --no-fail-fast` on Ubuntu and macOS (run all tests even after a failure) |
 | **Format** | `cargo fmt --all --check` (no `--locked`; unsupported on this subcommand) |
 | **Clippy** | `cargo clippy --all-targets --locked -- -D warnings` |
 | **Doc** | `cargo doc --no-deps --locked` with **`RUSTDOCFLAGS=-D warnings`** (Ubuntu) |
@@ -396,13 +396,15 @@ Concurrent runs for the same branch are **cancelled** (only the latest run matte
 
 `--locked` fails the job if `Cargo.lock` is out of sync with `Cargo.toml` — same resolution as locally: run `cargo update` or refresh the lockfile intentionally, then commit.
 
+**`Cargo.lock` is tracked in git** so CI and contributors get the same dependency graph. If your **global** `~/.gitignore` ignores `Cargo.lock`, clone/checkout may omit it until you run `cargo generate-lockfile` or copy from the repo; to **commit** lockfile updates use `git add -f Cargo.lock` so the file is not skipped by that global rule.
+
 Local checks (match CI):
 
 ```sh
 cargo fmt --all --check
 cargo clippy --all-targets --locked -- -D warnings
 RUSTDOCFLAGS='-D warnings' cargo doc --no-deps --locked
-cargo test --locked
+cargo test --locked --no-fail-fast
 ```
 
 Run subsets when iterating:
@@ -416,7 +418,7 @@ The workflow sets **`permissions: contents: read`** plus **`actions: write`** so
 
 The crate includes library unit tests, integration tests against the `tp` / `temprs` binaries, and extensive CLI parsing tests for [`clap`](https://docs.rs/clap/) option coverage (search for `clap coverage round` in `src/model/opts.rs` to list rounds in source order). List discovered tests with `cargo test -- --list` (output format is unstable; use for local discovery only).
 
-The **Test** job sets **`RUST_BACKTRACE=1`** so panics in CI include stack traces in the log.
+The **Test** job sets **`RUST_BACKTRACE=1`** so panics in CI include stack traces in the log, and **`--no-fail-fast`** so one failing test does not hide other failures in the same run.
 
 #### Troubleshooting CI failures
 
