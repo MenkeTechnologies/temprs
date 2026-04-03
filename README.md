@@ -412,6 +412,7 @@ Run subsets when iterating:
 ```sh
 cargo test --lib              # unit tests only (library + model + util)
 cargo test --test integration # integration tests only (spawns tp/temprs)
+cargo bench                   # Criterion benchmarks (optional local profiling; not in CI by default)
 ```
 
 The workflow sets **`permissions: contents: read`** plus **`actions: write`** so [`actions/upload-artifact`](https://github.com/actions/upload-artifact) can store release-build binaries (artifact uploads are not covered by `contents` alone). The **Doc** job uses the same **`RUSTDOCFLAGS=-D warnings`** pattern as many Rust projects: broken links or other rustdoc warnings fail CI. Test and release-build matrices use **`fail-fast: false`** so every OS/target runs to completion even if another variant fails. Each job has a **timeout** so a stuck runner does not run indefinitely.
