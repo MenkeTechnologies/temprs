@@ -7110,4 +7110,290 @@ mod tests {
         let m = parse_opts().get_matches_from(vec!["tp", "-q"]);
         assert!(m.get_flag(SILENT));
     }
+
+    // ── clap coverage round 22 ─────────────────────────────
+
+    #[test]
+    fn recognizes_clap22_positional_file_url() {
+        let m = parse_opts().get_matches_from(vec!["tp", "file:///tmp/x"]);
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("file:///tmp/x")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap22_positional_query_string() {
+        let m = parse_opts().get_matches_from(vec!["tp", "api?foo=1&bar=2"]);
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("api?foo=1&bar=2")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap22_output_short_large_index() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-o", "9999"]);
+        assert_eq!(
+            m.get_one::<String>(OUTPUT).map(|s| s.as_str()),
+            Some("9999")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap22_input_equals_tagged() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--input=@0"]);
+        assert_eq!(m.get_one::<String>(INPUT).map(|s| s.as_str()), Some("@0"));
+    }
+
+    #[test]
+    fn recognizes_clap22_cat_seventeen_indices_long() {
+        let m = parse_opts().get_matches_from(vec![
+            "tp", "--cat", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12",
+            "13", "14", "15", "16",
+        ]);
+        let v: Vec<&str> = m
+            .get_many::<String>(CAT)
+            .unwrap()
+            .map(|s| s.as_str())
+            .collect();
+        assert_eq!(
+            v,
+            vec![
+                "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14",
+                "15", "16"
+            ]
+        );
+    }
+
+    #[test]
+    fn recognizes_clap22_grep_escaped_brackets() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-g", r"\[a\]"]);
+        assert_eq!(
+            m.get_one::<String>(GREP).map(|s| s.as_str()),
+            Some(r"\[a\]")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap22_expire_decimal_hours() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--expire", "0.25"]);
+        assert_eq!(
+            m.get_one::<String>(EXPIRE).map(|s| s.as_str()),
+            Some("0.25")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap22_sort_name_then_positional() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--sort", "name", "y.dat"]);
+        assert_eq!(m.get_one::<String>(SORT).map(|s| s.as_str()), Some("name"));
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("y.dat")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap22_clear_pop_unshift_long() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--clear", "--pop", "--unshift"]);
+        assert!(m.get_flag(CLEAR));
+        assert!(m.get_flag(POP));
+        assert!(m.get_flag(UNSHIFT));
+    }
+
+    #[test]
+    fn recognizes_clap22_remove_add_equals_style() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--remove=-1", "--add=0"]);
+        assert_eq!(m.get_one::<String>(REMOVE).map(|s| s.as_str()), Some("-1"));
+        assert_eq!(m.get_one::<String>(ADD).map(|s| s.as_str()), Some("0"));
+    }
+
+    #[test]
+    fn recognizes_clap22_head_tail_size_long() {
+        let m = parse_opts().get_matches_from(vec![
+            "tp", "--head", "0", "3", "--tail", "1", "4", "--size", "0",
+        ]);
+        assert_eq!(
+            m.get_many::<String>(HEAD)
+                .unwrap()
+                .cloned()
+                .collect::<Vec<_>>(),
+            vec!["0", "3"]
+        );
+        assert_eq!(
+            m.get_many::<String>(TAIL)
+                .unwrap()
+                .cloned()
+                .collect::<Vec<_>>(),
+            vec!["1", "4"]
+        );
+        assert_eq!(m.get_one::<String>(SIZE).map(|s| s.as_str()), Some("0"));
+    }
+
+    #[test]
+    fn recognizes_clap22_replace_newline_in_replacement() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--replace", "0", "a", "b\nc"]);
+        let v: Vec<String> = m.get_many(REPLACE).unwrap().cloned().collect();
+        assert_eq!(v, vec!["0", "a", "b\nc"]);
+    }
+
+    #[test]
+    fn recognizes_clap22_diff_swap_short_only() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-D", "p", "q", "-S", "r", "s"]);
+        assert_eq!(
+            m.get_many(DIFF).unwrap().cloned().collect::<Vec<String>>(),
+            vec!["p", "q"]
+        );
+        assert_eq!(
+            m.get_many(SWAP).unwrap().cloned().collect::<Vec<String>>(),
+            vec!["r", "s"]
+        );
+    }
+
+    #[test]
+    fn recognizes_clap22_move_short_pair() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-M", "7", "8"]);
+        let v: Vec<String> = m.get_many(MOVE).unwrap().cloned().collect();
+        assert_eq!(v, vec!["7", "8"]);
+    }
+
+    #[test]
+    fn recognizes_clap22_verbose_twenty_one_short() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-vvvvvvvvvvvvvvvvvvvvv"]);
+        assert_eq!(m.get_count(VERBOSE), 21);
+    }
+
+    #[test]
+    fn recognizes_clap22_double_dash_positional_spaces() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--", "my file.txt"]);
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("my file.txt")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap22_edit_rename_info_long() {
+        let m = parse_opts().get_matches_from(vec![
+            "tp", "--edit", "-2", "--rename", "old", "new", "--info", "0",
+        ]);
+        assert_eq!(m.get_one::<String>(EDIT).map(|s| s.as_str()), Some("-2"));
+        assert_eq!(
+            m.get_many(RENAME)
+                .unwrap()
+                .cloned()
+                .collect::<Vec<String>>(),
+            vec!["old", "new"]
+        );
+        assert_eq!(m.get_one::<String>(INFO).map(|s| s.as_str()), Some("0"));
+    }
+
+    #[test]
+    fn recognizes_clap22_grep_list_files_short() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-g", "needle", "-l"]);
+        assert_eq!(
+            m.get_one::<String>(GREP).map(|s| s.as_str()),
+            Some("needle")
+        );
+        assert!(m.get_flag(LIST_FILES));
+    }
+
+    #[test]
+    fn recognizes_clap22_count_list_contents_short() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-k", "-L"]);
+        assert!(m.get_flag(COUNT));
+        assert!(m.get_flag(LIST_CONTENTS));
+    }
+
+    #[test]
+    fn recognizes_clap22_rev_sort_quiet_long() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--rev", "--sort", "mtime", "--quiet"]);
+        assert!(m.get_flag(REVERSE));
+        assert_eq!(m.get_one::<String>(SORT).map(|s| s.as_str()), Some("mtime"));
+        assert!(m.get_flag(SILENT));
+    }
+
+    #[test]
+    fn recognizes_clap22_append_output_input_short() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-A", "0", "-o", "1", "-i", "2"]);
+        assert_eq!(m.get_one::<String>(APPEND).map(|s| s.as_str()), Some("0"));
+        assert_eq!(m.get_one::<String>(OUTPUT).map(|s| s.as_str()), Some("1"));
+        assert_eq!(m.get_one::<String>(INPUT).map(|s| s.as_str()), Some("2"));
+    }
+
+    #[test]
+    fn recognizes_clap22_name_long_equals() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--name=alias"]);
+        assert_eq!(m.get_one::<String>(TAG).map(|s| s.as_str()), Some("alias"));
+    }
+
+    #[test]
+    fn recognizes_clap22_dup_long_equals() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--dup=-3"]);
+        assert_eq!(m.get_one::<String>(DUP).map(|s| s.as_str()), Some("-3"));
+    }
+
+    #[test]
+    fn recognizes_clap22_append_long_equals() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--append=99"]);
+        assert_eq!(m.get_one::<String>(APPEND).map(|s| s.as_str()), Some("99"));
+    }
+
+    #[test]
+    fn recognizes_clap22_cat_short_six_indices() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-C", "9", "8", "7", "6", "5", "4"]);
+        let v: Vec<&str> = m
+            .get_many::<String>(CAT)
+            .unwrap()
+            .map(|s| s.as_str())
+            .collect();
+        assert_eq!(v, vec!["9", "8", "7", "6", "5", "4"]);
+    }
+
+    #[test]
+    fn recognizes_clap22_rev_path_wc_expire() {
+        let m = parse_opts().get_matches_from(vec![
+            "tp", "--rev", "--path", "2", "--wc", "2", "--expire", "48",
+        ]);
+        assert!(m.get_flag(REVERSE));
+        assert_eq!(m.get_one::<String>(PATH).map(|s| s.as_str()), Some("2"));
+        assert_eq!(m.get_one::<String>(WC).map(|s| s.as_str()), Some("2"));
+        assert_eq!(m.get_one::<String>(EXPIRE).map(|s| s.as_str()), Some("48"));
+    }
+
+    #[test]
+    fn recognizes_clap22_sort_mtime_long_only() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--sort", "mtime"]);
+        assert_eq!(m.get_one::<String>(SORT).map(|s| s.as_str()), Some("mtime"));
+    }
+
+    #[test]
+    fn recognizes_clap22_positional_windows_drive() {
+        let m = parse_opts().get_matches_from(vec!["tp", r"C:\temp\out.txt"]);
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some(r"C:\temp\out.txt")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap22_master_list_files_numbered_short() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-m", "-n"]);
+        assert!(m.get_flag(MASTER));
+        assert!(m.get_flag(LIST_FILES_NUMBERED));
+    }
+
+    #[test]
+    fn recognizes_clap22_directory_list_contents_numbered_long() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--dir", "--list-contents-numbered"]);
+        assert!(m.get_flag(DIRECTORY));
+        assert!(m.get_flag(LIST_CONTENTS_NUMBERED));
+    }
+
+    #[test]
+    fn recognizes_clap22_program_name_temprs_binary() {
+        let m = parse_opts().get_matches_from(vec!["temprs", "--count"]);
+        assert!(m.get_flag(COUNT));
+    }
 }
