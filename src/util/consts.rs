@@ -811,4 +811,37 @@ mod tests {
         assert!(!NAME.contains('/'));
         assert!(!NAME.contains('\\'));
     }
+
+    #[test]
+    fn tempfile_prefix_has_no_whitespace() {
+        assert!(!TEMPFILE_PREFIX.chars().any(|c| c.is_whitespace()));
+    }
+
+    #[test]
+    fn master_record_filename_ends_with_stack_literal() {
+        assert!(MASTER_RECORD_FILENAME.ends_with("stack"));
+    }
+
+    #[test]
+    fn all_error_constants_distinct() {
+        let errs = [
+            ERR_NO_FILE,
+            ERR_PARSE,
+            ERR_INVALID_RM,
+            ERR_INVALID_IDX,
+            ERR_INVALID_FILE,
+            ERR_LOGGER,
+            ERR_FILE_READ,
+            ERR_CLOCK,
+            ERR_INVALID_NAME,
+            ERR_NAME_NUL,
+            ERR_MASTER_WRITE,
+            ERR_MASTER_LOCK,
+            ERR_EDITOR,
+        ];
+        let mut v = errs.to_vec();
+        v.sort();
+        v.dedup();
+        assert_eq!(v.len(), errs.len());
+    }
 }

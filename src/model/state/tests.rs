@@ -1887,3 +1887,54 @@ fn append_temp_file_roundtrip() {
     s.set_append_temp_file(Some("-1".to_string()));
     assert_eq!(s.append_temp_file(), &Some("-1".to_string()));
 }
+
+#[test]
+fn insert_idx_set_sequence() {
+    let mut s = make_state();
+    for i in 0..10 {
+        s.set_insert_idx(Some(i.to_string()));
+        assert_eq!(s.insert_idx(), &Some(i.to_string()));
+    }
+    s.set_insert_idx(None);
+    assert!(s.insert_idx().is_none());
+}
+
+#[test]
+fn input_output_temp_file_independent_strings() {
+    let mut s = make_state();
+    s.set_input_temp_file(Some("a".to_string()));
+    s.set_output_temp_file(Some("b".to_string()));
+    assert_ne!(s.input_temp_file(), s.output_temp_file());
+}
+
+#[test]
+fn master_file_path_str_after_constructor() {
+    let s = TempState::new(
+        PathBuf::from("/o"),
+        PathBuf::from("/master/path"),
+        PathBuf::from("/home"),
+        vec![],
+        vec![],
+        None,
+        String::new(),
+    );
+    assert_eq!(s.master_file_path_str(), "/master/path");
+}
+
+#[test]
+fn new_with_maximal_stack_and_names_length_match() {
+    let n = 20;
+    let stack: Vec<PathBuf> = (0..n).map(|i| PathBuf::from(format!("/f{}", i))).collect();
+    let names: Vec<Option<String>> = (0..n).map(|i| Some(format!("n{}", i))).collect();
+    let s = TempState::new(
+        PathBuf::from("/o"),
+        PathBuf::from("/m"),
+        PathBuf::from("/h"),
+        stack.clone(),
+        names.clone(),
+        None,
+        String::new(),
+    );
+    assert_eq!(s.temp_file_stack().len(), n);
+    assert_eq!(s.temp_file_names().len(), n);
+}

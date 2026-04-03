@@ -5282,3 +5282,85 @@ fn remove_middle_preserves_neighbors() {
     run_tp(&dir, &["-r", "2"]);
     assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "2");
 }
+
+// ── bulk integration smoke tests ──────────────────────
+
+#[test]
+fn push_four_items_count_four() {
+    let dir = setup_clean_env();
+    for i in 0..4 {
+        tick();
+        run_tp_stdin(&dir, &[], &format!("item{}", i));
+    }
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "4");
+}
+
+#[test]
+fn output_negative_two_is_bottom_two_item_stack() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "bottom");
+    tick();
+    run_tp_stdin(&dir, &[], "top");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "-2"])).trim(), "bottom");
+}
+
+#[test]
+fn grep_no_match_exits_failure_on_stack() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "hello");
+    let out = run_tp(&dir, &["--grep", "zzznomatch"]);
+    assert!(!out.status.success());
+}
+
+#[test]
+fn size_zero_byte_file() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "");
+    let out = run_tp(&dir, &["--size", "1"]);
+    assert_eq!(stdout(&out).trim(), "0");
+}
+
+#[test]
+fn clear_then_push_one() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "old");
+    run_tp(&dir, &["-c"]);
+    run_tp_stdin(&dir, &[], "fresh");
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "1");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])).trim(), "fresh");
+}
+
+#[test]
+fn dup_twice_triples_stack() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "solo");
+    run_tp(&dir, &["--dup", "1"]);
+    run_tp(&dir, &["--dup", "1"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "3");
+}
+
+#[test]
+fn swap_first_and_last_three_items() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a");
+    tick();
+    run_tp_stdin(&dir, &[], "b");
+    tick();
+    run_tp_stdin(&dir, &[], "c");
+    run_tp(&dir, &["--swap", "1", "3"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])).trim(), "c");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "3"])).trim(), "a");
+}
+
+#[test]
+fn cat_three_files_in_order() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "1");
+    tick();
+    run_tp_stdin(&dir, &[], "2");
+    tick();
+    run_tp_stdin(&dir, &[], "3");
+    let out = run_tp(&dir, &["--cat", "1", "2", "3"]);
+    let t = stdout(&out);
+    assert!(t.contains('1') && t.contains('2') && t.contains('3'));
+}

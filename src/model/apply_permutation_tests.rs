@@ -295,3 +295,37 @@ fn apply_permutation_isize_slice() {
     assert_eq!(v, vec![-3, -1, -2]);
 }
 
+#[test]
+fn apply_permutation_unit_type() {
+    let mut v = vec![(), (), ()];
+    apply_permutation(&mut v, &[2, 1, 0]);
+    assert_eq!(v.len(), 3);
+}
+
+#[test]
+fn apply_permutation_n12_reverse_only() {
+    let n = 12;
+    let perm: Vec<usize> = (0..n).rev().collect();
+    let mut v: Vec<i32> = (0..n as i32).collect();
+    apply_permutation(&mut v, &perm);
+    assert_eq!(v, (0..n as i32).rev().collect::<Vec<_>>());
+}
+
+#[test]
+fn apply_permutation_string_slices_reorder() {
+    let mut v = vec![
+        "alpha".to_string(),
+        "beta".to_string(),
+        "gamma".to_string(),
+    ];
+    apply_permutation(&mut v, &[1, 2, 0]);
+    assert_eq!(
+        v,
+        vec![
+            "beta".to_string(),
+            "gamma".to_string(),
+            "alpha".to_string()
+        ]
+    );
+}
+

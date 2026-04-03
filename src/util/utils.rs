@@ -1923,4 +1923,38 @@ mod tests {
         assert_eq!(paths, vec![PathBuf::from("/tmp/only")]);
         fs::remove_dir_all(&dir).unwrap();
     }
+
+    #[test]
+    fn transform_idx_len_two_both_directions() {
+        assert_eq!(util_transform_idx(1, 2), 0);
+        assert_eq!(util_transform_idx(2, 2), 1);
+        assert_eq!(util_transform_idx(-1, 2), 1);
+        assert_eq!(util_transform_idx(-2, 2), 0);
+    }
+
+    #[test]
+    fn transform_idx_len_three_mid() {
+        assert_eq!(util_transform_idx(2, 3), 1);
+        assert_eq!(util_transform_idx(-2, 3), 1);
+    }
+
+    #[test]
+    fn util_paths_to_file_round_trip_ten_paths() {
+        let dir = tmp_dir();
+        let master = dir.join("m10");
+        let paths: Vec<PathBuf> = (0..10).map(|i| PathBuf::from(format!("/p/{}", i))).collect();
+        util_paths_to_file(&paths, &master);
+        assert_eq!(util_file_to_paths(master.as_path()), paths);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn util_file_contents_round_trip_with_bom() {
+        let dir = tmp_dir();
+        let f = dir.join("bom_read");
+        fs::write(&f, "\u{feff}only").unwrap();
+        assert_eq!(util_file_contents_to_string(&f), "\u{feff}only");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
 }
