@@ -412,7 +412,7 @@ cargo test --test integration # integration tests only (spawns tp/temprs)
 
 The workflow sets **`permissions: contents: read`** plus **`actions: write`** so [`actions/upload-artifact`](https://github.com/actions/upload-artifact) can store release-build binaries (artifact uploads are not covered by `contents` alone). Test and release-build matrices use **`fail-fast: false`** so every OS/target runs to completion even if another variant fails. Each job has a **timeout** so a stuck runner does not run indefinitely.
 
-The crate includes library unit tests, integration tests against the `tp` / `temprs` binaries, and extensive CLI parsing tests for [`clap`](https://docs.rs/clap/) option coverage. List discovered tests with `cargo test -- --list` (output format is unstable; use for local discovery only).
+The crate includes library unit tests, integration tests against the `tp` / `temprs` binaries, and extensive CLI parsing tests for [`clap`](https://docs.rs/clap/) option coverage (grouped in source as numbered “coverage rounds” in `src/model/opts.rs`). List discovered tests with `cargo test -- --list` (output format is unstable; use for local discovery only).
 
 The **Test** job sets **`RUST_BACKTRACE=1`** so panics in CI include stack traces in the log.
 
@@ -421,7 +421,7 @@ The **Test** job sets **`RUST_BACKTRACE=1`** so panics in CI include stack trace
 | Symptom | What to do |
 |---------|------------|
 | **Format** job failed | Run `cargo fmt --all` locally, then commit. |
-| **Clippy** job failed | Fix warnings or run `cargo clippy --all-targets -- -D warnings` and address each `-D warnings` denial. |
+| **Clippy** job failed | Fix warnings or run `cargo clippy --all-targets --locked -- -D warnings` and address each `-D warnings` denial. |
 | **Test** failed on one OS only | Re-run the workflow; if it repeats, run `cargo test` on that platform or inspect the job log (backtraces are enabled). |
 | **Release Build** failed | Usually a cross-target issue; confirm `rustup target add <triple>` works locally for the failing matrix entry. |
 

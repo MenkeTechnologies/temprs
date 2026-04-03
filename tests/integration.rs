@@ -5830,3 +5830,23 @@ fn output_index_three_three_pushes() {
     run_tp_stdin(&dir, &[], "top");
     assert_eq!(stdout(&run_tp(&dir, &["-o", "3"])).trim(), "top");
 }
+
+#[test]
+fn count_three_after_three_stdin_pushes() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a");
+    tick();
+    run_tp_stdin(&dir, &[], "b");
+    tick();
+    run_tp_stdin(&dir, &[], "c");
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "3");
+}
+
+#[test]
+fn negative_output_minus_one_is_top_after_two_pushes() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "bottom");
+    tick();
+    run_tp_stdin(&dir, &[], "top");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "-1"])).trim(), "top");
+}
