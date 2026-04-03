@@ -800,4 +800,15 @@ mod tests {
             assert!(!e.ends_with('.'), "{}", e);
         }
     }
+
+    #[test]
+    fn hr_char_is_ascii_dash() {
+        assert_eq!(HR_CHAR.as_bytes(), b"-");
+    }
+
+    #[test]
+    fn name_constant_is_valid_dir_name() {
+        assert!(!NAME.contains('/'));
+        assert!(!NAME.contains('\\'));
+    }
 }

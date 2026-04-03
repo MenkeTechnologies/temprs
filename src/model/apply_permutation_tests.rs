@@ -287,3 +287,11 @@ fn apply_permutation_u16_values() {
     apply_permutation(&mut v, &[3, 0, 2, 1]);
     assert_eq!(v, vec![400, 100, 300, 200]);
 }
+
+#[test]
+fn apply_permutation_isize_slice() {
+    let mut v: Vec<isize> = vec![-1, -2, -3];
+    apply_permutation(&mut v, &[2, 0, 1]);
+    assert_eq!(v, vec![-3, -1, -2]);
+}
+

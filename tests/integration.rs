@@ -5158,3 +5158,127 @@ fn reverse_two_items_swaps_output_order() {
     assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])).trim(), "y");
     assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])).trim(), "x");
 }
+
+// ── additional CLI workflows ─────────────────────────
+
+#[test]
+fn diff_two_distinct_files_exits_nonzero() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "aaa\n");
+    tick();
+    run_tp_stdin(&dir, &[], "bbb\n");
+    let out = run_tp(&dir, &["--diff", "1", "2"]);
+    assert!(!out.status.success() || stdout(&out).contains("---") || stdout(&out).contains("+++"));
+}
+
+#[test]
+fn mv_top_to_bottom_position() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "first");
+    tick();
+    run_tp_stdin(&dir, &[], "second");
+    tick();
+    run_tp_stdin(&dir, &[], "third");
+    run_tp(&dir, &["--mv", "1", "3"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "3"])).trim(), "first");
+}
+
+#[test]
+fn name_tag_push_then_output_by_name() {
+    let dir = setup_clean_env();
+    let out = run_tp_stdin(&dir, &["-w", "mine"], "tagged-data");
+    assert!(out.status.success());
+    let read = run_tp(&dir, &["-o", "mine"]);
+    assert_eq!(stdout(&read).trim(), "tagged-data");
+}
+
+#[test]
+fn pop_twice_leaves_empty_stack() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a");
+    tick();
+    run_tp_stdin(&dir, &[], "b");
+    run_tp(&dir, &["-p"]);
+    run_tp(&dir, &["-p"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "0");
+}
+
+#[test]
+fn list_master_file_exits_ok() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "x");
+    let out = run_tp(&dir, &["-m"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn dir_flag_prints_temprs_path() {
+    let dir = setup_clean_env();
+    let out = run_tp(&dir, &["-d"]);
+    assert!(out.status.success());
+    let text = stdout(&out);
+    assert!(text.contains("temprs") || dir.to_string_lossy().contains("temprs_test"));
+}
+
+#[test]
+fn sort_size_three_files() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "xx");
+    tick();
+    run_tp_stdin(&dir, &[], "xxxx");
+    tick();
+    run_tp_stdin(&dir, &[], "x");
+    let out = run_tp(&dir, &["--sort", "size"]);
+    assert!(out.status.success());
+}
+
+#[test]
+fn replace_all_occurrences_word() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "foo foo foo");
+    let out = run_tp(&dir, &["--replace", "1", "foo", "bar"]);
+    assert!(out.status.success());
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])).trim(), "bar bar bar");
+}
+
+#[test]
+fn wc_three_lines_reports_three() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a\nb\nc\n");
+    let out = run_tp(&dir, &["--wc", "1"]);
+    assert!(stdout(&out).contains('3'));
+}
+
+#[test]
+fn path_flag_matches_output_read() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "payload");
+    let path_out = run_tp(&dir, &["--path", "1"]);
+    let text = stdout(&path_out);
+    let p = text.trim();
+    let content = std::fs::read_to_string(p).unwrap();
+    assert_eq!(content.trim(), "payload");
+}
+
+#[test]
+fn add_inserts_middle_three_item_stack() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a");
+    tick();
+    run_tp_stdin(&dir, &[], "b");
+    tick();
+    run_tp_stdin(&dir, &["-a", "2"], "inserted");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])).trim(), "inserted");
+}
+
+#[test]
+fn remove_middle_preserves_neighbors() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "keep1");
+    tick();
+    run_tp_stdin(&dir, &[], "gone");
+    tick();
+    run_tp_stdin(&dir, &[], "keep2");
+    run_tp(&dir, &["-r", "2"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "2");
+}

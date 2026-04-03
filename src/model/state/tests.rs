@@ -1839,3 +1839,51 @@ fn write_master_single_named_entry() {
     assert_eq!(n, names);
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+#[test]
+fn temp_file_stack_mut_iter_mut_len() {
+    let mut s = make_state();
+    let n: usize = s.temp_file_stack_mut().iter().map(|p| p.as_os_str().len()).sum();
+    assert!(n > 0);
+    assert_eq!(s.temp_file_stack().len(), 2);
+}
+
+#[test]
+fn temp_file_names_mut_resize_with_default() {
+    let mut s = make_state();
+    s.temp_file_names_mut().resize(4, None);
+    s.temp_file_stack_mut().resize(
+        4,
+        PathBuf::from("/fill"),
+    );
+    assert_eq!(s.temp_file_names().len(), 4);
+    assert_eq!(s.temp_file_stack().len(), 4);
+}
+
+#[test]
+fn set_verbose_large_then_zero() {
+    let mut s = make_state();
+    s.set_verbose(1_000_000);
+    assert_eq!(s.verbose(), 1_000_000);
+    s.set_verbose(0);
+    assert_eq!(s.verbose(), 0);
+}
+
+#[test]
+fn output_buffer_clone_from_holding() {
+    let mut s = make_state();
+    s.set_holding_buffer("shared".to_string());
+    s.set_output_buffer(s.holding_buffer().to_string());
+    s.set_holding_buffer(String::new());
+    assert_eq!(s.output_buffer(), "shared");
+    assert!(s.holding_buffer().is_empty());
+}
+
+#[test]
+fn append_temp_file_roundtrip() {
+    let mut s = make_state();
+    s.set_append_temp_file(Some("9".to_string()));
+    assert_eq!(s.append_temp_file(), &Some("9".to_string()));
+    s.set_append_temp_file(Some("-1".to_string()));
+    assert_eq!(s.append_temp_file(), &Some("-1".to_string()));
+}

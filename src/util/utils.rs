@@ -1862,4 +1862,65 @@ mod tests {
     fn transform_idx_boundary_negative_one() {
         assert_eq!(util_transform_idx(-1, 1000), 999);
     }
+
+    #[test]
+    fn paths_and_names_single_record_with_empty_name_tag() {
+        let dir = tmp_dir();
+        let master = dir.join("m");
+        let paths = vec![PathBuf::from("/p")];
+        let names = vec![Some(String::new())];
+        util_paths_and_names_to_file(&paths, &names, &master);
+        let (p, n) = util_file_to_paths_and_names(master.as_path());
+        assert_eq!(p, paths);
+        assert_eq!(n, vec![None]);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn util_overwrite_file_preserves_binary_null() {
+        let dir = tmp_dir();
+        let f = dir.join("b.bin");
+        util_overwrite_file(&f, "a\0b\0c");
+        assert_eq!(fs::read(&f).unwrap(), b"a\0b\0c");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn util_append_file_preserves_utf8_bom() {
+        let dir = tmp_dir();
+        let f = dir.join("bom.txt");
+        util_overwrite_file(&f, "\u{feff}hi");
+        util_append_file(&f, "\u{feff}lo");
+        let s = fs::read_to_string(&f).unwrap();
+        assert!(s.contains("hi") && s.contains("lo"));
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn util_lines_to_file_single_empty_string_writes_nothing() {
+        let dir = tmp_dir();
+        let f = dir.join("e.txt");
+        util_lines_to_file(&f, vec![String::new()]);
+        assert_eq!(fs::read_to_string(&f).unwrap(), "");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn util_lines_to_file_two_empty_lines_trailing_newline() {
+        let dir = tmp_dir();
+        let f = dir.join("e2.txt");
+        util_lines_to_file(&f, vec![String::new(), String::new()]);
+        assert_eq!(fs::read_to_string(&f).unwrap(), "\n\n");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn util_file_to_paths_single_record_no_trailing_delim() {
+        let dir = tmp_dir();
+        let file = dir.join("legacy");
+        fs::write(&file, "/tmp/only").unwrap();
+        let paths = util_file_to_paths(file.as_path());
+        assert_eq!(paths, vec![PathBuf::from("/tmp/only")]);
+        fs::remove_dir_all(&dir).unwrap();
+    }
 }
