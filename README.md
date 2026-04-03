@@ -383,7 +383,7 @@ The master record is hardened against corruption and concurrent access:
 
 Pull requests and pushes to `main` run the workflow in [`.github/workflows/ci.yml`](.github/workflows/ci.yml). You can also run it manually from the repository **Actions** tab (**workflow dispatch**).
 
-Concurrent runs for the same branch are **cancelled** (only the latest run matters for rapid iteration).
+Concurrent runs for the same branch are **cancelled** (only the latest run matters for rapid iteration). The workflow name is **`CI`** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)); filter Actions runs with that name if the repository has multiple workflows.
 
 | Job | What it runs |
 |-----|----------------|
