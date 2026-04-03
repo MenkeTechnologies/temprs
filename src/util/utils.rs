@@ -2076,4 +2076,33 @@ mod tests {
         );
         fs::remove_dir_all(&dir).unwrap();
     }
+
+    #[test]
+    fn util_path_to_string_percent_encoded_looking() {
+        assert_eq!(
+            util_path_to_string(Path::new("/tmp/hello%20world")),
+            "/tmp/hello%20world"
+        );
+    }
+
+    #[test]
+    fn util_paths_and_names_empty_paths_empty_names_round_trip() {
+        let dir = tmp_dir();
+        let master = dir.join("empty");
+        util_paths_and_names_to_file(&[], &[], &master);
+        let (p, n) = util_file_to_paths_and_names(master.as_path());
+        assert!(p.is_empty());
+        assert!(n.is_empty());
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn util_overwrite_then_read_round_trip_unicode() {
+        let dir = tmp_dir();
+        let f = dir.join("u.txt");
+        let s = "你好\nこんにちは\n";
+        util_overwrite_file(&f, s);
+        assert_eq!(util_file_contents_to_string(&f), s);
+        fs::remove_dir_all(&dir).unwrap();
+    }
 }

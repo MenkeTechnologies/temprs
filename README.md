@@ -381,7 +381,9 @@ The master record is hardened against corruption and concurrent access:
 
 [![CI](https://github.com/MenkeTechnologies/temprs/actions/workflows/ci.yml/badge.svg)](https://github.com/MenkeTechnologies/temprs/actions/workflows/ci.yml)
 
-Pull requests and pushes to `main` run the workflow in [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
+Pull requests and pushes to `main` run the workflow in [`.github/workflows/ci.yml`](.github/workflows/ci.yml). You can also run it manually from the repository **Actions** tab (**workflow dispatch**).
+
+Concurrent runs for the same branch are **cancelled** (only the latest run matters for rapid iteration).
 
 | Job | What it runs |
 |-----|----------------|
@@ -406,7 +408,7 @@ cargo test --lib              # unit tests only (library + model + util)
 cargo test --test integration # integration tests only (spawns tp/temprs)
 ```
 
-The workflow uses **`permissions: contents: read`** (least privilege for the `GITHUB_TOKEN`). Test and release-build matrices use **`fail-fast: false`** so every OS/target runs to completion even if another variant fails.
+The workflow sets **`permissions: contents: read`** plus **`actions: write`** so [`actions/upload-artifact`](https://github.com/actions/upload-artifact) can store release-build binaries (artifact uploads are not covered by `contents` alone). Test and release-build matrices use **`fail-fast: false`** so every OS/target runs to completion even if another variant fails. Each job has a **timeout** so a stuck runner does not run indefinitely.
 
 The crate includes library unit tests, integration tests against the `tp` / `temprs` binaries, and extensive CLI parsing tests for [`clap`](https://docs.rs/clap/) option coverage. List discovered tests with `cargo test -- --list` (output format is unstable; use for local discovery only).
 

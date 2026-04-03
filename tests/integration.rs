@@ -5728,3 +5728,51 @@ fn edit_invalid_index_reports_error() {
     let out = run_tp(&dir, &["-e", "99"]);
     assert!(!out.status.success());
 }
+
+#[test]
+fn clear_then_count_zero() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "x");
+    run_tp(&dir, &["-c"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-k"])).trim(), "0");
+}
+
+#[test]
+fn push_two_swap_outputs() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "first");
+    tick();
+    run_tp_stdin(&dir, &[], "second");
+    run_tp(&dir, &["--swap", "1", "2"]);
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])).trim(), "second");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "2"])).trim(), "first");
+}
+
+#[test]
+fn size_reports_bytes_after_multiline_push() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a\nb\nc\n");
+    let out = run_tp(&dir, &["--size", "1"]);
+    assert!(out.status.success());
+    let text = stdout(&out);
+    let t = text.trim();
+    assert!(t.parse::<u64>().is_ok());
+}
+
+#[test]
+fn head_first_line_only() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "line1\nline2\nline3\n");
+    let out = run_tp(&dir, &["--head", "1", "1"]);
+    let t = stdout(&out);
+    assert!(t.contains("line1"));
+}
+
+#[test]
+fn tail_last_line_only_three_line_file() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "a\nb\nc\n");
+    let out = run_tp(&dir, &["--tail", "1", "1"]);
+    let t = stdout(&out);
+    assert!(t.contains('c'));
+}
