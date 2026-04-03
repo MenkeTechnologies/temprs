@@ -17,7 +17,7 @@ use crate::model::state::TempState;
 use crate::util::consts::*;
 use crate::util::utils::*;
 
-fn apply_permutation<T: Default>(vec: &mut Vec<T>, indices: &[usize]) {
+pub(crate) fn apply_permutation<T: Default>(vec: &mut Vec<T>, indices: &[usize]) {
     let mut taken = std::mem::take(vec);
     vec.extend(indices.iter().map(|&i| std::mem::take(&mut taken[i])));
 }
@@ -999,56 +999,5 @@ impl TempApp {
             }
             None => util_terminate_error(ERR_INVALID_IDX),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::apply_permutation;
-
-    #[test]
-    fn apply_permutation_identity() {
-        let mut v = vec![1, 2, 3, 4];
-        apply_permutation(&mut v, &[0, 1, 2, 3]);
-        assert_eq!(v, vec![1, 2, 3, 4]);
-    }
-
-    #[test]
-    fn apply_permutation_reverse() {
-        let mut v = vec![10, 20, 30];
-        apply_permutation(&mut v, &[2, 1, 0]);
-        assert_eq!(v, vec![30, 20, 10]);
-    }
-
-    #[test]
-    fn apply_permutation_rotate_left() {
-        let mut v = vec!['a', 'b', 'c', 'd'];
-        apply_permutation(&mut v, &[1, 2, 3, 0]);
-        assert_eq!(v, vec!['b', 'c', 'd', 'a']);
-    }
-
-    #[test]
-    fn apply_permutation_single_element() {
-        let mut v = vec![42];
-        apply_permutation(&mut v, &[0]);
-        assert_eq!(v, vec![42]);
-    }
-
-    #[test]
-    fn apply_permutation_reorders_option_strings() {
-        let mut v: Vec<Option<String>> = vec![
-            Some("a".to_string()),
-            Some("b".to_string()),
-            Some("c".to_string()),
-        ];
-        apply_permutation(&mut v, &[2, 0, 1]);
-        assert_eq!(
-            v,
-            vec![
-                Some("c".to_string()),
-                Some("a".to_string()),
-                Some("b".to_string())
-            ]
-        );
     }
 }

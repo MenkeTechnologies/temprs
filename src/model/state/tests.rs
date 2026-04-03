@@ -1664,3 +1664,66 @@ fn new_constructor_preserves_temp_file_names() {
     );
     assert_eq!(s.temp_file_names(), &names);
 }
+
+// ── mut accessors (used by TempApp) ─────────────────
+
+#[test]
+fn holding_buffer_mut_take_and_replace() {
+    let mut s = make_state();
+    s.set_holding_buffer("before".to_string());
+    let taken = std::mem::take(s.holding_buffer_mut());
+    assert_eq!(taken, "before");
+    assert!(s.holding_buffer().is_empty());
+    s.holding_buffer_mut().push_str("after");
+    assert_eq!(s.holding_buffer(), "after");
+}
+
+#[test]
+fn temp_file_stack_mut_push_pop() {
+    let mut s = make_state();
+    s.temp_file_stack_mut()
+        .push(PathBuf::from("/tmp/extra"));
+    assert_eq!(s.temp_file_stack().len(), 3);
+    let _ = s.temp_file_stack_mut().pop();
+    assert_eq!(s.temp_file_stack().len(), 2);
+}
+
+#[test]
+fn temp_file_names_mut_push_aligns_with_stack() {
+    let mut s = make_state();
+    s.temp_file_stack_mut().push(PathBuf::from("/p3"));
+    s.temp_file_names_mut().push(Some("third".to_string()));
+    assert_eq!(s.temp_file_stack().len(), 3);
+    assert_eq!(s.temp_file_names().len(), 3);
+    assert_eq!(s.temp_file_names()[2], Some("third".to_string()));
+}
+
+#[test]
+fn temp_file_names_mut_overwrite_slot() {
+    let mut s = make_state();
+    s.temp_file_names_mut()[0] = Some("tag-a".to_string());
+    assert_eq!(s.temp_file_names()[0], Some("tag-a".to_string()));
+}
+
+#[test]
+fn temp_file_names_mut_clear_name() {
+    let mut s = make_state();
+    s.temp_file_names_mut()[0] = None;
+    assert!(s.temp_file_names()[0].is_none());
+}
+
+#[test]
+fn temp_file_stack_mut_clear() {
+    let mut s = make_state();
+    s.temp_file_stack_mut().clear();
+    assert!(s.temp_file_stack().is_empty());
+}
+
+#[test]
+fn temp_file_names_mut_truncate_with_stack() {
+    let mut s = make_state();
+    s.temp_file_stack_mut().truncate(1);
+    s.temp_file_names_mut().truncate(1);
+    assert_eq!(s.temp_file_stack().len(), 1);
+    assert_eq!(s.temp_file_names().len(), 1);
+}
