@@ -381,7 +381,7 @@ The master record is hardened against corruption and concurrent access:
 
 [![CI](https://github.com/MenkeTechnologies/temprs/actions/workflows/ci.yml/badge.svg)](https://github.com/MenkeTechnologies/temprs/actions/workflows/ci.yml)
 
-Pull requests and pushes to `main` run the workflow in [`.github/workflows/ci.yml`](.github/workflows/ci.yml). You can also run it manually from the repository **Actions** tab (**workflow dispatch**).
+Pull requests and pushes to `main` run the workflow in [`.github/workflows/ci.yml`](.github/workflows/ci.yml). You can also run it manually from the repository **Actions** tab (**workflow dispatch**). On a pull request, the **Checks** tab (or the merge box) shows the aggregate status; open the **CI** workflow run for per-job logs (Check, Test, Format, Clippy, Doc, Release Build).
 
 Concurrent runs for the same branch are **cancelled** (only the latest run matters for rapid iteration). The workflow name is **`CI`** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)); filter Actions runs with that name if the repository has multiple workflows.
 
