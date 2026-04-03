@@ -1,4 +1,23 @@
+use std::path::PathBuf;
+use std::sync::atomic::{AtomicU64, Ordering};
+
+use crate::util::utils::{util_file_to_paths_and_names, util_time_ms};
+
 use super::*;
+
+static STATE_TEST_TMP_COUNTER: AtomicU64 = AtomicU64::new(0);
+
+fn state_test_tmp_dir() -> PathBuf {
+    let id = STATE_TEST_TMP_COUNTER.fetch_add(1, Ordering::SeqCst);
+    let dir = std::env::temp_dir().join(format!(
+        "temprs_state_test_{}_{}_{}",
+        std::process::id(),
+        id,
+        util_time_ms()
+    ));
+    std::fs::create_dir_all(&dir).unwrap();
+    dir
+}
 
 fn make_state() -> TempState {
     TempState::new(
@@ -26,6 +45,10 @@ fn new_state_defaults() {
     assert!(s.output_buffer().is_empty());
     assert!(s.input_temp_file().is_none());
     assert!(s.output_temp_file().is_none());
+    assert!(s.append_temp_file().is_none());
+    assert!(s.name().is_none());
+    assert_eq!(s.temp_file_names().len(), 2);
+    assert_eq!(s.temp_file_names(), &vec![None, None]);
     assert!(s.insert_idx().is_none());
     assert!(s.arg_file().is_none());
 }
@@ -1558,4 +1581,86 @@ fn out_file_path_str_with_dots() {
         String::new(),
     );
     assert_eq!(s.out_file_path_str(), "/tmp/file.txt.bak");
+}
+
+// ── temp_file_names, append_temp_file, name ─────────
+
+#[test]
+fn set_get_temp_file_names() {
+    let mut s = make_state();
+    let names = vec![
+        Some("a".to_string()),
+        Some("b".to_string()),
+        Some("c".to_string()),
+    ];
+    s.set_temp_file_stack(vec![
+        PathBuf::from("/x"),
+        PathBuf::from("/y"),
+        PathBuf::from("/z"),
+    ]);
+    s.set_temp_file_names(names.clone());
+    assert_eq!(s.temp_file_names(), &names);
+}
+
+#[test]
+fn set_get_append_temp_file() {
+    let mut s = make_state();
+    s.set_append_temp_file(Some("7".to_string()));
+    assert_eq!(s.append_temp_file(), &Some("7".to_string()));
+    s.set_append_temp_file(None);
+    assert!(s.append_temp_file().is_none());
+}
+
+#[test]
+fn set_get_name() {
+    let mut s = make_state();
+    s.set_name(Some("my-tag".to_string()));
+    assert_eq!(s.name(), &Some("my-tag".to_string()));
+    s.set_name(None);
+    assert!(s.name().is_none());
+}
+
+#[test]
+fn write_master_round_trip_paths_and_names() {
+    let dir = state_test_tmp_dir();
+    let master = dir.join("temprs-stack");
+    let paths = vec![
+        PathBuf::from("/stack/a"),
+        PathBuf::from("/stack/b"),
+    ];
+    let names = vec![Some("first".to_string()), None];
+    let s = TempState::new(
+        PathBuf::from("/tmp/out"),
+        master.clone(),
+        dir.clone(),
+        paths.clone(),
+        names.clone(),
+        None,
+        String::new(),
+    );
+    s.write_master();
+    let (loaded_paths, loaded_names) = util_file_to_paths_and_names(&master);
+    assert_eq!(loaded_paths, paths);
+    assert_eq!(loaded_names, names);
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+#[test]
+fn new_constructor_preserves_temp_file_names() {
+    let names = vec![Some("x".to_string()), None, Some("z".to_string())];
+    let stack = vec![
+        PathBuf::from("/a"),
+        PathBuf::from("/b"),
+        PathBuf::from("/c"),
+    ];
+    let s = TempState::new(
+        PathBuf::from("/out"),
+        PathBuf::from("/master"),
+        PathBuf::from("/home"),
+        stack,
+        names.clone(),
+        None,
+        String::new(),
+    );
+    assert_eq!(s.temp_file_names(), &names);
 }
