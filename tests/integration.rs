@@ -5878,3 +5878,12 @@ fn path_top_of_stack_is_nonempty_string() {
     let p = out.trim();
     assert!(!p.is_empty());
 }
+
+#[test]
+fn wc_top_reports_line_count_for_multiline_stdin_push() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "line1\nline2\nline3");
+    let out = stdout(&run_tp(&dir, &["--wc", "1"]));
+    let n = out.trim().parse::<u32>().unwrap();
+    assert_eq!(n, 3);
+}

@@ -416,7 +416,7 @@ cargo test --test integration # integration tests only (spawns tp/temprs)
 
 The workflow sets **`permissions: contents: read`** plus **`actions: write`** so [`actions/upload-artifact`](https://github.com/actions/upload-artifact) can store release-build binaries (artifact uploads are not covered by `contents` alone). The **Doc** job uses the same **`RUSTDOCFLAGS=-D warnings`** pattern as many Rust projects: broken links or other rustdoc warnings fail CI. Test and release-build matrices use **`fail-fast: false`** so every OS/target runs to completion even if another variant fails. Each job has a **timeout** so a stuck runner does not run indefinitely.
 
-The crate includes library unit tests, integration tests against the `tp` / `temprs` binaries, and extensive CLI parsing tests for [`clap`](https://docs.rs/clap/) option coverage (search for `clap coverage round` in `src/model/opts.rs` to list rounds in source order). List discovered tests with `cargo test -- --list` (output format is unstable; use for local discovery only).
+The crate includes library unit tests, integration tests against the `tp` / `temprs` binaries, and extensive CLI parsing tests for [`clap`](https://docs.rs/clap/) option coverage (search for `clap coverage round` in `src/model/opts.rs` to list rounds in source order). To run only CLI parse tests, filter by name prefix: `cargo test --lib recognizes_clap --locked`. List discovered tests with `cargo test -- --list` (output format is unstable; use for local discovery only).
 
 The **Test** job sets **`RUST_BACKTRACE=1`** so panics in CI include stack traces in the log, and **`--no-fail-fast`** so one failing test does not hide other failures in the same run.
 
