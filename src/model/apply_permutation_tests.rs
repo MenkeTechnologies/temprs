@@ -902,3 +902,12 @@ fn apply_permutation_n212_full_reverse() {
     apply_permutation(&mut v, &perm);
     assert_eq!(v, (0..n as u32).rev().collect::<Vec<_>>());
 }
+
+#[test]
+fn apply_permutation_n216_full_reverse() {
+    let n = 216;
+    let perm: Vec<usize> = (0..n).rev().collect();
+    let mut v: Vec<i16> = (0..n as i16).collect();
+    apply_permutation(&mut v, &perm);
+    assert_eq!(v, (0..n as i16).rev().collect::<Vec<_>>());
+}
