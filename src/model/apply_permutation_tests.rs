@@ -1422,3 +1422,20 @@ fn apply_permutation_n436_full_reverse() {
     apply_permutation(&mut v, &perm);
     assert_eq!(v, (0..n).map(|i| i as f64).rev().collect::<Vec<_>>());
 }
+
+#[test]
+fn apply_permutation_n440_full_reverse() {
+    let n = 440;
+    let perm: Vec<usize> = (0..n).rev().collect();
+    let mut v: Vec<char> = (0..n)
+        .map(|i| char::from_u32(i as u32).expect("Unicode scalar"))
+        .collect();
+    apply_permutation(&mut v, &perm);
+    assert_eq!(
+        v,
+        (0..n)
+            .map(|i| char::from_u32(i as u32).expect("Unicode scalar"))
+            .rev()
+            .collect::<Vec<_>>()
+    );
+}
