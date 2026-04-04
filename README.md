@@ -379,60 +379,7 @@ The master record is hardened against corruption and concurrent access:
 
 ## [0x07] DEVELOPMENT & CI
 
-[![CI](https://github.com/MenkeTechnologies/temprs/actions/workflows/ci.yml/badge.svg)](https://github.com/MenkeTechnologies/temprs/actions/workflows/ci.yml)
-
 Pull requests and pushes to `main` run the workflow in [`.github/workflows/ci.yml`](.github/workflows/ci.yml). You can also run it manually from the repository **Actions** tab (**workflow dispatch**). On a pull request, the **Checks** tab (or the merge box) shows the aggregate status; open the **CI** workflow run for per-job logs (Check, Test, Format, Clippy, Doc, Release Build).
-
-Concurrent runs for the same branch are **cancelled** (only the latest run matters for rapid iteration). The workflow name is **`CI`** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)); filter Actions runs with that name if the repository has multiple workflows.
-
-| Job | What it runs |
-|-----|----------------|
-| **Check** | `cargo check --all-targets --locked` (Ubuntu) |
-| **Test** | `cargo test --locked --no-fail-fast` on Ubuntu and macOS (run all tests even after a failure) |
-| **Format** | `cargo fmt --all --check` (no `--locked`; unsupported on this subcommand) |
-| **Clippy** | `cargo clippy --all-targets --locked -- -D warnings` |
-| **Doc** | `cargo doc --no-deps --locked` with **`RUSTDOCFLAGS=-D warnings`** (Ubuntu) |
-| **Release Build** | `cargo build --release --locked` for Linux x86_64, macOS x86_64, and macOS aarch64 (after the jobs above pass) |
-
-`--locked` fails the job if `Cargo.lock` is out of sync with `Cargo.toml` — same resolution as locally: run `cargo update` or refresh the lockfile intentionally, then commit.
-
-**`Cargo.lock` is tracked in git** so CI and contributors get the same dependency graph. If your **global** `~/.gitignore` ignores `Cargo.lock`, clone/checkout may omit it until you run `cargo generate-lockfile` or copy from the repo; to **commit** lockfile updates use `git add -f Cargo.lock` so the file is not skipped by that global rule.
-
-Local checks (match CI):
-
-```sh
-cargo fmt --all --check
-cargo clippy --all-targets --locked -- -D warnings
-RUSTDOCFLAGS='-D warnings' cargo doc --no-deps --locked
-cargo test --locked --no-fail-fast
-```
-
-Run subsets when iterating:
-
-```sh
-cargo test --lib              # unit tests only (library + model + util)
-cargo test --test integration # integration tests only (spawns tp/temprs)
-cargo test --lib recognizes_clap --locked   # CLI parse coverage only (`src/model/opts.rs`, rounds `clap coverage round N`)
-cargo test --lib apply_permutation --locked # stack reorder helper (`src/model/apply_permutation_tests.rs`)
-cargo bench                   # Criterion benchmarks (optional local profiling; not in CI by default)
-```
-
-The workflow sets **`permissions: contents: read`** plus **`actions: write`** so [`actions/upload-artifact`](https://github.com/actions/upload-artifact) can store release-build binaries (artifact uploads are not covered by `contents` alone). The **Doc** job uses the same **`RUSTDOCFLAGS=-D warnings`** pattern as many Rust projects: broken links or other rustdoc warnings fail CI. Test and release-build matrices use **`fail-fast: false`** so every OS/target runs to completion even if another variant fails. Each job has a **timeout** so a stuck runner does not run indefinitely.
-
-The crate includes library unit tests, integration tests against the `tp` / `temprs` binaries, extensive CLI parsing tests for [`clap`](https://docs.rs/clap/) option coverage (search for `clap coverage round` in `src/model/opts.rs` to list rounds in source order), and permutation tests for `apply_permutation` in `src/model/apply_permutation_tests.rs`. To run only CLI parse tests, filter by name prefix: `cargo test --lib recognizes_clap --locked`. List discovered tests with `cargo test -- --list` (output format is unstable; use for local discovery only). **Do not hardcode test counts** in docs or README: totals change whenever tests are added; use the `test result:` lines from `cargo test --locked` (or `cargo test --lib --locked` / `cargo test --test integration --locked`) as the source of truth.
-
-The **Test** job sets **`RUST_BACKTRACE=1`** so panics in CI include stack traces in the log, and **`--no-fail-fast`** so one failing test does not hide other failures in the same run.
-
-#### Troubleshooting CI failures
-
-| Symptom | What to do |
-|---------|------------|
-| **Check** job failed | Run `cargo check --all-targets --locked` locally and fix compile errors (same as the first CI step). |
-| **Format** job failed | Run `cargo fmt --all` locally, then commit. If only line endings differ, check `core.autocrlf` on Windows or normalize with `cargo fmt --all` on Linux/macOS. |
-| **Clippy** job failed | Fix warnings or run `cargo clippy --all-targets --locked -- -D warnings` and address each `-D warnings` denial. The CI job passes **`-D warnings`** to clippy (warnings are errors in CI). |
-| **Doc** job failed | Run `RUSTDOCFLAGS='-D warnings' cargo doc --no-deps --locked` locally and fix rustdoc issues (broken links, etc.). |
-| **Test** failed on one OS only | Re-run the workflow; if it repeats, run `cargo test --locked --no-fail-fast` on that platform or inspect the job log (backtraces are enabled). |
-| **Release Build** failed | Usually a cross-target issue; confirm `rustup target add <triple>` works locally for the failing matrix entry. If the compile step passed but **upload-artifact** failed, confirm the workflow still has **`permissions: actions: write`** (required for artifact uploads). |
 
 ---
 
