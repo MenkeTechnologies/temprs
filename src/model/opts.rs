@@ -20817,4 +20817,350 @@ mod tests {
         assert!(m.get_flag(POP));
         assert_eq!(m.get_one::<String>(APPEND).map(|s| s.as_str()), Some("1"));
     }
+
+    // ── clap coverage round 64 ─────────────────────────────
+
+    #[test]
+    fn recognizes_clap64_positional_pulumi_stack_uri() {
+        let m = parse_opts().get_matches_from(vec!["tp", "pulumi://acme/network/prod"]);
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("pulumi://acme/network/prod")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap64_positional_terraform_state_uri() {
+        let m =
+            parse_opts().get_matches_from(vec!["tp", "terraform://local/state/default.tfstate"]);
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("terraform://local/state/default.tfstate")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap64_positional_tfstate_remote_uri() {
+        let m = parse_opts().get_matches_from(vec![
+            "tp",
+            "tfstate://remote-bucket/prefix/env/terraform.tfstate",
+        ]);
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("tfstate://remote-bucket/prefix/env/terraform.tfstate")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap64_positional_op_cli_uri() {
+        let m = parse_opts().get_matches_from(vec!["tp", "op://vault-name/item-title/password"]);
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("op://vault-name/item-title/password")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap64_positional_bitwarden_item_uri() {
+        let m = parse_opts().get_matches_from(vec![
+            "tp",
+            "bitwarden://item/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        ]);
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("bitwarden://item/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap64_input_long_equals_cidr_class_a() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--input=10.0.0.0/8"]);
+        assert_eq!(
+            m.get_one::<String>(INPUT).map(|s| s.as_str()),
+            Some("10.0.0.0/8")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap64_output_long_equals_cidr_class_c() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--output=192.168.0.0/16"]);
+        assert_eq!(
+            m.get_one::<String>(OUTPUT).map(|s| s.as_str()),
+            Some("192.168.0.0/16")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap64_cat_fifty_nine_indices_long() {
+        let m = parse_opts().get_matches_from(vec![
+            "tp", "--cat", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13",
+            "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27",
+            "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41",
+            "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55",
+            "56", "57", "58", "59",
+        ]);
+        let v: Vec<&str> = m
+            .get_many::<String>(CAT)
+            .unwrap()
+            .map(|s| s.as_str())
+            .collect();
+        let expected: Vec<String> = (1..=59).map(|n| n.to_string()).collect();
+        let expected: Vec<&str> = expected.iter().map(String::as_str).collect();
+        assert_eq!(v, expected);
+    }
+
+    #[test]
+    fn recognizes_clap64_grep_branch_reset_pattern() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-g", "(?|foo|bar)baz"]);
+        assert_eq!(
+            m.get_one::<String>(GREP).map(|s| s.as_str()),
+            Some("(?|foo|bar)baz")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap64_expire_micro_hours_scientific() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--expire", "1e-6"]);
+        assert_eq!(
+            m.get_one::<String>(EXPIRE).map(|s| s.as_str()),
+            Some("1e-6")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap64_sort_size_rev_positional_plain() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--sort", "size", "--rev", "disk.img"]);
+        assert_eq!(m.get_one::<String>(SORT).map(|s| s.as_str()), Some("size"));
+        assert!(m.get_flag(REVERSE));
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("disk.img")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap64_output_add_remove_short_chain() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-o", "0", "-a", "1", "-r", "2"]);
+        assert_eq!(m.get_one::<String>(OUTPUT).map(|s| s.as_str()), Some("0"));
+        assert_eq!(m.get_one::<String>(ADD).map(|s| s.as_str()), Some("1"));
+        assert_eq!(m.get_one::<String>(REMOVE).map(|s| s.as_str()), Some("2"));
+    }
+
+    #[test]
+    fn recognizes_clap64_unshift_shift_pop_short() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-u", "-s", "-p"]);
+        assert!(m.get_flag(UNSHIFT));
+        assert!(m.get_flag(SHIFT));
+        assert!(m.get_flag(POP));
+    }
+
+    #[test]
+    fn recognizes_clap64_replace_three_args_musical_flat() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--replace", "0", "x", "y\u{266d}z"]);
+        let v: Vec<String> = m.get_many(REPLACE).unwrap().cloned().collect();
+        assert_eq!(v, vec!["0", "x", "y\u{266d}z"]);
+    }
+
+    #[test]
+    fn recognizes_clap64_verbose_sixty_three_short() {
+        let v_flag = format!("-{}", "v".repeat(63));
+        let m = parse_opts().get_matches_from(vec!["tp", v_flag.as_str()]);
+        assert_eq!(m.get_count(VERBOSE), 63);
+    }
+
+    #[test]
+    fn recognizes_clap64_double_dash_positional_close_brace() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--", "}"]);
+        assert_eq!(m.get_one::<String>(ARGFILE).map(|s| s.as_str()), Some("}"));
+    }
+
+    #[test]
+    fn recognizes_clap64_size_path_wc_head_long() {
+        let m = parse_opts().get_matches_from(vec![
+            "tp", "--size", "4", "--path", "3", "--wc", "2", "--head", "1", "0",
+        ]);
+        assert_eq!(m.get_one::<String>(SIZE).map(|s| s.as_str()), Some("4"));
+        assert_eq!(m.get_one::<String>(PATH).map(|s| s.as_str()), Some("3"));
+        assert_eq!(m.get_one::<String>(WC).map(|s| s.as_str()), Some("2"));
+        assert_eq!(
+            m.get_many::<String>(HEAD)
+                .unwrap()
+                .cloned()
+                .collect::<Vec<_>>(),
+            vec!["1", "0"]
+        );
+    }
+
+    #[test]
+    fn recognizes_clap64_grep_size_path_long() {
+        let m = parse_opts()
+            .get_matches_from(vec!["tp", "--grep", "byte", "--size", "0", "--path", "1"]);
+        assert_eq!(m.get_one::<String>(GREP).map(|s| s.as_str()), Some("byte"));
+        assert_eq!(m.get_one::<String>(SIZE).map(|s| s.as_str()), Some("0"));
+        assert_eq!(m.get_one::<String>(PATH).map(|s| s.as_str()), Some("1"));
+    }
+
+    #[test]
+    fn recognizes_clap64_cat_short_forty_eight_indices() {
+        let m = parse_opts().get_matches_from(vec![
+            "tp", "-C", "3001", "3002", "3003", "3004", "3005", "3006", "3007", "3008", "3009",
+            "3010", "3011", "3012", "3013", "3014", "3015", "3016", "3017", "3018", "3019", "3020",
+            "3021", "3022", "3023", "3024", "3025", "3026", "3027", "3028", "3029", "3030", "3031",
+            "3032", "3033", "3034", "3035", "3036", "3037", "3038", "3039", "3040", "3041", "3042",
+            "3043", "3044", "3045", "3046", "3047", "3048",
+        ]);
+        let v: Vec<&str> = m
+            .get_many::<String>(CAT)
+            .unwrap()
+            .map(|s| s.as_str())
+            .collect();
+        let expected: Vec<String> = (3001..=3048).map(|n| n.to_string()).collect();
+        let expected: Vec<&str> = expected.iter().map(String::as_str).collect();
+        assert_eq!(v, expected);
+    }
+
+    #[test]
+    fn recognizes_clap64_rev_sort_size_only_long() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--rev", "--sort", "size"]);
+        assert!(m.get_flag(REVERSE));
+        assert_eq!(m.get_one::<String>(SORT).map(|s| s.as_str()), Some("size"));
+    }
+
+    #[test]
+    fn recognizes_clap64_rename_diff_swap_long_chain() {
+        let m = parse_opts().get_matches_from(vec![
+            "tp", "--rename", "a", "b", "--diff", "c", "d", "--swap", "e", "f",
+        ]);
+        assert_eq!(
+            m.get_many(RENAME)
+                .unwrap()
+                .cloned()
+                .collect::<Vec<String>>(),
+            vec!["a", "b"]
+        );
+        assert_eq!(
+            m.get_many(DIFF).unwrap().cloned().collect::<Vec<String>>(),
+            vec!["c", "d"]
+        );
+        assert_eq!(
+            m.get_many(SWAP).unwrap().cloned().collect::<Vec<String>>(),
+            vec!["e", "f"]
+        );
+    }
+
+    #[test]
+    fn recognizes_clap64_master_list_contents_short() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-m", "-L"]);
+        assert!(m.get_flag(MASTER));
+        assert!(m.get_flag(LIST_CONTENTS));
+    }
+
+    #[test]
+    fn recognizes_clap64_grep_head_wc_long() {
+        let m = parse_opts().get_matches_from(vec![
+            "tp", "--grep", "line", "--head", "0", "1", "--wc", "2",
+        ]);
+        assert_eq!(m.get_one::<String>(GREP).map(|s| s.as_str()), Some("line"));
+        assert_eq!(
+            m.get_many::<String>(HEAD)
+                .unwrap()
+                .cloned()
+                .collect::<Vec<_>>(),
+            vec!["0", "1"]
+        );
+        assert_eq!(m.get_one::<String>(WC).map(|s| s.as_str()), Some("2"));
+    }
+
+    #[test]
+    fn recognizes_clap64_count_directory_quiet_short() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-k", "-d", "-q"]);
+        assert!(m.get_flag(COUNT));
+        assert!(m.get_flag(DIRECTORY));
+        assert!(m.get_flag(SILENT));
+    }
+
+    #[test]
+    fn recognizes_clap64_info_grep_cat_short_ordered() {
+        let m = parse_opts()
+            .get_matches_from(vec!["tp", "-I", "14", "-g", "\\g<0>", "-C", "200", "201"]);
+        assert_eq!(m.get_one::<String>(INFO).map(|s| s.as_str()), Some("14"));
+        assert_eq!(
+            m.get_one::<String>(GREP).map(|s| s.as_str()),
+            Some(r"\g<0>")
+        );
+        let v: Vec<&str> = m
+            .get_many::<String>(CAT)
+            .unwrap()
+            .map(|s| s.as_str())
+            .collect();
+        assert_eq!(v, vec!["200", "201"]);
+    }
+
+    #[test]
+    fn recognizes_clap64_positional_ssh_git_uri() {
+        let m = parse_opts().get_matches_from(vec!["tp", "ssh://git@github.com/org/repo.git"]);
+        assert_eq!(
+            m.get_one::<String>(ARGFILE).map(|s| s.as_str()),
+            Some("ssh://git@github.com/org/repo.git")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap64_program_name_temprs_master_long() {
+        let m = parse_opts().get_matches_from(vec!["temprs", "--master"]);
+        assert!(m.get_flag(MASTER));
+    }
+
+    #[test]
+    fn recognizes_clap64_tag_french_franc_legacy() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-w", "\u{20a3}50"]);
+        assert_eq!(
+            m.get_one::<String>(TAG).map(|s| s.as_str()),
+            Some("\u{20a3}50")
+        );
+    }
+
+    #[test]
+    fn recognizes_clap64_clear_list_contents_numbered_long() {
+        let m = parse_opts().get_matches_from(vec!["tp", "--clear", "--list-contents-numbered"]);
+        assert!(m.get_flag(CLEAR));
+        assert!(m.get_flag(LIST_CONTENTS_NUMBERED));
+    }
+
+    #[test]
+    fn recognizes_clap64_directory_list_files_short() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-d", "-l"]);
+        assert!(m.get_flag(DIRECTORY));
+        assert!(m.get_flag(LIST_FILES));
+    }
+
+    #[test]
+    fn recognizes_clap64_move_rename_diff_long_chain() {
+        let m = parse_opts().get_matches_from(vec![
+            "tp", "--mv", "a", "b", "--rename", "c", "d", "--diff", "e", "f",
+        ]);
+        assert_eq!(
+            m.get_many(MOVE).unwrap().cloned().collect::<Vec<String>>(),
+            vec!["a", "b"]
+        );
+        assert_eq!(
+            m.get_many(RENAME)
+                .unwrap()
+                .cloned()
+                .collect::<Vec<String>>(),
+            vec!["c", "d"]
+        );
+        assert_eq!(
+            m.get_many(DIFF).unwrap().cloned().collect::<Vec<String>>(),
+            vec!["e", "f"]
+        );
+    }
+
+    #[test]
+    fn recognizes_clap64_edit_remove_shift_short() {
+        let m = parse_opts().get_matches_from(vec!["tp", "-e", "0", "-r", "1", "-s"]);
+        assert_eq!(m.get_one::<String>(EDIT).map(|s| s.as_str()), Some("0"));
+        assert_eq!(m.get_one::<String>(REMOVE).map(|s| s.as_str()), Some("1"));
+        assert!(m.get_flag(SHIFT));
+    }
 }
