@@ -609,7 +609,7 @@ dependencies = [
 
 [[package]]
 name = "temprs"
-version = "2.9.3"
+version = "2.9.4"
 dependencies = [
  "clap",
  "criterion",
