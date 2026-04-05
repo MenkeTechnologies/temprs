@@ -828,9 +828,10 @@ impl TempApp {
             Some(idx) => {
                 let path = self.state.temp_file_stack()[idx].clone();
                 let content = util_file_contents_to_string(path.as_path());
+                let n = content.matches(&pattern).count();
                 let replaced = content.replace(&pattern, &replacement);
                 util_overwrite_file(&path, &replaced);
-                println!("{}", replaced.matches(&replacement).count());
+                println!("{}", n);
                 exit(0)
             }
             None => util_terminate_error(ERR_INVALID_IDX),

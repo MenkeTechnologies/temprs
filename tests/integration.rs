@@ -2925,6 +2925,17 @@ fn replace_prints_count() {
     assert_eq!(stdout(&out).trim(), "3");
 }
 
+/// Replacement text may appear multiple times in the result without implying multiple substitutions
+/// (e.g. replacing `x` with `foo` in `xfoo` → `foofoo` is one replacement, not two `foo` substrings).
+#[test]
+fn replace_count_is_pattern_occurrences_not_replacement_substrings_in_result() {
+    let dir = setup_clean_env();
+    run_tp_stdin(&dir, &[], "xfoo");
+    let out = run_tp(&dir, &["--replace", "1", "x", "foo"]);
+    assert_eq!(stdout(&out).trim(), "1");
+    assert_eq!(stdout(&run_tp(&dir, &["-o", "1"])), "foofoo");
+}
+
 #[test]
 fn replace_no_match() {
     let dir = setup_clean_env();
