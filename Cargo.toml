@@ -32,13 +32,13 @@ path = "src/main.rs"
 
 [dependencies]
 log = "0.4.29"
-env_logger = "0.10.2"
-simple_logger = "1.16.0"
+env_logger = "0.11.10"
+simple_logger = "5.2.0"
 clap = "4.6.0"
 fs2 = "0.4"
 
 [dev-dependencies]
-criterion = "0.5"
+criterion = "0.8"
 
 [[bench]]
 name = "benchmarks"
