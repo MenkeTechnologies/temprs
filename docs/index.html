@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <meta name="description" content="temprs (tp) — temporary file stack manager in Rust. Stack-based push/pop/shift/unshift, dual indexing by position or @name, head/tail/wc/size, find-and-replace, grep, diff, concat, atomic flock-protected master record. 5,578 tests, two binaries (tp + temprs), zsh completions, man page.">
+  <title>temprs — Documentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&amp;family=Share+Tech+Mono&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="hud-static.css">
+  <link rel="stylesheet" href="tutorial.css">
+  <style>
+    .tutorial-main { max-width: 68rem; }
+    .docs-build-line {
+      margin: 0.35rem 0 0;
+      font-family: 'Share Tech Mono', ui-monospace, monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.03em;
+      max-width: 42rem;
+      opacity: 0.75;
+    }
+    .hub-scheme-strip {
+      border-bottom: 1px dashed var(--border);
+      background: color-mix(in srgb, var(--bg-secondary) 85%, transparent);
+      padding: 0.55rem 1.5rem 0.65rem;
+      position: relative;
+    }
+    .hub-scheme-strip-inner {
+      max-width: 68rem;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+    .hub-scheme-strip .hud-scheme-label {
+      flex: 0 0 auto;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      text-align: left;
+    }
+    .hub-scheme-strip .scheme-grid {
+      flex: 1 1 auto;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 6px;
+    }
+    @media (max-width: 720px) {
+      .hub-scheme-strip-inner { flex-direction: column; align-items: stretch; }
+      .hub-scheme-strip .scheme-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    .flag-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.6rem 0 0.2rem;
+      font-size: 12px;
+    }
+    .flag-table th {
+      background: var(--bg-secondary);
+      color: var(--cyan);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      text-align: left;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+    }
+    .flag-table td {
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      vertical-align: top;
+    }
+    .flag-table td:first-child {
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--accent-light);
+      white-space: nowrap;
+      font-weight: 600;
+    }
+    .flag-table code { color: var(--accent-light); background: var(--bg); padding: 1px 4px; border-radius: 2px; }
+
+    .oneliner {
+      margin: 0.4rem 0;
+      padding: 0.55rem 0.8rem;
+      border-left: 2px solid var(--cyan);
+      background: var(--bg);
+      font-family: 'Share Tech Mono', ui-monospace, monospace;
+      font-size: 12px;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .oneliner .comment { color: var(--text-muted); }
+
+    .cat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+      gap: 0.6rem;
+      margin: 0.7rem 0;
+    }
+    .cat-card {
+      border: 1px solid var(--border);
+      border-left: 2px solid var(--cyan);
+      padding: 0.6rem 0.8rem;
+      background: color-mix(in srgb, var(--bg-card) 92%, transparent);
+      border-radius: 2px;
+    }
+    .cat-card h4 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin: 0 0 0.35rem;
+    }
+    .cat-card p {
+      margin: 0;
+      font-size: 11.5px;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+    .cat-card code { font-size: 11px; color: var(--accent-light); }
+
+    .ascii-block {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: var(--cyan);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 0.6rem 0.9rem;
+      white-space: pre;
+      overflow-x: auto;
+      line-height: 1.35;
+      margin: 0.7rem 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="app tutorial-app" id="docsApp">
+    <div class="crt-scanline" id="crtH" aria-hidden="true"></div>
+    <div class="crt-scanline-v" id="crtV" aria-hidden="true"></div>
+
+    <header class="tutorial-header">
+      <div class="tutorial-header-inner">
+        <div>
+          <h1 class="tutorial-brand">// TEMPRS — TEMPORARY FILE STACK MANAGER</h1>
+          <nav class="tutorial-crumbs" aria-label="Breadcrumb">
+            <span class="current">Docs</span>
+            <span class="sep">/</span>
+            <a href="report.html">Engineering report</a>
+            <span class="sep">/</span>
+            <a href="https://github.com/MenkeTechnologies/temprs" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <span class="sep">/</span>
+            <a href="https://crates.io/crates/temprs" target="_blank" rel="noopener noreferrer">crates.io</a>
+            <span class="sep">/</span>
+            <a href="https://docs.rs/temprs" target="_blank" rel="noopener noreferrer">docs.rs</a>
+          </nav>
+          <p class="docs-build-line">temprs v2.9.4 &middot; Two binaries (<code>tp</code> + <code>temprs</code>) &middot; Dual indexing (position + <code>@name</code>) &middot; Null-byte master record &middot; <code>flock</code>-protected, atomic writes &middot; 5,578 tests</p>
+          <p class="docs-build-line">4,487 production Rust lines &middot; 56,277 test Rust lines &middot; 235 commits &middot; 5 direct deps &middot; zsh completion + man page</p>
+        </div>
+        <div class="tutorial-toolbar">
+          <button type="button" class="btn btn-secondary" id="btnTheme" title="Toggle light/dark">Theme</button>
+          <button type="button" class="btn btn-secondary active" id="btnCrt" title="CRT scanline overlay">CRT</button>
+          <button type="button" class="btn btn-secondary active" id="btnNeon" title="Neon border pulse">Neon</button>
+          <a class="btn btn-secondary" href="report.html">Report</a>
+          <a class="btn btn-secondary" href="https://github.com/MenkeTechnologies/temprs" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <a class="btn btn-secondary" href="https://github.com/MenkeTechnologies/temprs/issues" target="_blank" rel="noopener noreferrer">Issues</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="hub-scheme-strip">
+      <div class="hub-scheme-strip-inner">
+        <span class="hud-scheme-label">// Color scheme</span>
+        <div class="scheme-grid" id="hudSchemeGrid"></div>
+      </div>
+    </div>
+
+    <main class="tutorial-main">
+      <h2 class="tutorial-title"><span class="step-hash">&gt;_</span>TEMPRS — PUSH YOUR DATA. OWN YOUR TEMP FILES.</h2>
+      <p class="tutorial-subtitle"><strong>A stack-based temporary file manager for the shell.</strong> Pipe data into <code>tp</code>, get a numbered tempfile on top of a persistent stack. Address files by position (<code>1</code>, <code>-1</code>) or by tag (<code>@mydata</code>). Stack operations mirror Perl/Ruby arrays: <code>push</code>, <code>pop</code>, <code>shift</code>, <code>unshift</code>, <code>move</code>, <code>swap</code>, <code>duplicate</code>, <code>reverse</code>, <code>sort</code>. The master record is null-byte delimited, atomically renamed, and <code>flock</code>-protected so concurrent shells can't corrupt it. Both <code>tp</code> and <code>temprs</code> binaries are shipped from one Cargo target.</p>
+
+      <section class="tutorial-section">
+        <h2>Quickstart</h2>
+        <p>Install from crates.io or build from source. <code>tp</code> is the short alias; <code>temprs</code> is the long name. Both binaries are identical.</p>
+<pre># install
+cargo install temprs
+
+# from source
+git clone https://github.com/MenkeTechnologies/temprs
+cd temprs &amp;&amp; cargo build --release
+
+# push stdin to a new tempfile on top of stack
+echo "hello" | tp
+
+# list the stack
+tp -l
+
+# read top of stack to stdout
+tp | wc -l
+
+# read tempfile at index 1
+tp -o 1 | head -5
+
+# tag a tempfile so you can recall it by name
+ps aux | tp -w procs
+tp -o procs | grep firefox</pre>
+        <p>Full install + usage live in the <a href="https://github.com/MenkeTechnologies/temprs#readme">README</a>; the man page is shipped at <code>man/temprs.1</code>.</p>
+      </section>
+
+      <hr class="section-rule">
+
+      <section class="tutorial-section">
+        <h2>Stack architecture</h2>
+        <p>Tempfiles are ordered in a persistent stack. Top of stack is the newest entry. Indices are 1-based ascending from the bottom; negative indices count from the top (<code>-1</code> = top, <code>-stack_size</code> = bottom). Index <code>0</code> is always invalid.</p>
+        <div class="ascii-block"> ┌─────────────────────────────────────┐
+ │  INDEX N   ▓▓  TOP OF STACK (newest)│
+ │  INDEX N-1 ▓▓  ...                  │
+ │  INDEX 2   ▓▓  ...                  │
+ │  INDEX 1   ▓▓  BOTTOM OF STACK      │
+ └─────────────────────────────────────┘</div>
+        <p>Files live in <code>$TMPDIR/temprs/</code> (override with <code>TEMPRS_DIR</code>). The master record (<code>master</code>) maps index → filename → optional tag. Stack position is reconstructed from the master on every invocation, so multiple shells share one canonical view.</p>
+      </section>
+
+      <hr class="section-rule">
+
+      <section class="tutorial-section">
+        <h2>Dual indexing — by position or by <code>@name</code></h2>
+        <p>Every operation that takes an <code>INDEX</code> also accepts a tag name. Resolution order: numeric parse first, then tag lookup. Names are unique across the stack and travel with their files through every stack mutation (move, swap, duplicate). Names render with a <code>@</code> prefix in listings.</p>
+<pre># tag on creation
+ps aux | tp -w procs
+
+# tag on existing file (rename)
+tp -R 1 newname
+tp -R procs procs2
+
+# use the tag anywhere INDEX is accepted
+tp -o procs
+tp -r procs
+tp -A procs &lt; more.txt
+tp -M procs 1
+tp -S procs other
+tp -x procs
+tp --head procs 10
+tp --replace procs old new</pre>
+      </section>
+
+      <hr class="section-rule">
+
+      <section class="tutorial-section">
+        <h2>Operations &mdash; full surface</h2>
+        <div class="cat-grid">
+          <div class="cat-card"><h4>I/O</h4><p><code>tp</code> (push stdin), <code>tp FILE</code> (load file), <code>tp -i N</code> (write into N), <code>tp -o N</code> (read N to stdout), <code>tp -v</code> (verbose = also write to stdout), <code>tp -A N</code> (append to N).</p></div>
+          <div class="cat-card"><h4>Stack mutation</h4><p><code>-p</code> pop, <code>-u</code> unshift, <code>-s</code> shift, <code>-a N</code> insert at N, <code>-r N</code> remove, <code>-M src dst</code> move, <code>-S a b</code> swap, <code>-x N</code> duplicate to top.</p></div>
+          <div class="cat-card"><h4>Bulk</h4><p><code>--rev</code> reverse the stack, <code>--sort name|size|mtime</code> sort, <code>-c</code> purge all, <code>--expire HOURS</code> purge by mtime (fractional hours OK: <code>0.5</code>).</p></div>
+          <div class="cat-card"><h4>Listing</h4><p><code>-l</code> list, <code>-L</code> list with contents, <code>-n</code> numbered, <code>-N</code> numbered with contents, <code>-k</code> count, <code>-d</code> show temprs directory, <code>-m</code> show master file.</p></div>
+          <div class="cat-card"><h4>Inspect</h4><p><code>-I N</code> metadata, <code>--head N [LINES]</code>, <code>--tail N [LINES]</code>, <code>--wc N</code>, <code>--size N</code>, <code>--path N</code> (raw filesystem path for shell substitution).</p></div>
+          <div class="cat-card"><h4>Search &amp; transform</h4><p><code>-g PATTERN</code> grep across all tempfiles (exit 0/1), <code>--replace N PAT REPL</code> find-and-replace in place (prints replacement count).</p></div>
+          <div class="cat-card"><h4>Combine</h4><p><code>-C a b c</code> concat tempfiles to stdout in order (indices and names freely mixed), <code>-D a b</code> unified diff of two tempfiles.</p></div>
+          <div class="cat-card"><h4>Tagging</h4><p><code>-w NAME</code> tag a new tempfile on creation, <code>-R src NAME</code> rename a tag, names render as <code>@name</code> in listings.</p></div>
+          <div class="cat-card"><h4>Editor</h4><p><code>-e N</code> open in <code>$EDITOR</code> (falls back to <code>vi</code>), works with <code>-1</code> for top-of-stack.</p></div>
+        </div>
+      </section>
+
+      <hr class="section-rule">
+
+      <section class="tutorial-section">
+        <h2>Flag reference</h2>
+        <p>The same flag set is bound under both binaries. Long forms shown where they exist; <code>tp -h</code> prints the cyberpunk banner + grouped help.</p>
+        <table class="flag-table">
+          <thead><tr><th>Flag</th><th>Argument</th><th>Behavior</th></tr></thead>
+          <tbody>
+            <tr><td>-i, --input</td><td>INDEX</td><td>Write stdin into tempfile at INDEX</td></tr>
+            <tr><td>-o, --output</td><td>INDEX</td><td>Read tempfile at INDEX to stdout</td></tr>
+            <tr><td>-a, --add</td><td>INDEX [FILE]</td><td>Insert new tempfile at INDEX (from stdin or FILE)</td></tr>
+            <tr><td>-r, --remove</td><td>INDEX</td><td>Remove tempfile at INDEX</td></tr>
+            <tr><td>-p, --pop</td><td>&nbsp;</td><td>Pop top of stack</td></tr>
+            <tr><td>-u, --unshift</td><td>&nbsp;</td><td>Push to bottom (stdin in, no stdout)</td></tr>
+            <tr><td>-s, --shift</td><td>&nbsp;</td><td>Shift from bottom</td></tr>
+            <tr><td>-A, --append</td><td>INDEX</td><td>Append stdin to tempfile at INDEX</td></tr>
+            <tr><td>-v, --verbose</td><td>&nbsp;</td><td>Also echo data to stdout on write</td></tr>
+            <tr><td>-w, --write-name</td><td>NAME</td><td>Tag new tempfile with NAME</td></tr>
+            <tr><td>-R, --rename</td><td>SRC NAME</td><td>Rename tag (SRC = index or current name)</td></tr>
+            <tr><td>-l, --list</td><td>&nbsp;</td><td>List stack</td></tr>
+            <tr><td>-L</td><td>&nbsp;</td><td>List stack with contents</td></tr>
+            <tr><td>-n</td><td>&nbsp;</td><td>List stack numbered</td></tr>
+            <tr><td>-N</td><td>&nbsp;</td><td>List stack numbered with contents</td></tr>
+            <tr><td>-k, --count</td><td>&nbsp;</td><td>Print stack size</td></tr>
+            <tr><td>-d, --dir</td><td>&nbsp;</td><td>Print temprs directory</td></tr>
+            <tr><td>-m, --master</td><td>&nbsp;</td><td>Print master record path</td></tr>
+            <tr><td>-c, --clear</td><td>&nbsp;</td><td>Purge all tempfiles</td></tr>
+            <tr><td>--expire</td><td>HOURS</td><td>Purge tempfiles older than HOURS (fractional OK)</td></tr>
+            <tr><td>-e, --edit</td><td>INDEX</td><td>Open INDEX in <code>$EDITOR</code> (fallback <code>vi</code>)</td></tr>
+            <tr><td>-I, --info</td><td>INDEX</td><td>Show metadata for INDEX</td></tr>
+            <tr><td>--head</td><td>INDEX [LINES]</td><td>Head of INDEX (default 10)</td></tr>
+            <tr><td>--tail</td><td>INDEX [LINES]</td><td>Tail of INDEX (default 10)</td></tr>
+            <tr><td>--wc</td><td>INDEX</td><td>Line count of INDEX</td></tr>
+            <tr><td>--size</td><td>INDEX</td><td>Byte size of INDEX</td></tr>
+            <tr><td>--path</td><td>INDEX</td><td>Filesystem path of INDEX (for <code>cat "$(tp --path 1)"</code>)</td></tr>
+            <tr><td>-g, --grep</td><td>PATTERN</td><td>Grep all tempfiles (exit 0 on match, 1 on none)</td></tr>
+            <tr><td>--replace</td><td>INDEX PAT REPL</td><td>Replace PAT with REPL in INDEX, print replacement count</td></tr>
+            <tr><td>-C, --concat</td><td>INDEX...</td><td>Concatenate listed tempfiles to stdout</td></tr>
+            <tr><td>-D, --diff</td><td>A B</td><td>Unified diff of two tempfiles</td></tr>
+            <tr><td>-M, --move</td><td>SRC DST</td><td>Move tempfile from SRC to DST position</td></tr>
+            <tr><td>-S, --swap</td><td>A B</td><td>Swap two tempfiles</td></tr>
+            <tr><td>-x, --dup</td><td>INDEX</td><td>Duplicate INDEX onto top of stack</td></tr>
+            <tr><td>--rev</td><td>&nbsp;</td><td>Reverse the entire stack</td></tr>
+            <tr><td>--sort</td><td>name|size|mtime</td><td>Sort the stack</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <hr class="section-rule">
+
+      <section class="tutorial-section">
+        <h2>Data integrity</h2>
+        <p>The master record is the single source of truth for the stack. Three layered protections prevent corruption under concurrent access:</p>
+        <ul>
+          <li><strong>Null-byte delimited format</strong> &mdash; fields separated by <code>\0</code>, records by <code>\0\0</code>. Filenames containing newlines, tabs, spaces, or any other shell-metacharacters parse correctly. No quoting, no escaping.</li>
+          <li><strong>Atomic writes</strong> &mdash; the master is written to a sibling temp file and renamed into place. A crash mid-write leaves the previous master intact; readers never see a partial record.</li>
+          <li><strong>Exclusive file locking</strong> &mdash; <code>fs2::FileExt::lock_exclusive</code> wraps every read-modify-write. Two shells racing on the same stack serialize cleanly; neither sees a half-mutated state.</li>
+          <li><strong>Auto-recovery</strong> &mdash; corrupt or empty records (e.g. from an aborted external edit) are silently skipped on read and cleaned up on the next write.</li>
+        </ul>
+      </section>
+
+      <hr class="section-rule">
+
+      <section class="tutorial-section">
+        <h2>Environment</h2>
+        <table class="flag-table">
+          <thead><tr><th>Variable</th><th>Effect</th></tr></thead>
+          <tbody>
+            <tr><td>TEMPRS_DIR</td><td>Override the tempfile + master record directory. Default: <code>$TMPDIR/temprs</code> (or <code>/tmp/temprs</code> if <code>$TMPDIR</code> is unset).</td></tr>
+            <tr><td>EDITOR</td><td>Used by <code>tp -e INDEX</code>. Falls back to <code>vi</code>.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <hr class="section-rule">
+
+      <section class="tutorial-section">
+        <h2>Shell integration</h2>
+        <p>A zsh completion lives at <code>completions/_temprs</code> and dynamically resolves stack indices, file names, and <code>@name</code> tags &mdash; tab-completion sees the current stack, not a static word list.</p>
+<pre># install into your fpath
+cp completions/_temprs /usr/local/share/zsh/site-functions/_tp
+
+# or extend fpath in .zshrc
+fpath=(/path/to/temprs/completions $fpath)
+autoload -Uz compinit &amp;&amp; compinit</pre>
+        <p>A groff man page is shipped at <code>man/temprs.1</code> &mdash; install to <code>$MANPATH/man1/</code> for <code>man tp</code>.</p>
+      </section>
+
+      <hr class="section-rule">
+
+      <section class="tutorial-section">
+        <h2>Pipeline examples</h2>
+<pre><span class="comment"># capture, transform, recall</span>
+ps aux | tp -w procs
+tp -o procs | awk '$3 &gt; 5'
+
+<span class="comment"># diff two captures</span>
+curl -s api/v1/state | tp -w before
+make deploy
+curl -s api/v1/state | tp -w after
+tp -D before after
+
+<span class="comment"># build a working set, then dump it</span>
+grep -r TODO src | tp -w todos
+grep -r FIXME src | tp -w fixmes
+tp -C todos fixmes | sort -u
+
+<span class="comment"># edit a captured payload, then re-emit</span>
+curl -s config.json | tp -w cfg
+tp -e cfg
+tp -o cfg | curl -X PUT --data-binary @- api/v1/config
+
+<span class="comment"># expiry &amp; housekeeping</span>
+tp --expire 24    <span class="comment"># drop anything older than a day</span>
+tp --expire 0.5   <span class="comment"># drop anything older than 30 minutes</span>
+tp -c             <span class="comment"># drop everything</span></pre>
+      </section>
+
+      <hr class="section-rule">
+
+      <section class="tutorial-section">
+        <h2>Development &amp; CI</h2>
+        <p>The repository ships with a GitHub Actions workflow at <code>.github/workflows/ci.yml</code> that runs <code>cargo check</code>, the full <code>cargo test</code> suite (<strong>5,578 tests</strong> &mdash; 5,048 unit + 530 integration), <code>cargo fmt --check</code>, <code>cargo clippy</code>, <code>cargo doc</code>, and a release build on every push to <code>main</code> and on every pull request. Criterion benchmarks live under <code>benches/benchmarks.rs</code> (<code>cargo bench</code>).</p>
+        <p>For more detail on architecture, test breakdown, and module-level statistics, see the <a href="report.html">engineering report</a>.</p>
+      </section>
+
+    </main>
+  </div>
+  <script src="hud-theme.js" defer></script>
+</body>
+</html>

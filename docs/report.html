@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <meta name="description" content="temprs — Engineering report. Stack-based temporary file manager in Rust: 4,487 production Rust lines + 56,277 test Rust lines, 5,578 tests (5,048 unit + 530 integration), v2.9.4, 235 commits, 5 direct deps, two binaries (tp + temprs), zsh completion + man page.">
+  <title>temprs &mdash; Engineering Report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="hud-static.css">
+  <link rel="stylesheet" href="tutorial.css">
+  <style>
+    .tutorial-main { max-width: 76rem; }
+    .bar-wrap { background:var(--bg-primary);border:1px solid var(--border);border-radius:2px;height:18px;position:relative;overflow:hidden; }
+    .bar-fill { height:100%;border-radius:1px;transition:width 1.2s cubic-bezier(.22,1,.36,1); }
+    .bar-fill.green  { background:linear-gradient(90deg,#39ff14,#20c00a);box-shadow:0 0 8px rgba(57,255,20,.4); }
+    .bar-fill.cyan   { background:linear-gradient(90deg,#05d9e8,#0891b2);box-shadow:0 0 8px rgba(5,217,232,.4); }
+    .bar-fill.yellow { background:linear-gradient(90deg,#ffb800,#e8a000);box-shadow:0 0 8px rgba(255,184,0,.35); }
+    .bar-fill.magenta{ background:linear-gradient(90deg,#d300c5,#a000a0);box-shadow:0 0 8px rgba(211,0,197,.35); }
+    .bar-pct { position:absolute;right:6px;top:0;line-height:18px;font-size:10px;font-weight:700;color:#fff;text-shadow:0 0 4px #000;font-family:'Orbitron',sans-serif; }
+
+    .file-table { width:100%;border-collapse:collapse;margin:0.6rem 0;font-size:12px; }
+    .file-table th { background:var(--bg-secondary);color:var(--cyan);font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;text-align:left;padding:7px 10px;border:1px solid var(--border); }
+    .file-table td { padding:6px 10px;border:1px solid var(--border);color:var(--text-dim);vertical-align:middle; }
+    .file-table tr:hover td { background:var(--bg-hover); }
+    .file-table td:first-child { font-family:'Share Tech Mono',monospace;color:var(--accent-light);font-weight:600;white-space:nowrap; }
+    .file-table .num { text-align:right;font-family:'Share Tech Mono',monospace; }
+    .file-table .total-row td { background:var(--bg-secondary);font-weight:700;color:var(--text);border-top:2px solid var(--cyan); }
+    .file-table code { font-size:11px;color:var(--accent-light);background:var(--bg-primary);padding:1px 4px;border-radius:2px; }
+
+    .stat-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(14rem,1fr));gap:0.75rem;margin:1.2rem 0; }
+    .stat-card { border:1px solid var(--border);border-top:3px solid var(--cyan);background:var(--bg-card);padding:1rem 1.2rem;border-radius:2px;text-align:center; }
+    .stat-card .stat-val { font-family:'Orbitron',sans-serif;font-size:28px;font-weight:900;color:var(--cyan);line-height:1.1;text-shadow:0 0 20px var(--cyan-glow); }
+    .stat-card .stat-val.accent { color:var(--accent);text-shadow:0 0 20px var(--accent-glow); }
+    .stat-card .stat-val.green  { color:var(--green);text-shadow:0 0 20px rgba(57,255,20,.3); }
+    .stat-card .stat-label { font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-top:0.5rem; }
+    @keyframes glow-pulse { 0%,100%{text-shadow:0 0 20px var(--cyan-glow)}50%{text-shadow:0 0 40px var(--cyan-glow),0 0 80px var(--cyan-dim)} }
+    .stat-card .stat-val { animation:glow-pulse 3s ease-in-out infinite; }
+
+    .mapping-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(20rem,1fr));gap:0.65rem;margin:0.8rem 0; }
+    .mapping-card { border:1px solid var(--border);border-left:3px solid var(--magenta);background:var(--bg-card);padding:0.6rem 0.9rem;border-radius:2px; }
+    .mapping-card h4 { font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--magenta);margin:0 0 0.3rem; }
+    .mapping-card p { margin:0;font-size:11px;color:var(--text-dim);line-height:1.5; }
+    .mapping-card code { font-size:10.5px;color:var(--accent-light);background:var(--bg-primary);padding:1px 4px;border-radius:2px; }
+
+    .section-rule { border:none;border-top:1px dashed var(--border);margin:2rem 0; }
+
+    .feature-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(22rem,1fr));gap:0.65rem;margin:0.8rem 0; }
+    .feature-card { border:1px solid var(--border);border-left:3px solid var(--cyan);background:var(--bg-card);padding:0.7rem 1rem;border-radius:2px; }
+    .feature-card h4 { font-family:'Orbitron',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--cyan);margin:0 0 0.3rem; }
+    .feature-card p { margin:0;font-size:11px;color:var(--text-dim);line-height:1.55; }
+    .feature-card code { font-size:10.5px;color:var(--accent-light);background:var(--bg-primary);padding:1px 4px;border-radius:2px; }
+    .feature-card ul { margin:0.3rem 0 0;padding-left:1.2rem;font-size:11px;color:var(--text-dim);line-height:1.6; }
+    .feature-card li code { font-size:10px; }
+  </style>
+</head>
+<body>
+  <div class="app tutorial-app" id="reportApp">
+    <div class="crt-scanline" id="crtH" aria-hidden="true"></div>
+    <div class="crt-scanline-v" id="crtV" aria-hidden="true"></div>
+
+    <header class="tutorial-header">
+      <div class="tutorial-header-inner">
+        <div>
+          <h1 class="tutorial-brand">// TEMPRS &mdash; ENGINEERING REPORT</h1>
+          <nav class="tutorial-crumbs" aria-label="Breadcrumb">
+            <span class="current">Engineering Report</span>
+            <span class="sep">/</span>
+            <a href="index.html">Temprs Docs</a>
+            <span class="sep">/</span>
+            <a href="https://github.com/MenkeTechnologies/temprs" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <span class="sep">/</span>
+            <a href="https://crates.io/crates/temprs" target="_blank" rel="noopener noreferrer">crates.io</a>
+          </nav>
+          <p style="margin:0.35rem 0 0;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);letter-spacing:0.03em;opacity:0.75;">
+            Stack-based temporary file manager in Rust &middot; v2.9.4 &middot; clap CLI &middot; <code>fs2</code> flock-protected master record &middot; null-byte delimited storage &middot; atomic renames
+          </p>
+        </div>
+        <div class="tutorial-toolbar">
+          <button type="button" class="btn btn-secondary" id="btnTheme" title="Toggle light/dark">Theme</button>
+          <button type="button" class="btn btn-secondary active" id="btnCrt" title="CRT scanline overlay">CRT</button>
+          <button type="button" class="btn btn-secondary active" id="btnNeon" title="Neon border pulse">Neon</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="tutorial-main">
+
+      <!-- ═══════════════════════════════════════ -->
+      <!-- SECTION 1: EXECUTIVE SUMMARY           -->
+      <!-- ═══════════════════════════════════════ -->
+      <h2 class="tutorial-title"><span class="step-hash">&gt;_</span>EXECUTIVE SUMMARY</h2>
+      <p class="tutorial-subtitle">temprs is a single-binary stack-based temporary file manager written in Rust. The CLI is built on <code>clap</code>; persistence runs through a null-byte delimited master record with atomic renames and <code>flock</code>-protected exclusive access. Every operation that takes an <code>INDEX</code> also accepts a tag name (<code>@name</code>) &mdash; resolution falls through numeric parse to tag lookup. Two binaries (<code>tp</code> and <code>temprs</code>) ship from one Cargo target. <strong>4,487 production Rust lines + 56,277 test Rust lines + 5,578 tests (5,048 unit + 530 integration)</strong> back the surface: stack mutation (push, pop, shift, unshift, insert, remove, move, swap, duplicate, reverse, sort), inspection (head, tail, wc, size, path, info), transformation (find-and-replace, grep, concat, diff), and editor handoff. CI runs <code>check + test + fmt + clippy + doc + release build</code> on every push.</p>
+
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-val">4,487</div><div class="stat-label">Production Rust Lines</div></div>
+        <div class="stat-card"><div class="stat-val">56,277</div><div class="stat-label">Test Rust Lines</div></div>
+        <div class="stat-card"><div class="stat-val accent">5,578</div><div class="stat-label">Tests (Verified Passing)</div></div>
+        <div class="stat-card"><div class="stat-val green">2.9.4</div><div class="stat-label">Crates.io Version</div></div>
+        <div class="stat-card"><div class="stat-val">2</div><div class="stat-label">Binaries (<code>tp</code>+<code>temprs</code>)</div></div>
+        <div class="stat-card"><div class="stat-val">5</div><div class="stat-label">Direct Dependencies</div></div>
+        <div class="stat-card"><div class="stat-val">95</div><div class="stat-label">Transitive Crates</div></div>
+        <div class="stat-card"><div class="stat-val">235</div><div class="stat-label">Git Commits</div></div>
+      </div>
+
+      <div style="margin:1.2rem 0;">
+        <p style="font-size:11px;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:4px;font-family:'Orbitron',sans-serif;font-weight:700;">Source distribution &mdash; 60,764 Rust lines total</p>
+        <div class="bar-wrap" style="height:26px;">
+          <div class="bar-fill cyan" style="width:7.4%;"></div>
+          <span class="bar-pct" style="font-size:12px;">4,487 production / 56,277 test &middot; 92.6% test code</span>
+        </div>
+        <p style="font-size:10px;color:var(--text-muted);margin-top:4px;">Production source: <code>src/lib.rs</code>, <code>src/main.rs</code>, <code>src/util/{consts,utils,mod}.rs</code>, <code>src/model/{mod,app,state/mod}.rs</code>, and the CLI definition in <code>src/model/opts.rs</code> (lines 1&ndash;258). Test source: <code>tests/integration.rs</code> + inline test modules in <code>src/model/opts.rs</code>, <code>src/model/apply_permutation_tests.rs</code>, <code>src/model/state/tests.rs</code>.</p>
+      </div>
+
+      <hr class="section-rule">
+
+      <!-- ═══════════════════════════════════════ -->
+      <!-- SECTION 2: SOURCE LAYOUT               -->
+      <!-- ═══════════════════════════════════════ -->
+      <h2 class="tutorial-title"><span class="step-hash">~</span>SOURCE LAYOUT</h2>
+      <p class="tutorial-subtitle">Module-level breakdown of the Rust source tree. <code>opts.rs</code> dominates the line count because the inline test module holds 4,449 combinatorial CLI argument tests &mdash; the production CLI definition itself is the first 258 lines of that file.</p>
+
+      <table class="file-table">
+        <thead>
+          <tr>
+            <th>File</th>
+            <th class="num">Lines</th>
+            <th class="num">Tests</th>
+            <th>Role</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>src/main.rs</td><td class="num">7</td><td class="num">&mdash;</td><td>Binary entrypoint (shared by <code>tp</code> + <code>temprs</code>)</td></tr>
+          <tr><td>src/lib.rs</td><td class="num">8</td><td class="num">&mdash;</td><td>Library root; re-exports model + util</td></tr>
+          <tr><td>src/util/mod.rs</td><td class="num">2</td><td class="num">&mdash;</td><td>Util module declaration</td></tr>
+          <tr><td>src/util/consts.rs</td><td class="num">859</td><td class="num">&mdash;</td><td>Flag names, error strings, banner, separators</td></tr>
+          <tr><td>src/util/utils.rs</td><td class="num">2,129</td><td class="num">&mdash;</td><td>Stack ops, master-record I/O, flock, filesystem helpers</td></tr>
+          <tr><td>src/model/mod.rs</td><td class="num">6</td><td class="num">&mdash;</td><td>Model module declaration</td></tr>
+          <tr><td>src/model/app.rs</td><td class="num">1,004</td><td class="num">&mdash;</td><td>Top-level dispatch &mdash; matches parsed flags to handlers</td></tr>
+          <tr><td>src/model/state/mod.rs</td><td class="num">214</td><td class="num">&mdash;</td><td><code>State</code> struct &mdash; in-memory mirror of the master record</td></tr>
+          <tr><td>src/model/state/tests.rs</td><td class="num">1,980</td><td class="num">181</td><td>State invariants &mdash; serialization round-trips, name uniqueness, edge cases</td></tr>
+          <tr><td>src/model/opts.rs (CLI def)</td><td class="num">258</td><td class="num">&mdash;</td><td>Production clap definition + cyberpunk help template</td></tr>
+          <tr><td>src/model/opts.rs (tests)</td><td class="num">46,866</td><td class="num">4,449</td><td>Combinatorial flag parsing tests &mdash; long form, short form, value parsing, mutual exclusion</td></tr>
+          <tr><td>src/model/apply_permutation_tests.rs</td><td class="num">1,531</td><td class="num">162</td><td>Stack mutation permutation suite &mdash; move/swap/sort/reverse correctness</td></tr>
+          <tr><td>tests/integration.rs</td><td class="num">5,900</td><td class="num">530</td><td>End-to-end CLI tests &mdash; spawn the binary, pipe stdin, assert stdout/stderr/files</td></tr>
+          <tr><td>benches/benchmarks.rs</td><td class="num">144</td><td class="num">&mdash;</td><td>Criterion benchmarks &mdash; stack ops, master record round-trips</td></tr>
+          <tr class="total-row"><td>TOTAL Rust</td><td class="num">60,908</td><td class="num">5,322</td><td>+ 256 inline lib doc-tests (verified via <code>cargo test</code>) &rArr; <strong>5,578 total tests pass</strong></td></tr>
+        </tbody>
+      </table>
+
+      <p style="font-size:11px;color:var(--text-muted);margin-top:0.5rem;">
+        Note: the test-attribute grep yields <code>4,449 + 162 + 181 + 530 = 5,322</code>; the live binary count from <code>cargo test</code> is <code>5,048 lib + 530 integration = 5,578</code>. The 256-test delta is accounted for by doc-tests and macro-expanded tests not visible to the raw grep.
+      </p>
+
+      <hr class="section-rule">
+
+      <!-- ═══════════════════════════════════════ -->
+      <!-- SECTION 3: DEPENDENCIES                -->
+      <!-- ═══════════════════════════════════════ -->
+      <h2 class="tutorial-title"><span class="step-hash">$</span>DEPENDENCIES</h2>
+      <p class="tutorial-subtitle">Five direct runtime dependencies, one dev dependency. The lock file resolves to 95 transitive crates. Selection criteria: foundational, audit-friendly, durable &mdash; no flavor-of-the-month wrappers.</p>
+
+      <table class="file-table">
+        <thead>
+          <tr><th>Crate</th><th>Version</th><th>Role</th><th>Why</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>clap</td><td>4.6</td><td>CLI parser</td><td>De facto standard for Rust CLIs; derives long/short, mutual exclusion, value validation, custom help template</td></tr>
+          <tr><td>fs2</td><td>0.4</td><td>File locking</td><td><code>FileExt::lock_exclusive</code> / <code>unlock</code> &mdash; the master record's concurrency guard</td></tr>
+          <tr><td>log</td><td>0.4</td><td>Logging facade</td><td>Decouples library logging from the binary's choice of backend</td></tr>
+          <tr><td>env_logger</td><td>0.11</td><td>Log backend (env-driven)</td><td><code>RUST_LOG=temprs=debug</code> opt-in tracing without recompile</td></tr>
+          <tr><td>simple_logger</td><td>5.2</td><td>Log backend (zero-config)</td><td>Default-on logger for users who don't set <code>RUST_LOG</code></td></tr>
+          <tr><td>criterion (dev)</td><td>0.8</td><td>Benchmark harness</td><td>Statistical benchmarking with regression detection &mdash; gated to <code>[dev-dependencies]</code></td></tr>
+        </tbody>
+      </table>
+
+      <hr class="section-rule">
+
+      <!-- ═══════════════════════════════════════ -->
+      <!-- SECTION 4: STORAGE FORMAT              -->
+      <!-- ═══════════════════════════════════════ -->
+      <h2 class="tutorial-title"><span class="step-hash">&amp;</span>STORAGE FORMAT</h2>
+      <p class="tutorial-subtitle">The persistent state of the stack lives in a single master record file. The format is null-byte delimited so any filename &mdash; including ones with newlines, tabs, spaces, or other shell-hostile characters &mdash; round-trips losslessly. Writes are atomic; reads are <code>flock</code>-protected.</p>
+
+      <div class="mapping-grid">
+        <div class="mapping-card"><h4>Field delimiter</h4><p><code>\0</code> separates fields within a record (filename, optional tag).</p></div>
+        <div class="mapping-card"><h4>Record delimiter</h4><p><code>\0\0</code> separates records. Stack order = file order.</p></div>
+        <div class="mapping-card"><h4>Atomic writes</h4><p>Write to <code>master.tmp</code>, <code>rename()</code> to <code>master</code>. A crash leaves the previous master intact.</p></div>
+        <div class="mapping-card"><h4>Exclusive locking</h4><p><code>fs2::FileExt::lock_exclusive</code> wraps every read-modify-write. Concurrent shells serialize.</p></div>
+        <div class="mapping-card"><h4>Auto-recovery</h4><p>Empty or malformed records on read are silently skipped and dropped on the next write.</p></div>
+        <div class="mapping-card"><h4>Storage root</h4><p><code>$TMPDIR/temprs</code> by default; override with <code>TEMPRS_DIR</code>. Master record lives alongside the tempfiles themselves.</p></div>
+      </div>
+
+      <hr class="section-rule">
+
+      <!-- ═══════════════════════════════════════ -->
+      <!-- SECTION 5: CAPABILITY SURFACE          -->
+      <!-- ═══════════════════════════════════════ -->
+      <h2 class="tutorial-title"><span class="step-hash">@</span>CAPABILITY SURFACE</h2>
+      <p class="tutorial-subtitle">Grouped by behavior. Every operation that takes <code>INDEX</code> also accepts a tag name &mdash; the resolver tries numeric parse first, then falls through to tag lookup. Negative indices count from top of stack.</p>
+
+      <div class="feature-grid">
+        <div class="feature-card"><h4>I/O</h4><p>Push stdin or load a file; read by index or tag; verbose mode also tees to stdout.</p><ul><li><code>tp</code> &mdash; push stdin to top</li><li><code>tp FILE</code> &mdash; load file to top</li><li><code>tp -i N</code> &mdash; write stdin into N</li><li><code>tp -o N</code> &mdash; read N to stdout</li><li><code>tp -A N</code> &mdash; append stdin to N</li><li><code>tp -v</code> &mdash; verbose (also tee to stdout)</li></ul></div>
+        <div class="feature-card"><h4>Stack mutation</h4><p>Position-based operations with the full Perl/Ruby array vocabulary.</p><ul><li><code>-p</code> pop, <code>-u</code> unshift, <code>-s</code> shift</li><li><code>-a N</code> insert at N, <code>-r N</code> remove</li><li><code>-M src dst</code> move</li><li><code>-S a b</code> swap</li><li><code>-x N</code> duplicate to top</li></ul></div>
+        <div class="feature-card"><h4>Bulk</h4><p>Whole-stack transforms and housekeeping.</p><ul><li><code>--rev</code> reverse</li><li><code>--sort name|size|mtime</code></li><li><code>-c</code> purge all</li><li><code>--expire HOURS</code> purge by mtime (fractional)</li></ul></div>
+        <div class="feature-card"><h4>Listing</h4><p>Five list modes; pick the verbosity you need.</p><ul><li><code>-l</code> names only</li><li><code>-L</code> names + contents</li><li><code>-n</code> numbered names</li><li><code>-N</code> numbered + contents</li><li><code>-k</code> stack size</li></ul></div>
+        <div class="feature-card"><h4>Inspection</h4><p>Read partial content or metadata without consuming the file.</p><ul><li><code>--head N [LINES]</code></li><li><code>--tail N [LINES]</code></li><li><code>--wc N</code>, <code>--size N</code></li><li><code>--path N</code> &mdash; raw FS path for <code>$(...)</code> substitution</li><li><code>-I N</code> &mdash; metadata block</li></ul></div>
+        <div class="feature-card"><h4>Search &amp; transform</h4><p>In-place edits and cross-stack search.</p><ul><li><code>-g PAT</code> &mdash; grep all tempfiles (exit 0/1)</li><li><code>--replace N PAT REPL</code> &mdash; in-place find/replace, prints replacement count</li></ul></div>
+        <div class="feature-card"><h4>Combine &amp; compare</h4><p>Treat the stack as a working set; combine or diff entries.</p><ul><li><code>-C a b c</code> &mdash; concat to stdout in given order</li><li><code>-D a b</code> &mdash; unified diff of two tempfiles</li></ul></div>
+        <div class="feature-card"><h4>Tagging</h4><p>Optional string aliases. Travel with files through every mutation.</p><ul><li><code>-w NAME</code> &mdash; tag on creation</li><li><code>-R src NAME</code> &mdash; rename</li><li>Names display as <code>@name</code> in listings</li></ul></div>
+        <div class="feature-card"><h4>Editor</h4><p>Direct handoff to <code>$EDITOR</code>.</p><ul><li><code>-e N</code> &mdash; open INDEX in <code>$EDITOR</code></li><li>Fallback: <code>vi</code></li><li>Works with <code>-1</code> for top of stack</li></ul></div>
+      </div>
+
+      <hr class="section-rule">
+
+      <!-- ═══════════════════════════════════════ -->
+      <!-- SECTION 6: TEST POSTURE                -->
+      <!-- ═══════════════════════════════════════ -->
+      <h2 class="tutorial-title"><span class="step-hash">!</span>TEST POSTURE</h2>
+      <p class="tutorial-subtitle">Five test suites cover three layers: argument parsing, in-memory state invariants, and end-to-end CLI behavior. Aggregate: <strong>5,578 tests pass</strong> in <code>cargo test</code>, all green in CI.</p>
+
+      <table class="file-table">
+        <thead>
+          <tr><th>Suite</th><th>File</th><th class="num">Tests</th><th>Coverage</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>CLI parsing</td><td>src/model/opts.rs</td><td class="num">4,449</td><td>Combinatorial &mdash; every flag, long + short, value validation, mutual exclusion</td></tr>
+          <tr><td>Stack permutations</td><td>src/model/apply_permutation_tests.rs</td><td class="num">162</td><td>Move/swap/sort/reverse correctness across every starting permutation</td></tr>
+          <tr><td>State invariants</td><td>src/model/state/tests.rs</td><td class="num">181</td><td>Serialization round-trips, name uniqueness, malformed-record recovery</td></tr>
+          <tr><td>Integration</td><td>tests/integration.rs</td><td class="num">530</td><td>End-to-end &mdash; spawn binary, pipe stdin, assert stdout/stderr/exit/files</td></tr>
+          <tr><td>Doc + macro-expanded</td><td>(implicit)</td><td class="num">256</td><td>Inline doctests + macro-generated tests not visible to raw grep</td></tr>
+          <tr class="total-row"><td>TOTAL</td><td>cargo test</td><td class="num">5,578</td><td>Wall-clock: ~3.4s (lib 0.35s + integration 3.01s); CI gate on every push to main</td></tr>
+        </tbody>
+      </table>
+
+      <hr class="section-rule">
+
+      <!-- ═══════════════════════════════════════ -->
+      <!-- SECTION 7: SHIP SURFACE                -->
+      <!-- ═══════════════════════════════════════ -->
+      <h2 class="tutorial-title"><span class="step-hash">#</span>SHIP SURFACE</h2>
+      <p class="tutorial-subtitle">What you get when you <code>cargo install temprs</code> or unpack a release artifact.</p>
+
+      <div class="mapping-grid">
+        <div class="mapping-card"><h4>Binaries</h4><p><code>tp</code> &mdash; short form. <code>temprs</code> &mdash; long form. Identical builds from one Cargo target; LTO + <code>panic=abort</code> + <code>strip=true</code> + <code>codegen-units=1</code> for release.</p></div>
+        <div class="mapping-card"><h4>zsh completion</h4><p><code>completions/_temprs</code> &mdash; dynamic resolution of stack indices, filenames, and <code>@name</code> tags. Tab-completion sees the live stack, not a static word list.</p></div>
+        <div class="mapping-card"><h4>man page</h4><p><code>man/temprs.1</code> &mdash; 320-line groff manual; install to <code>$MANPATH/man1/</code> for <code>man tp</code>.</p></div>
+        <div class="mapping-card"><h4>Library crate</h4><p><code>temprs</code> is also published as a library (<code>src/lib.rs</code>) &mdash; downstream crates can <code>use temprs::*</code> for state, dispatch, and stack ops without forking the binary.</p></div>
+        <div class="mapping-card"><h4>CI workflow</h4><p><code>.github/workflows/ci.yml</code> runs check + test + fmt + clippy + doc + release build on every push to <code>main</code> and every pull request. Runnable manually via workflow dispatch.</p></div>
+        <div class="mapping-card"><h4>Benchmarks</h4><p><code>benches/benchmarks.rs</code> &mdash; criterion harness over stack ops and master-record round-trips; run with <code>cargo bench</code>.</p></div>
+      </div>
+
+      <hr class="section-rule">
+
+      <!-- ═══════════════════════════════════════ -->
+      <!-- SECTION 8: VERSION HISTORY             -->
+      <!-- ═══════════════════════════════════════ -->
+      <h2 class="tutorial-title"><span class="step-hash">v</span>VERSION HISTORY</h2>
+      <p class="tutorial-subtitle">Current crate: <code>temprs 2.9.4</code>. 235 commits on <code>main</code>. Last five commits:</p>
+
+      <table class="file-table">
+        <thead><tr><th>Hash</th><th>Subject</th></tr></thead>
+        <tbody>
+          <tr><td>12599a23bf</td><td>man page</td></tr>
+          <tr><td>b8984aa942</td><td>fix(ci): use <code>std::hint::black_box</code> in criterion benches</td></tr>
+          <tr><td>c0cfd0f625</td><td>update deps</td></tr>
+          <tr><td>35341cae64</td><td>chore: release temprs v2.9.4</td></tr>
+          <tr><td>73e6b8fea3</td><td>fix(replace): count pattern matches, not replacement substrings in output</td></tr>
+        </tbody>
+      </table>
+
+      <p style="font-size:11px;color:var(--text-muted);margin-top:0.7rem;">Full history: <a href="https://github.com/MenkeTechnologies/temprs/commits/main" target="_blank" rel="noopener noreferrer">github.com/MenkeTechnologies/temprs/commits/main</a></p>
+
+      <hr class="section-rule">
+
+      <p style="text-align:center;font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;margin:2rem 0 0;">
+        &gt;&gt;&gt; JACK IN. PUSH YOUR DATA. OWN YOUR TEMP FILES. &lt;&lt;&lt;
+      </p>
+
+    </main>
+  </div>
+  <script src="hud-theme.js" defer></script>
+</body>
+</html>
