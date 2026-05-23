@@ -1,0 +1,653 @@
+.\" temprsall(1) — comprehensive all-in-one man page for temprs
+.\" Modeled after zshall(1): every man page in one document.
+.\" Render with:  man -l man/man1/temprsall.1
+.\" Install:      cp man/man1/temprsall.1 /usr/local/share/man/man1/
+.TH TEMPRSALL 1 "May 2026" "temprs 2.9.4" "User Commands"
+.SH NAME
+temprsall \- the temprs comprehensive reference (stack semantics,
+indexing, every option, name tags, data integrity, examples)
+.SH OVERVIEW
+This is the all-in-one
+.B temprs
+manual, modeled on
+.BR zshall (1).
+It concatenates the major sections of the temprs reference into a
+single page so you can grep with `/`:
+.RS 2
+.PP
+.B 1.  INVOCATION
+.RB "\(em " "binaries (temprs, tp), default behavior, stdin priority"
+.br
+.B 2.  STACK MODEL
+.RB "\(em " "ordering, top/bottom, push/pop/shift/unshift"
+.br
+.B 3.  INDEXING
+.RB "\(em " "positive, negative, name tags, invalid index 0"
+.br
+.B 4.  DATA I/O OPTIONS
+.RB "\(em " "every -i/-o/-a/-r/-p/-u/-s/-A/-e flag"
+.br
+.B 5.  STACK INSPECTION
+.RB "\(em " "-d/-m/-l/-n/-L/-N/-k/-I/--path/--size/--wc/--head/--tail"
+.br
+.B 6.  SEARCH & CONTENT
+.RB "\(em " "-g grep, -C cat, -D diff, --replace"
+.br
+.B 7.  REORDERING & LIFECYCLE
+.RB "\(em " "-M mv, -S swap, -x dup, --rev, --sort, -c clear, --expire"
+.br
+.B 8.  TAGGING
+.RB "\(em " "-w name, -R rename"
+.br
+.B 9.  DATA INTEGRITY
+.RB "\(em " "null-byte master record, atomic writes, flock(2), auto-recovery"
+.br
+.B 10. ENVIRONMENT
+.br
+.B 11. FILES
+.br
+.B 12. EXIT STATUS
+.br
+.B 13. EXAMPLES
+.RB "\(em " "one-liners, pipelines, name-tag patterns, sort+expire"
+.RE
+.PP
+For a shorter quick-reference page see
+.BR temprs (1).
+.SH NAME
+temprs, tp \- temporary file stack manager with atomic flock-protected
+master record
+.SH SYNOPSIS
+.B temprs
+.RI [ OPTIONS ]
+.RI [ argfile ]
+.br
+.B tp
+.RI [ OPTIONS ]
+.RI [ argfile ]
+.PP
+.B tp
+is a shorter alias binary installed alongside
+.BR temprs
+\(em same binary, same options.
+.SH DESCRIPTION
+.B temprs
+maintains a
+.B stack
+of tempfiles under
+.IR $TEMPRS_DIR
+(default
+.IR $TMPDIR/temprs ).
+New tempfiles are pushed onto the top of the stack; existing tempfiles
+can be read, edited, tagged, reordered, searched, diffed, or removed by
+positional index or by name tag.
+.PP
+With no options, input is read from standard input (if present) or from
+the positional
+.I argfile
+and written to a new tempfile on top of the stack.
+.PP
+.B Master record:
+the stack ordering, name tags, and per-entry metadata live in a single
+.B null-byte-delimited
+master file
+.RB ( "\\0"
+field separator,
+.B "\\0\\0"
+record separator), atomically written and protected by an exclusive
+.BR flock (2)
+lock.  Filenames may contain newlines, tabs, spaces, and any other
+special characters without ambiguity.
+.SH "1.  INVOCATION"
+The default invocation
+.RB ( "tp" )
+reads stdin (or
+.IR argfile )
+and pushes a new tempfile onto the top of the stack.  Stdin takes
+priority over
+.I argfile
+when both are present.
+.PP
+Every other behavior is gated by an explicit option:
+.B \-p
+pops,
+.B \-o INDEX
+outputs,
+.B \-e INDEX
+edits,
+.B \-l
+lists, etc.
+.PP
+Both binaries
+.RB ( "temprs"
+and
+.BR "tp" )
+are installed and equivalent.  Use
+.B tp
+for muscle memory; use
+.B temprs
+in scripts that need the long name visible.
+.SH "2.  STACK MODEL"
+.PP
+.RS 2
+.nf
+ ┌─────────────────────────────────────┐
+ │  INDEX N   ░░  TOP OF STACK (newest)│
+ │  INDEX N-1 ░░  ...                  │
+ │  INDEX 2   ░░  ...                  │
+ │  INDEX 1   ░░  BOTTOM OF STACK      │
+ └─────────────────────────────────────┘
+.fi
+.RE
+.PP
+.B Operations:
+.PP
+.TS
+tab(|);
+l l.
+.B Operation|.B Flag
+push (top)|default (stdin / argfile)
+pop (top)|\-p / \-\-pop
+shift (bottom)|\-s / \-\-shift
+unshift (bottom)|\-u / \-\-unshift
+peek (output by index)|\-o INDEX
+insert at INDEX|\-a INDEX
+remove at INDEX|\-r INDEX
+duplicate at INDEX|\-x INDEX
+.TE
+.SH "3.  INDEXING"
+Tempfiles are numbered in ascending order; the
+.B highest index is the top of the stack.
+.PP
+.TS
+tab(|);
+l l.
+.B Range|.B Meaning
+\fB1\fR .. \fIstack_size\fR|positive index, bottom to top
+\fB\-stack_size\fR .. \fB\-1\fR|negative index, top to bottom (-1 = top)
+\fB0\fR|always invalid
+.TE
+.PP
+Where an option accepts an
+.IR INDEX ,
+a previously assigned
+.B name tag
+(see
+.BR \-w )
+may be used in its place.  Names take precedence over numeric indices
+when the string is non-numeric.
+.PP
+.B Examples:
+.PP
+.RS
+.nf
+tp \-o 1            # bottom of stack
+tp \-o \-1           # top of stack
+tp \-o config       # named tag "config"
+tp \-w build && cargo build > $(tp \-\-path build)
+.fi
+.RE
+.SH "4.  DATA I/O OPTIONS"
+.TP
+.BR \-i ", " \-\-input " " \fIINDEX\fR
+Write standard input into the tempfile at
+.IR INDEX ,
+overwriting its contents.
+.TP
+.BR \-o ", " \-\-output " " \fIINDEX\fR
+Read the tempfile at
+.I INDEX
+to standard output.
+.TP
+.BR \-a ", " \-\-add " " \fIINDEX\fR
+Insert a new tempfile at
+.IR INDEX ,
+shifting existing entries upward.
+.TP
+.BR \-r ", " \-\-remove " " \fIINDEX\fR
+Remove the tempfile at
+.IR INDEX .
+The file on disk is deleted; remaining indices are renumbered.
+.TP
+.BR \-p ", " \-\-pop
+Pop the tempfile from the top of the stack and emit its contents on
+stdout.  The file is removed from disk after the read completes.
+.TP
+.BR \-u ", " \-\-unshift
+Push a new tempfile onto the
+.B bottom
+of the stack from standard input.  No output is produced.
+.TP
+.BR \-s ", " \-\-shift
+Shift the tempfile from the
+.B bottom
+of the stack and emit its contents.  The file is removed from disk
+after the read completes.
+.TP
+.BR \-A ", " \-\-append " " \fIINDEX\fR
+Append standard input to the tempfile at
+.IR INDEX
+(does not overwrite).
+.TP
+.BR \-e ", " \-\-edit " " \fIINDEX\fR
+Open the tempfile at
+.I INDEX
+in
+.BR $EDITOR .
+Falls back to
+.BR vi (1)
+if
+.B $EDITOR
+is unset.
+.SH "5.  STACK INSPECTION"
+.TP
+.BR \-d ", " \-\-dir
+Print the temprs working directory path.
+.TP
+.BR \-m ", " \-\-master
+Print the master record file path.
+.TP
+.BR \-l ", " \-\-list\-files
+List all tempfile paths on the stack, one per line.
+.TP
+.BR \-n ", " \-\-list\-files\-numbered
+List all tempfile paths, prefixed by index.
+.TP
+.BR \-L ", " \-\-list\-contents
+Concatenate every tempfile's contents to stdout, with separators.
+.TP
+.BR \-N ", " \-\-list\-contents\-numbered
+Same as
+.B \-L
+but with index headers between entries.
+.TP
+.BR \-k ", " \-\-count
+Print the number of tempfiles on the stack.
+.TP
+.BR \-I ", " \-\-info " " \fIINDEX\fR
+Show metadata (path, size, mtime, name tag) for the tempfile at
+.IR INDEX .
+.TP
+.BR \-\-path " " \fIINDEX\fR
+Print the absolute filesystem path of the tempfile at
+.IR INDEX .
+Useful for shell substitution:
+.B "$(tp \-\-path build)"
+.TP
+.BR \-\-size " " \fIINDEX\fR
+Print the byte size of the tempfile at
+.IR INDEX .
+.TP
+.BR \-\-wc " " \fIINDEX\fR
+Print the line count of the tempfile at
+.IR INDEX .
+.TP
+.BR \-\-head " " \fIINDEX " " N\fR
+Show the first
+.I N
+lines of the tempfile at
+.IR INDEX .
+.TP
+.BR \-\-tail " " \fIINDEX " " N\fR
+Show the last
+.I N
+lines of the tempfile at
+.IR INDEX .
+.SH "6.  SEARCH & CONTENT"
+.TP
+.BR \-g ", " \-\-grep " " \fIPATTERN\fR
+Search every tempfile's contents for
+.IR PATTERN .
+Prints matching lines with index prefix and line number.
+.TP
+.BR \-C ", " \-\-cat " " \fIINDEX...\fR
+Concatenate the tempfiles at the given indices to standard output, in
+the order specified.
+.TP
+.BR \-D ", " \-\-diff " " \fIA " " B\fR
+Diff two tempfiles by index or name tag.  Uses the system
+.BR diff (1).
+.TP
+.BR \-\-replace " " \fIINDEX " " PATTERN " " REPLACEMENT\fR
+In-place find-and-replace inside the tempfile at
+.IR INDEX .
+.SH "7.  REORDERING & LIFECYCLE"
+.TP
+.BR \-M ", " \-\-mv " " \fIFROM " " TO\fR
+Move the tempfile at position
+.I FROM
+to position
+.IR TO .
+.TP
+.BR \-S ", " \-\-swap " " \fIA " " B\fR
+Swap two tempfiles by index or name.
+.TP
+.BR \-x ", " \-\-dup " " \fIINDEX\fR
+Duplicate the tempfile at
+.I INDEX
+onto the top of the stack.
+.TP
+.BR \-\-rev
+Reverse the entire stack order.
+.TP
+.BR \-\-sort " [" \fIKEY\fR "]"
+Sort the stack.  Valid
+.I KEY
+values:
+.B name ,
+.B size ,
+.BR mtime .
+Defaults to
+.B name
+when no key is given.
+.TP
+.BR \-c ", " \-\-clear
+Purge all tempfiles from the stack.  Files on disk are deleted; the
+master record is rewritten empty.
+.TP
+.BR \-\-expire " " \fIHOURS\fR
+Purge tempfiles older than
+.I HOURS
+hours (by mtime).
+.SH "8.  TAGGING"
+.TP
+.BR \-w ", " \-\-name " " \fINAME\fR
+Tag the new tempfile with
+.I NAME
+so it can be addressed by name anywhere an
+.I INDEX
+is accepted.
+.TP
+.BR \-R ", " \-\-rename " " \fIOLD " " NEW\fR
+Rename a tag from
+.I OLD
+to
+.IR NEW .
+.PP
+Name tags are persisted in the master record and survive across
+sessions until the tempfile is removed.
+.SH "9.  DATA INTEGRITY"
+The master record is hardened against corruption and concurrent
+access:
+.TP
+.B Null-byte delimited format
+.B "\\0"
+field separator,
+.B "\\0\\0"
+record separator.  Supports filenames with newlines, tabs, spaces, and
+any other special characters.
+.TP
+.B Atomic writes
+Data is written to a temp file and atomically
+.BR rename (2)d
+into place.  Crash during write leaves the old record intact.
+.TP
+.B Exclusive file locking
+A
+.BR flock (2)
+exclusive lock on
+.I $TEMPRS_DIR/temprs-stack.lock
+serializes concurrent writers from multiple shells / scripts.  Readers
+take a shared lock.
+.TP
+.B Auto-recovery
+Corrupt or empty records in the master file are silently skipped and
+cleaned up on the next write.  No manual recovery step required.
+.SH "10. ENVIRONMENT"
+.TP
+.B TEMPRS_DIR
+Override the directory used for tempfiles and the master record.
+Defaults to
+.IR $TMPDIR/temprs .
+.TP
+.B TMPDIR
+Falls through to
+.B TEMPRS_DIR
+default base (defaults to
+.IR /tmp
+when unset).
+.TP
+.B EDITOR
+Editor used by
+.BR \-\-edit .
+Defaults to
+.BR vi (1).
+.SH "11. FILES"
+.TP
+.I $TEMPRS_DIR/temprs-stack
+Master record file.  Null-byte delimited, atomically written, protected
+by
+.IR temprs-stack.lock .
+.TP
+.I $TEMPRS_DIR/temprs-stack.lock
+Exclusive
+.BR flock (2)
+lock file for the master record.
+.TP
+.I $TEMPRS_DIR/temp-*
+Individual tempfiles created by
+.BR temprs .
+.TP
+.I /usr/local/share/man/man1/temprs.1
+Short reference man page.
+.TP
+.I /usr/local/share/man/man1/temprsall.1
+This man page.
+.SH "12. EXIT STATUS"
+.TP
+.B 0
+Success.
+.TP
+.B "non-zero"
+Error: invalid index, missing tempfile, I/O failure, master record
+lock failure, etc.
+.SH "13. EXAMPLES"
+.PP
+Push command output onto the stack:
+.RS
+.nf
+ls \-la | tp
+.fi
+.RE
+.PP
+Push from a file:
+.RS
+.nf
+tp /etc/hosts
+.fi
+.RE
+.PP
+Tag a tempfile and recall it by name:
+.RS
+.nf
+echo hello | tp \-w greeting
+tp \-o greeting
+.fi
+.RE
+.PP
+Use a tagged tempfile path in another command:
+.RS
+.nf
+cargo build > $(tp \-\-path build) 2>&1
+.fi
+.RE
+.PP
+Pop the top tempfile:
+.RS
+.nf
+tp \-p
+.fi
+.RE
+.PP
+Shift the bottom tempfile:
+.RS
+.nf
+tp \-s
+.fi
+.RE
+.PP
+Read the top tempfile without consuming it:
+.RS
+.nf
+tp \-o \-1
+.fi
+.RE
+.PP
+List the stack with indices:
+.RS
+.nf
+tp \-n
+.fi
+.RE
+.PP
+Count entries:
+.RS
+.nf
+tp \-k
+.fi
+.RE
+.PP
+Edit a named tempfile in $EDITOR:
+.RS
+.nf
+tp \-e config
+.fi
+.RE
+.PP
+Append to a tagged tempfile:
+.RS
+.nf
+date | tp \-A log
+.fi
+.RE
+.PP
+Insert before the top entry:
+.RS
+.nf
+echo important | tp \-a \-1
+.fi
+.RE
+.PP
+Grep across all stack entries:
+.RS
+.nf
+tp \-g 'TODO'
+.fi
+.RE
+.PP
+Concatenate selected entries:
+.RS
+.nf
+tp \-C 1 3 5 > merged.txt
+.fi
+.RE
+.PP
+Diff two tagged tempfiles:
+.RS
+.nf
+tp \-D alpha beta
+.fi
+.RE
+.PP
+Find-and-replace inside a tempfile:
+.RS
+.nf
+tp \-\-replace config 'localhost' '127.0.0.1'
+.fi
+.RE
+.PP
+Move the bottom entry to the top:
+.RS
+.nf
+tp \-M 1 \-1
+.fi
+.RE
+.PP
+Swap two entries:
+.RS
+.nf
+tp \-S 2 5
+.fi
+.RE
+.PP
+Duplicate an entry onto the top:
+.RS
+.nf
+tp \-x important
+.fi
+.RE
+.PP
+Sort the stack by modification time:
+.RS
+.nf
+tp \-\-sort mtime
+.fi
+.RE
+.PP
+Reverse the stack:
+.RS
+.nf
+tp \-\-rev
+.fi
+.RE
+.PP
+Expire tempfiles older than 24 hours:
+.RS
+.nf
+tp \-\-expire 24
+.fi
+.RE
+.PP
+Clear everything:
+.RS
+.nf
+tp \-c
+.fi
+.RE
+.PP
+Rename a tag:
+.RS
+.nf
+tp \-R old_name new_name
+.fi
+.RE
+.PP
+Show first 10 lines of the top entry:
+.RS
+.nf
+tp \-\-head \-1 10
+.fi
+.RE
+.PP
+Show last 5 lines of a tagged entry:
+.RS
+.nf
+tp \-\-tail config 5
+.fi
+.RE
+.PP
+Quiet push (no stdout):
+.RS
+.nf
+ls | tp \-q
+.fi
+.RE
+.SH AUTHOR
+.B Jacob Menke
+.RI < linux.dev25@gmail.com >
+and contributors.
+.SH REPORTING BUGS
+Report bugs at
+.UR https://github.com/MenkeTechnologies/temprs/issues
+.UE .
+.SH COPYRIGHT
+Copyright \(co Jacob Menke.  Released under the MIT license.
+.SH SEE ALSO
+.BR temprs (1),
+.BR mktemp (1),
+.BR flock (2),
+.BR rename (2),
+.BR vi (1),
+.BR strykeall (1),
+.BR lsofrsall (1),
+.BR zshrsall (1)

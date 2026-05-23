@@ -18,7 +18,7 @@
 
 > *"The stack is vast and infinite."*
 
-`temprs` (binary: `tp`) is a temporary file stack manager in Rust. Stack-based `push`/`pop`/`shift`/`unshift`, dual indexing by position or `@name`, `head`/`tail`/`wc`/`size`, find-and-replace, `grep`, `diff`, `concat`, and an atomic `flock`-protected master record. Two binaries (`tp` + `temprs`), zsh completions, man page.
+`temprs` (binary: `tp`) is a temporary file stack manager in Rust. Stack-based `push`/`pop`/`shift`/`unshift`, dual indexing by position or `@name`, `head`/`tail`/`wc`/`size`, find-and-replace, `grep`, `diff`, `concat`, and an atomic `flock`-protected master record. Two binaries (`tp` + `temprs`), zsh completions, short + full man pages (`man temprs`, `man temprsall`).
 
  ┌──────────────────────────────────────────────────────────────┐
  │ STATUS: ONLINE &nbsp;&nbsp; THREAT LEVEL: NEON &nbsp;&nbsp; SIGNAL: ████████░░ │
