@@ -11,15 +11,34 @@
 [![Crates.io](https://img.shields.io/crates/v/temprs.svg)](https://crates.io/crates/temprs)
 [![Downloads](https://img.shields.io/crates/d/temprs.svg)](https://crates.io/crates/temprs)
 [![Docs.rs](https://docs.rs/temprs/badge.svg)](https://docs.rs/temprs)
+ [![Docs](https://img.shields.io/badge/docs-online-blue.svg)](https://menketechnologies.github.io/temprs/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ### `[TEMPORARY FILE STACK MANAGER // FULL SPECTRUM DATA CONTROL]`
+
+> *"The stack is vast and infinite."*
+
+`temprs` (binary: `tp`) is a temporary file stack manager in Rust. Stack-based `push`/`pop`/`shift`/`unshift`, dual indexing by position or `@name`, `head`/`tail`/`wc`/`size`, find-and-replace, `grep`, `diff`, `concat`, and an atomic `flock`-protected master record. Two binaries (`tp` + `temprs`), zsh completions, man page.
 
  ┌──────────────────────────────────────────────────────────────┐
  │ STATUS: ONLINE &nbsp;&nbsp; THREAT LEVEL: NEON &nbsp;&nbsp; SIGNAL: ████████░░ │
  └──────────────────────────────────────────────────────────────┘
 
-> *"The stack is vast and infinite."*
+### [`Read the Docs`](https://menketechnologies.github.io/temprs/) &middot; [`Engineering Report`](https://menketechnologies.github.io/temprs/report.html) · [`strykelang`](https://github.com/MenkeTechnologies/strykelang) · [`zshrs`](https://github.com/MenkeTechnologies/zshrs)
+
+---
+
+## Table of Contents
+
+- [\[0x00\] Screenshots](#0x00-screenshots)
+- [\[0x01\] System Requirements](#0x01-system-requirements)
+- [\[0x02\] Installation](#0x02-installation)
+- [\[0x03\] Usage](#0x03-usage)
+- [\[0x04\] Environment](#0x04-environment)
+- [\[0x05\] Data Integrity](#0x05-data-integrity)
+- [\[0x06\] Stack Architecture](#0x06-stack-architecture)
+- [\[0x07\] Development & CI](#0x07-development--ci)
+- [\[0xFF\] License](#0xff-license)
 
 ---
 
