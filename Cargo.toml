@@ -1,6 +1,6 @@
 [package]
 name = "temprs"
-version = "2.9.6"
+version = "2.9.7"
 authors = ["Jacob Menke <linux.dev25@gmail.com>"]
 edition = "2024"
 description = "A temporary file manager with stack mechanism"
