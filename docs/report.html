@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark light">
-  <meta name="description" content="temprs — Engineering report. Stack-based temporary file manager in Rust: 4,487 production Rust lines + 56,277 test Rust lines, 5,578 tests (5,048 unit + 530 integration), v2.9.4, 235 commits, 5 direct deps, two binaries (tp + temprs), zsh completion + man page.">
+  <meta name="description" content="temprs — Engineering report. Stack-based temporary file manager in Rust: 4,860 production Rust lines + 55,904 test Rust lines, 5,578 tests (5,048 unit + 530 integration), v2.9.8, 244 commits, 5 direct deps, two binaries (tp + temprs), zsh completion + man page.">
   <title>temprs &mdash; Engineering Report</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -75,7 +75,7 @@
             <a href="https://crates.io/crates/temprs" target="_blank" rel="noopener noreferrer">crates.io</a>
           </nav>
           <p style="margin:0.35rem 0 0;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);letter-spacing:0.03em;opacity:0.75;">
-            Stack-based temporary file manager in Rust &middot; v2.9.4 &middot; clap CLI &middot; <code>fs2</code> flock-protected master record &middot; null-byte delimited storage &middot; atomic renames
+            Stack-based temporary file manager in Rust &middot; v2.9.8 &middot; clap CLI &middot; <code>fs2</code> flock-protected master record &middot; null-byte delimited storage &middot; atomic renames
           </p>
         </div>
         <div class="tutorial-toolbar">
@@ -92,24 +92,24 @@
       <!-- SECTION 1: EXECUTIVE SUMMARY           -->
       <!-- ═══════════════════════════════════════ -->
       <h2 class="tutorial-title"><span class="step-hash">&gt;_</span>EXECUTIVE SUMMARY</h2>
-      <p class="tutorial-subtitle">temprs is a single-binary stack-based temporary file manager written in Rust. The CLI is built on <code>clap</code>; persistence runs through a null-byte delimited master record with atomic renames and <code>flock</code>-protected exclusive access. Every operation that takes an <code>INDEX</code> also accepts a tag name (<code>@name</code>) &mdash; resolution falls through numeric parse to tag lookup. Two binaries (<code>tp</code> and <code>temprs</code>) ship from one Cargo target. <strong>4,487 production Rust lines + 56,277 test Rust lines + 5,578 tests (5,048 unit + 530 integration)</strong> back the surface: stack mutation (push, pop, shift, unshift, insert, remove, move, swap, duplicate, reverse, sort), inspection (head, tail, wc, size, path, info), transformation (find-and-replace, grep, concat, diff), and editor handoff. CI runs <code>check + test + fmt + clippy + doc + release build</code> on every push.</p>
+      <p class="tutorial-subtitle">temprs is a single-binary stack-based temporary file manager written in Rust. The CLI is built on <code>clap</code>; persistence runs through a null-byte delimited master record with atomic renames and <code>flock</code>-protected exclusive access. Every operation that takes an <code>INDEX</code> also accepts a tag name (<code>@name</code>) &mdash; resolution falls through numeric parse to tag lookup. Two binaries (<code>tp</code> and <code>temprs</code>) ship from one Cargo target. <strong>4,860 production Rust lines + 55,904 test Rust lines + 5,578 tests (5,048 unit + 530 integration)</strong> back the surface: stack mutation (push, pop, shift, unshift, insert, remove, move, swap, duplicate, reverse, sort), inspection (head, tail, wc, size, path, info), transformation (find-and-replace, grep, concat, diff), and editor handoff. CI runs <code>check + test + fmt + clippy + doc + release build</code> on every push.</p>
 
       <div class="stat-grid">
-        <div class="stat-card"><div class="stat-val">4,487</div><div class="stat-label">Production Rust Lines</div></div>
-        <div class="stat-card"><div class="stat-val">56,277</div><div class="stat-label">Test Rust Lines</div></div>
+        <div class="stat-card"><div class="stat-val">4,860</div><div class="stat-label">Production Rust Lines</div></div>
+        <div class="stat-card"><div class="stat-val">55,904</div><div class="stat-label">Test Rust Lines</div></div>
         <div class="stat-card"><div class="stat-val accent">5,578</div><div class="stat-label">Tests (Verified Passing)</div></div>
-        <div class="stat-card"><div class="stat-val green">2.9.4</div><div class="stat-label">Crates.io Version</div></div>
+        <div class="stat-card"><div class="stat-val green">2.9.8</div><div class="stat-label">Crates.io Version</div></div>
         <div class="stat-card"><div class="stat-val">2</div><div class="stat-label">Binaries (<code>tp</code>+<code>temprs</code>)</div></div>
         <div class="stat-card"><div class="stat-val">5</div><div class="stat-label">Direct Dependencies</div></div>
         <div class="stat-card"><div class="stat-val">95</div><div class="stat-label">Transitive Crates</div></div>
-        <div class="stat-card"><div class="stat-val">235</div><div class="stat-label">Git Commits</div></div>
+        <div class="stat-card"><div class="stat-val">244</div><div class="stat-label">Git Commits</div></div>
       </div>
 
       <div style="margin:1.2rem 0;">
-        <p style="font-size:11px;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:4px;font-family:'Orbitron',sans-serif;font-weight:700;">Source distribution &mdash; 60,764 Rust lines total</p>
+        <p style="font-size:11px;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:4px;font-family:'Orbitron',sans-serif;font-weight:700;">Source distribution &mdash; 60,908 Rust lines total</p>
         <div class="bar-wrap" style="height:26px;">
-          <div class="bar-fill cyan" style="width:7.4%;"></div>
-          <span class="bar-pct" style="font-size:12px;">4,487 production / 56,277 test &middot; 92.6% test code</span>
+          <div class="bar-fill cyan" style="width:8.0%;"></div>
+          <span class="bar-pct" style="font-size:12px;">4,860 production / 55,904 test &middot; 91.8% test code</span>
         </div>
         <p style="font-size:10px;color:var(--text-muted);margin-top:4px;">Production source: <code>src/lib.rs</code>, <code>src/main.rs</code>, <code>src/util/{consts,utils,mod}.rs</code>, <code>src/model/{mod,app,state/mod}.rs</code>, and the CLI definition in <code>src/model/opts.rs</code> (lines 1&ndash;258). Test source: <code>tests/integration.rs</code> + inline test modules in <code>src/model/opts.rs</code>, <code>src/model/apply_permutation_tests.rs</code>, <code>src/model/state/tests.rs</code>.</p>
       </div>
@@ -258,16 +258,16 @@
       <!-- SECTION 8: VERSION HISTORY             -->
       <!-- ═══════════════════════════════════════ -->
       <h2 class="tutorial-title"><span class="step-hash">v</span>VERSION HISTORY</h2>
-      <p class="tutorial-subtitle">Current crate: <code>temprs 2.9.4</code>. 235 commits on <code>main</code>. Last five commits:</p>
+      <p class="tutorial-subtitle">Current crate: <code>temprs 2.9.8</code>. 244 commits on <code>main</code>. Last five commits:</p>
 
       <table class="file-table">
         <thead><tr><th>Hash</th><th>Subject</th></tr></thead>
         <tbody>
-          <tr><td>12599a23bf</td><td>man page</td></tr>
-          <tr><td>b8984aa942</td><td>fix(ci): use <code>std::hint::black_box</code> in criterion benches</td></tr>
-          <tr><td>c0cfd0f625</td><td>update deps</td></tr>
-          <tr><td>35341cae64</td><td>chore: release temprs v2.9.4</td></tr>
-          <tr><td>73e6b8fea3</td><td>fix(replace): count pattern matches, not replacement substrings in output</td></tr>
+          <tr><td>02b00cd00b</td><td>docs: refresh stale counts in docs/index.html</td></tr>
+          <tr><td>05c51996a8</td><td>ci(release): include version in tarball name (matches other 6 repos)</td></tr>
+          <tr><td>6232093c41</td><td>ci(release): fix homebrew needs: 'publish' -> 'release' (job name mismatch)</td></tr>
+          <tr><td>d7c2b0ef9a</td><td>bump v2.9.6 (wire homebrew tap auto-update on release)</td></tr>
+          <tr><td>1f9c13622c</td><td>ci(homebrew): auto-update homebrew-menketech tap on release</td></tr>
         </tbody>
       </table>
 
