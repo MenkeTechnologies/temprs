@@ -102,7 +102,7 @@ jobs:
           targets: ${{ matrix.target }}
       - uses: Swatinem/rust-cache@v2
       - run: cargo build --release --locked --target ${{ matrix.target }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: temprs-${{ matrix.target }}
           path: |

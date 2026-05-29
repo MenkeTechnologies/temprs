@@ -34,7 +34,7 @@ jobs:
         run: |
           cd target/${{ matrix.target }}/release
           tar czf ../../../temprs-${{ github.ref_name }}-${{ matrix.target }}.tar.gz temprs tp
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: temprs-${{ matrix.target }}
           path: temprs-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
