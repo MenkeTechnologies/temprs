@@ -29,6 +29,7 @@ fn is_tty() -> bool {
     })
 }
 
+/// `cyber_hr` — see implementation for the contract.
 pub fn cyber_hr() {
     if is_tty() {
         println!("\x1b[36m ░▒▓{}▓▒░\x1b[0m", "█".repeat(50));
@@ -37,6 +38,7 @@ pub fn cyber_hr() {
     }
 }
 
+/// `cyber_path` — see implementation for the contract.
 pub fn cyber_path(path: &Path) {
     let p = util_path_to_string(path);
     if is_tty() {
@@ -46,10 +48,12 @@ pub fn cyber_path(path: &Path) {
     }
 }
 
+/// `cyber_idx_path` — see implementation for the contract.
 pub fn cyber_idx_path(i: usize, path: &Path) {
     cyber_idx_path_named(i, path, &None);
 }
 
+/// `cyber_idx_path_named` — see implementation for the contract.
 pub fn cyber_idx_path_named(i: usize, path: &Path, name: &Option<String>) {
     let p = util_path_to_string(path);
     let tag = match name {
@@ -70,6 +74,7 @@ pub fn cyber_idx_path_named(i: usize, path: &Path, name: &Option<String>) {
     }
 }
 
+/// `cyber_content` — see implementation for the contract.
 pub fn cyber_content(text: &str) {
     if is_tty() {
         println!("\x1b[32m{}\x1b[0m", text.trim_end());
@@ -78,10 +83,12 @@ pub fn cyber_content(text: &str) {
     }
 }
 
+/// `cyber_idx_content` — see implementation for the contract.
 pub fn cyber_idx_content(i: usize, path: &Path, text: &str) {
     cyber_idx_content_named(i, path, text, &None);
 }
 
+/// `cyber_idx_content_named` — see implementation for the contract.
 pub fn cyber_idx_content_named(i: usize, path: &Path, text: &str, name: &Option<String>) {
     let p = util_path_to_string(path);
     let tag = match name {
@@ -104,6 +111,7 @@ pub fn cyber_idx_content_named(i: usize, path: &Path, text: &str, name: &Option<
     }
 }
 
+/// `cyber_print_content` — see implementation for the contract.
 pub fn cyber_print_content(text: &str) {
     if is_tty() {
         println!("\x1b[36m ┌──────────────────────────────────────────────────────┐\x1b[0m");
@@ -116,6 +124,7 @@ pub fn cyber_print_content(text: &str) {
     }
 }
 
+/// `cyber_single_path` — see implementation for the contract.
 pub fn cyber_single_path(path: &Path) {
     let p = util_path_to_string(path);
     if is_tty() {
@@ -125,11 +134,13 @@ pub fn cyber_single_path(path: &Path) {
     }
 }
 
+/// `util_file_to_paths` — see implementation for the contract.
 pub fn util_file_to_paths(path: &Path) -> Vec<PathBuf> {
     let (paths, _names) = util_file_to_paths_and_names(path);
     paths
 }
 
+/// `util_file_to_paths_and_names` — see implementation for the contract.
 pub fn util_file_to_paths_and_names(path: &Path) -> (Vec<PathBuf>, Vec<Option<String>>) {
     let data = match read_to_string(path) {
         Ok(s) => s,
@@ -169,11 +180,13 @@ pub fn util_file_to_paths_and_names(path: &Path) -> (Vec<PathBuf>, Vec<Option<St
     (paths, names)
 }
 
+/// `util_paths_to_file` — see implementation for the contract.
 pub fn util_paths_to_file(paths: &[PathBuf], out: &Path) {
     let names: Vec<Option<String>> = vec![None; paths.len()];
     util_paths_and_names_to_file(paths, &names, out);
 }
 
+/// `util_paths_and_names_to_file` — see implementation for the contract.
 pub fn util_paths_and_names_to_file(paths: &[PathBuf], names: &[Option<String>], out: &Path) {
     let records: Vec<String> = paths
         .iter()
@@ -201,11 +214,13 @@ pub fn util_paths_and_names_to_file(paths: &[PathBuf], names: &[Option<String>],
     debug!("atomic write master record '{}'", util_path_to_string(out));
 }
 
+/// `util_terminate_error` — see implementation for the contract.
 pub fn util_terminate_error(msg: &str) {
     error!("{}", msg);
     exit(1)
 }
 
+/// `util_transform_idx` — see implementation for the contract.
 pub fn util_transform_idx(idx: i32, len: usize) -> usize {
     if idx < 0 {
         let bnd = idx + len as i32;
@@ -225,6 +240,7 @@ pub fn util_transform_idx(idx: i32, len: usize) -> usize {
     }
 }
 
+/// `util_lines_to_file` — see implementation for the contract.
 pub fn util_lines_to_file(out: &Path, lines: Vec<String>) {
     let mut buf: String = lines.join("\n");
     if !buf.is_empty() {
@@ -235,12 +251,14 @@ pub fn util_lines_to_file(out: &Path, lines: Vec<String>) {
 }
 
 #[cfg(test)]
+/// `util_file_to_lines` — see implementation for the contract.
 pub fn util_file_to_lines(path: &Path) -> Vec<String> {
     let file = File::open(path).expect(ERR_NO_FILE);
     let buf = BufReader::new(file);
     buf.lines().map(|l| l.expect(ERR_PARSE)).collect()
 }
 
+/// `util_remove_file` — see implementation for the contract.
 pub fn util_remove_file(f: &Path) {
     match remove_file(f) {
         Ok(_success) => {
@@ -250,6 +268,7 @@ pub fn util_remove_file(f: &Path) {
     }
 }
 
+/// `util_path_to_string` — see implementation for the contract.
 pub fn util_path_to_string(path: &Path) -> String {
     match path.as_os_str().to_str() {
         Some(s) => s.to_owned(),
@@ -260,6 +279,7 @@ pub fn util_path_to_string(path: &Path) -> String {
     }
 }
 
+/// `util_file_contents_to_string` — see implementation for the contract.
 pub fn util_file_contents_to_string(filename: &Path) -> String {
     match read_to_string(filename) {
         Ok(str) => str,
@@ -270,6 +290,7 @@ pub fn util_file_contents_to_string(filename: &Path) -> String {
     }
 }
 
+/// `util_append_file` — see implementation for the contract.
 pub fn util_append_file(path: &Path, buffer: &str) {
     match OpenOptions::new().create(true).append(true).open(path) {
         Ok(mut file) => {
@@ -281,10 +302,12 @@ pub fn util_append_file(path: &Path, buffer: &str) {
     }
 }
 
+/// `util_horiz_rule` — see implementation for the contract.
 pub fn util_horiz_rule() {
     println!("{}", HR_CHAR.repeat(80))
 }
 
+/// `util_overwrite_file` — see implementation for the contract.
 pub fn util_overwrite_file(path: &Path, buffer: &str) {
     match OpenOptions::new()
         .create(true)
@@ -301,6 +324,7 @@ pub fn util_overwrite_file(path: &Path, buffer: &str) {
     }
 }
 
+/// `util_time_ms` — see implementation for the contract.
 pub fn util_time_ms() -> String {
     match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
         Ok(d) => d.as_millis().to_string(),

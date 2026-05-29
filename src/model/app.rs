@@ -22,6 +22,7 @@ pub(crate) fn apply_permutation<T: Default>(vec: &mut Vec<T>, indices: &[usize])
     vec.extend(indices.iter().map(|&i| std::mem::take(&mut taken[i])));
 }
 
+/// `TempApp` — see fields for the structure layout.
 pub struct TempApp {
     state: TempState,
     _lock_file: File,
@@ -34,6 +35,7 @@ impl Default for TempApp {
 }
 
 impl TempApp {
+    /// `run` — see implementation for the contract.
     pub fn run(&mut self) {
         self.parse_opts();
         self.input();
@@ -48,6 +50,7 @@ impl TempApp {
         }
     }
 
+    /// `new` — see implementation for the contract.
     pub fn new() -> Self {
         if simple_logger::init_with_level(TEMP_LOG_LEVEL).is_err() {
             eprintln!("{}", ERR_LOGGER);
@@ -127,6 +130,7 @@ impl TempApp {
         }
     }
 
+    /// `state` — see implementation for the contract.
     pub fn state(&mut self) -> &mut TempState {
         &mut self.state
     }
@@ -1000,5 +1004,68 @@ impl TempApp {
             }
             None => util_terminate_error(ERR_INVALID_IDX),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::apply_permutation;
+
+    // `apply_permutation` is the only purely-functional helper in
+    // app.rs (everything else on `TempApp` is `self`-coupled IO that
+    // requires a lock-file + temp dir to construct). Pin its
+    // semantic here — it's used to re-order the tempfile stack
+    // after `--swap` and `--move` operations, and a wrong permutation
+    // would silently scramble user data.
+
+    #[test]
+    fn apply_permutation_identity_leaves_vec_unchanged() {
+        let mut v = vec![10, 20, 30];
+        apply_permutation(&mut v, &[0, 1, 2]);
+        assert_eq!(v, vec![10, 20, 30]);
+    }
+
+    #[test]
+    fn apply_permutation_reverse_reverses_vec() {
+        let mut v = vec!["a", "b", "c"]
+            .into_iter()
+            .map(String::from)
+            .collect::<Vec<_>>();
+        apply_permutation(&mut v, &[2, 1, 0]);
+        assert_eq!(v, vec!["c".to_string(), "b".into(), "a".into()]);
+    }
+
+    #[test]
+    fn apply_permutation_can_duplicate_elements() {
+        // Duplicate indices in the permutation lift the same element
+        // into multiple slots. The implementation uses `mem::take`
+        // so duplicated-index slots get `T::default()` after the
+        // first take. Pin that behaviour.
+        let mut v = vec![1_i32, 2, 3];
+        apply_permutation(&mut v, &[0, 0, 0]);
+        // Slot 0 holds the original 1; slots 1+2 hold T::default()=0.
+        assert_eq!(v, vec![1, 0, 0]);
+    }
+
+    #[test]
+    fn apply_permutation_subset_truncates_vec() {
+        // Permutation shorter than the input vec → result shrinks.
+        let mut v = vec![10, 20, 30, 40];
+        apply_permutation(&mut v, &[3, 1]);
+        assert_eq!(v, vec![40, 20]);
+    }
+
+    #[test]
+    fn apply_permutation_empty_indices_clears_vec() {
+        let mut v = vec![1, 2, 3];
+        apply_permutation(&mut v, &[]);
+        assert!(v.is_empty(), "empty permutation drains the vec");
+    }
+
+    #[test]
+    fn apply_permutation_swap_two_elements() {
+        let mut v = vec!['x', 'y', 'z'];
+        apply_permutation(&mut v, &[1, 0, 2]);
+        assert_eq!(v, vec!['y', 'x', 'z']);
     }
 }

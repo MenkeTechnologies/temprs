@@ -1,63 +1,122 @@
 use log::Level;
 
+/// `TEMP_LOG_LEVEL` — Level::Info
 pub const TEMP_LOG_LEVEL: Level = Level::Info;
+/// `TEMP_DIR` — "temprs"
 pub const TEMP_DIR: &str = "temprs";
+/// `MASTER_RECORD_FILENAME` — "temprs-stack"
 pub const MASTER_RECORD_FILENAME: &str = "temprs-stack";
+/// `TEMPFILE_PREFIX` — "tempfile"
 pub const TEMPFILE_PREFIX: &str = "tempfile";
+/// `ERR_NO_FILE` — "No such file"
 pub const ERR_NO_FILE: &str = "No such file";
+/// `ERR_PARSE` — "Could not parse line"
 pub const ERR_PARSE: &str = "Could not parse line";
+/// `ERR_INVALID_RM` — "Could not remove specified temporary file"
 pub const ERR_INVALID_RM: &str = "Could not remove specified temporary file";
+/// `ERR_INVALID_IDX` — "Invalid specified index"
 pub const ERR_INVALID_IDX: &str = "Invalid specified index";
+/// `ERR_INVALID_FILE` — "Invalid specified file argument"
 pub const ERR_INVALID_FILE: &str = "Invalid specified file argument";
+/// `ERR_LOGGER` — "Could not create logger"
 pub const ERR_LOGGER: &str = "Could not create logger";
+/// `ERR_FILE_READ` — "Could not read file"
 pub const ERR_FILE_READ: &str = "Could not read file";
+/// `ERR_CLOCK` — "Could not read clock"
 pub const ERR_CLOCK: &str = "Could not read clock";
+/// `NAME` — "temprs"
 pub const NAME: &str = "temprs";
+/// `HR_CHAR` — "-"
 pub const HR_CHAR: &str = "-";
+/// `DIRECTORY` — "directory"
 pub const DIRECTORY: &str = "directory";
+/// `INPUT` — "input"
 pub const INPUT: &str = "input";
+/// `OUTPUT` — "output"
 pub const OUTPUT: &str = "output";
+/// `ADD` — "add"
 pub const ADD: &str = "add";
+/// `REMOVE` — "remove"
 pub const REMOVE: &str = "remove";
+/// `POP` — "pop"
 pub const POP: &str = "pop";
+/// `UNSHIFT` — "unshift"
 pub const UNSHIFT: &str = "unshift";
+/// `ARGFILE` — "argfile"
 pub const ARGFILE: &str = "argfile";
+/// `MASTER` — "master"
 pub const MASTER: &str = "master";
+/// `VERBOSE` — "verbose"
 pub const VERBOSE: &str = "verbose";
+/// `LIST_FILES` — "list_files"
 pub const LIST_FILES: &str = "list_files";
+/// `LIST_FILES_NUMBERED` — "list_files_numbered"
 pub const LIST_FILES_NUMBERED: &str = "list_files_numbered";
+/// `LIST_CONTENTS` — "list_contents"
 pub const LIST_CONTENTS: &str = "list_contents";
+/// `LIST_CONTENTS_NUMBERED` — "list_contents_numbered"
 pub const LIST_CONTENTS_NUMBERED: &str = "list_contents_numbered";
+/// `CLEAR` — "clear"
 pub const CLEAR: &str = "clear";
+/// `SHIFT` — "shift"
 pub const SHIFT: &str = "shift";
+/// `SILENT` — "silent"
 pub const SILENT: &str = "silent";
+/// `EDIT` — "edit"
 pub const EDIT: &str = "edit";
+/// `TAG` — "name"
 pub const TAG: &str = "name";
+/// `RENAME` — "rename"
 pub const RENAME: &str = "rename";
+/// `INFO` — "info"
 pub const INFO: &str = "info";
+/// `GREP` — "grep"
 pub const GREP: &str = "grep";
+/// `CAT` — "cat"
 pub const CAT: &str = "cat";
+/// `COUNT` — "count"
 pub const COUNT: &str = "count";
+/// `DIFF` — "diff"
 pub const DIFF: &str = "diff";
+/// `MOVE` — "move"
 pub const MOVE: &str = "move";
+/// `DUP` — "dup"
 pub const DUP: &str = "dup";
+/// `SWAP` — "swap"
 pub const SWAP: &str = "swap";
+/// `APPEND` — "append"
 pub const APPEND: &str = "append";
+/// `REVERSE` — "reverse"
 pub const REVERSE: &str = "reverse";
+/// `EXPIRE` — "expire"
 pub const EXPIRE: &str = "expire";
+/// `HEAD` — "head"
 pub const HEAD: &str = "head";
+/// `TAIL` — "tail"
 pub const TAIL: &str = "tail";
+/// `WC` — "wc"
 pub const WC: &str = "wc";
+/// `SIZE` — "size"
 pub const SIZE: &str = "size";
+/// `SORT` — "sort"
 pub const SORT: &str = "sort";
+/// `REPLACE` — "replace"
 pub const REPLACE: &str = "replace";
+/// `PATH` — "path"
 pub const PATH: &str = "path";
+/// `ERR_INVALID_NAME` — "Invalid or duplicate name"
 pub const ERR_INVALID_NAME: &str = "Invalid or duplicate name";
+/// `ERR_NAME_NUL` — "Name must not contain null bytes"
 pub const ERR_NAME_NUL: &str = "Name must not contain null bytes";
+/// `MASTER_FIELD_DELIM` — '\0'
 pub const MASTER_FIELD_DELIM: char = '\0';
+/// `MASTER_RECORD_DELIM` — "\0\0"
 pub const MASTER_RECORD_DELIM: &str = "\0\0";
+/// `ERR_EDITOR` — "Could not open editor"
 pub const ERR_EDITOR: &str = "Could not open editor";
+/// `ERR_MASTER_WRITE` — "Could not write master record"
 pub const ERR_MASTER_WRITE: &str = "Could not write master record";
+/// `ERR_MASTER_LOCK` — "Could not acquire lock on master record"
 pub const ERR_MASTER_LOCK: &str = "Could not acquire lock on master record";
 
 #[cfg(test)]

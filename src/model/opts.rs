@@ -39,6 +39,7 @@ const AFTER: &str = concat!(
     "\x1b[36m ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░\x1b[0m"
 );
 
+/// `parse_opts` — see implementation for the contract.
 pub fn parse_opts() -> Command {
     Command::new(NAME)
         .version(env!("CARGO_PKG_VERSION"))

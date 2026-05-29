@@ -4,5 +4,7 @@
 //! `clap` / `apply_permutation` tests live) are documented in the repository README.
 //! Test totals are not documented here; run `cargo test --locked` and read each `test result:` line.
 
+/// `model` submodule — see file for contents.
 pub mod model;
+/// `util` submodule — see file for contents.
 pub mod util;
