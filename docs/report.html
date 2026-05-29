@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark light">
-  <meta name="description" content="temprs — Engineering report. Stack-based temporary file manager in Rust: 4,860 production Rust lines + 55,904 test Rust lines, 5,578 tests (5,048 unit + 530 integration), v2.9.9, 244 commits, 5 direct deps, two binaries (tp + temprs), zsh completion + man page.">
+  <meta name="description" content="temprs — Engineering report. Stack-based temporary file manager in Rust: 4,860 production Rust lines + 55,904 test Rust lines, 5,612 tests (5,048 unit + 530 integration), v2.9.9, 244 commits, 5 direct deps, two binaries (tp + temprs), zsh completion + man page.">
   <title>temprs &mdash; Engineering Report</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -92,12 +92,12 @@
       <!-- SECTION 1: EXECUTIVE SUMMARY           -->
       <!-- ═══════════════════════════════════════ -->
       <h2 class="tutorial-title"><span class="step-hash">&gt;_</span>EXECUTIVE SUMMARY</h2>
-      <p class="tutorial-subtitle">temprs is a single-binary stack-based temporary file manager written in Rust. The CLI is built on <code>clap</code>; persistence runs through a null-byte delimited master record with atomic renames and <code>flock</code>-protected exclusive access. Every operation that takes an <code>INDEX</code> also accepts a tag name (<code>@name</code>) &mdash; resolution falls through numeric parse to tag lookup. Two binaries (<code>tp</code> and <code>temprs</code>) ship from one Cargo target. <strong>4,860 production Rust lines + 55,904 test Rust lines + 5,578 tests (5,048 unit + 530 integration)</strong> back the surface: stack mutation (push, pop, shift, unshift, insert, remove, move, swap, duplicate, reverse, sort), inspection (head, tail, wc, size, path, info), transformation (find-and-replace, grep, concat, diff), and editor handoff. CI runs <code>check + test + fmt + clippy + doc + release build</code> on every push.</p>
+      <p class="tutorial-subtitle">temprs is a single-binary stack-based temporary file manager written in Rust. The CLI is built on <code>clap</code>; persistence runs through a null-byte delimited master record with atomic renames and <code>flock</code>-protected exclusive access. Every operation that takes an <code>INDEX</code> also accepts a tag name (<code>@name</code>) &mdash; resolution falls through numeric parse to tag lookup. Two binaries (<code>tp</code> and <code>temprs</code>) ship from one Cargo target. <strong>4,860 production Rust lines + 55,904 test Rust lines + 5,612 tests (5,048 unit + 530 integration)</strong> back the surface: stack mutation (push, pop, shift, unshift, insert, remove, move, swap, duplicate, reverse, sort), inspection (head, tail, wc, size, path, info), transformation (find-and-replace, grep, concat, diff), and editor handoff. CI runs <code>check + test + fmt + clippy + doc + release build</code> on every push.</p>
 
       <div class="stat-grid">
         <div class="stat-card"><div class="stat-val">4,860</div><div class="stat-label">Production Rust Lines</div></div>
         <div class="stat-card"><div class="stat-val">55,904</div><div class="stat-label">Test Rust Lines</div></div>
-        <div class="stat-card"><div class="stat-val accent">5,578</div><div class="stat-label">Tests (Verified Passing)</div></div>
+        <div class="stat-card"><div class="stat-val accent">5,612</div><div class="stat-label">Tests (Verified Passing)</div></div>
         <div class="stat-card"><div class="stat-val green">2.9.8</div><div class="stat-label">Crates.io Version</div></div>
         <div class="stat-card"><div class="stat-val">2</div><div class="stat-label">Binaries (<code>tp</code>+<code>temprs</code>)</div></div>
         <div class="stat-card"><div class="stat-val">5</div><div class="stat-label">Direct Dependencies</div></div>
@@ -219,7 +219,7 @@
       <!-- SECTION 6: TEST POSTURE                -->
       <!-- ═══════════════════════════════════════ -->
       <h2 class="tutorial-title"><span class="step-hash">!</span>TEST POSTURE</h2>
-      <p class="tutorial-subtitle">Five test suites cover three layers: argument parsing, in-memory state invariants, and end-to-end CLI behavior. Aggregate: <strong>5,578 tests pass</strong> in <code>cargo test</code>, all green in CI.</p>
+      <p class="tutorial-subtitle">Five test suites cover three layers: argument parsing, in-memory state invariants, and end-to-end CLI behavior. Aggregate: <strong>5,612 tests pass</strong> in <code>cargo test</code>, all green in CI.</p>
 
       <table class="file-table">
         <thead>
@@ -231,7 +231,7 @@
           <tr><td>State invariants</td><td>src/model/state/tests.rs</td><td class="num">181</td><td>Serialization round-trips, name uniqueness, malformed-record recovery</td></tr>
           <tr><td>Integration</td><td>tests/integration.rs</td><td class="num">530</td><td>End-to-end &mdash; spawn binary, pipe stdin, assert stdout/stderr/exit/files</td></tr>
           <tr><td>Doc + macro-expanded</td><td>(implicit)</td><td class="num">256</td><td>Inline doctests + macro-generated tests not visible to raw grep</td></tr>
-          <tr class="total-row"><td>TOTAL</td><td>cargo test</td><td class="num">5,578</td><td>Wall-clock: ~3.4s (lib 0.35s + integration 3.01s); CI gate on every push to main</td></tr>
+          <tr class="total-row"><td>TOTAL</td><td>cargo test</td><td class="num">5,612</td><td>Wall-clock: ~3.4s (lib 0.35s + integration 3.01s); CI gate on every push to main</td></tr>
         </tbody>
       </table>
 
