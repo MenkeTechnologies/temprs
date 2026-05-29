@@ -2150,4 +2150,55 @@ mod tests {
         assert_eq!(util_file_to_paths(master.as_path()), paths);
         fs::remove_dir_all(&dir).unwrap();
     }
+
+    // ─── util_transform_idx happy-path pins ──────────────────────────
+    //
+    // Negative indices are Python/Perl-style (count from end);
+    // positive indices are 1-based (one-of-N). Drift between the
+    // two interpretations silently shifts every `tp -e N` selection.
+    // The error branches `process::exit(1)` and can't be unit-tested
+    // directly — pin the in-bound transformations exhaustively
+    // instead.
+
+    #[test]
+    fn util_transform_idx_positive_one_based_first() {
+        // `tp -e 1` means "first" → index 0.
+        assert_eq!(util_transform_idx(1, 5), 0);
+    }
+
+    #[test]
+    fn util_transform_idx_positive_last_in_range() {
+        // `tp -e 5` of 5-item stack → index 4.
+        assert_eq!(util_transform_idx(5, 5), 4);
+    }
+
+    #[test]
+    fn util_transform_idx_negative_minus_one_is_last() {
+        // `tp -e -1` is the conventional "last".
+        assert_eq!(util_transform_idx(-1, 5), 4);
+    }
+
+    #[test]
+    fn util_transform_idx_negative_minus_len_is_first() {
+        // `tp -e -5` of 5-item stack wraps to first (index 0), the
+        // first valid negative index before transform_idx exits.
+        assert_eq!(util_transform_idx(-5, 5), 0);
+    }
+
+    #[test]
+    fn util_transform_idx_full_range_round_trip() {
+        // Every (positive, negative) pair that resolves to the same
+        // index must agree, for every length 1..=8.
+        for len in 1..=8_usize {
+            for i in 0..len {
+                let pos = (i as i32) + 1;
+                let neg = (i as i32) - (len as i32);
+                assert_eq!(
+                    util_transform_idx(pos, len),
+                    util_transform_idx(neg, len),
+                    "len={len}, i={i}: positive {pos} and negative {neg} should resolve to same index"
+                );
+            }
+        }
+    }
 }
