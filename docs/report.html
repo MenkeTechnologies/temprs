@@ -92,17 +92,17 @@
       <!-- SECTION 1: EXECUTIVE SUMMARY           -->
       <!-- ═══════════════════════════════════════ -->
       <h2 class="tutorial-title"><span class="step-hash">&gt;_</span>EXECUTIVE SUMMARY</h2>
-      <p class="tutorial-subtitle">temprs is a single-binary stack-based temporary file manager written in Rust. The CLI is built on <code>clap</code>; persistence runs through a null-byte delimited master record with atomic renames and <code>flock</code>-protected exclusive access. Every operation that takes an <code>INDEX</code> also accepts a tag name (<code>@name</code>) &mdash; resolution falls through numeric parse to tag lookup. Two binaries (<code>tp</code> and <code>temprs</code>) ship from one Cargo target. <strong>4,860 production Rust lines + 55,904 test Rust lines + 5,612 tests (5,048 unit + 530 integration)</strong> back the surface: stack mutation (push, pop, shift, unshift, insert, remove, move, swap, duplicate, reverse, sort), inspection (head, tail, wc, size, path, info), transformation (find-and-replace, grep, concat, diff), and editor handoff. CI runs <code>check + test + fmt + clippy + doc + release build</code> on every push.</p>
+      <p class="tutorial-subtitle">temprs is a single-binary stack-based temporary file manager written in Rust. The CLI is built on <code>clap</code>; persistence runs through a null-byte delimited master record with atomic renames and <code>flock</code>-protected exclusive access. Every operation that takes an <code>INDEX</code> also accepts a tag name (<code>@name</code>) &mdash; resolution falls through numeric parse to tag lookup. Two binaries (<code>tp</code> and <code>temprs</code>) ship from one Cargo target. <strong>4,736 production Rust lines + 56,849 test Rust lines + 5,612 tests (5,082 unit + 530 integration)</strong> back the surface: stack mutation (push, pop, shift, unshift, insert, remove, move, swap, duplicate, reverse, sort), inspection (head, tail, wc, size, path, info), transformation (find-and-replace, grep, concat, diff), and editor handoff. CI runs <code>check + test + fmt + clippy + doc + release build</code> on every push.</p>
 
       <div class="stat-grid">
-        <div class="stat-card"><div class="stat-val">4,860</div><div class="stat-label">Production Rust Lines</div></div>
-        <div class="stat-card"><div class="stat-val">55,904</div><div class="stat-label">Test Rust Lines</div></div>
+        <div class="stat-card"><div class="stat-val">4,736</div><div class="stat-label">Production Rust Lines</div></div>
+        <div class="stat-card"><div class="stat-val">56,849</div><div class="stat-label">Test Rust Lines</div></div>
         <div class="stat-card"><div class="stat-val accent">5,612</div><div class="stat-label">Tests (Verified Passing)</div></div>
-        <div class="stat-card"><div class="stat-val green">2.9.8</div><div class="stat-label">Crates.io Version</div></div>
+        <div class="stat-card"><div class="stat-val green">2.9.9</div><div class="stat-label">Crates.io Version</div></div>
         <div class="stat-card"><div class="stat-val">2</div><div class="stat-label">Binaries (<code>tp</code>+<code>temprs</code>)</div></div>
         <div class="stat-card"><div class="stat-val">5</div><div class="stat-label">Direct Dependencies</div></div>
         <div class="stat-card"><div class="stat-val">95</div><div class="stat-label">Transitive Crates</div></div>
-        <div class="stat-card"><div class="stat-val">255</div><div class="stat-label">Git Commits</div></div>
+        <div class="stat-card"><div class="stat-val">256</div><div class="stat-label">Git Commits</div></div>
       </div>
 
       <div style="margin:1.2rem 0;">
@@ -132,21 +132,22 @@
           </tr>
         </thead>
         <tbody>
-          <tr><td>src/main.rs</td><td class="num">7</td><td class="num">&mdash;</td><td>Binary entrypoint (shared by <code>tp</code> + <code>temprs</code>)</td></tr>
-          <tr><td>src/lib.rs</td><td class="num">8</td><td class="num">&mdash;</td><td>Library root; re-exports model + util</td></tr>
-          <tr><td>src/util/mod.rs</td><td class="num">2</td><td class="num">&mdash;</td><td>Util module declaration</td></tr>
-          <tr><td>src/util/consts.rs</td><td class="num">859</td><td class="num">&mdash;</td><td>Flag names, error strings, banner, separators</td></tr>
-          <tr><td>src/util/utils.rs</td><td class="num">2,129</td><td class="num">&mdash;</td><td>Stack ops, master-record I/O, flock, filesystem helpers</td></tr>
-          <tr><td>src/model/mod.rs</td><td class="num">6</td><td class="num">&mdash;</td><td>Model module declaration</td></tr>
-          <tr><td>src/model/app.rs</td><td class="num">1,004</td><td class="num">&mdash;</td><td>Top-level dispatch &mdash; matches parsed flags to handlers</td></tr>
-          <tr><td>src/model/state/mod.rs</td><td class="num">214</td><td class="num">&mdash;</td><td><code>State</code> struct &mdash; in-memory mirror of the master record</td></tr>
+          <tr><td>src/main.rs</td><td class="num">9</td><td class="num">&mdash;</td><td>Binary entrypoint (shared by <code>tp</code> + <code>temprs</code>)</td></tr>
+          <tr><td>src/lib.rs</td><td class="num">10</td><td class="num">&mdash;</td><td>Library root; re-exports model + util</td></tr>
+          <tr><td>src/util/mod.rs</td><td class="num">4</td><td class="num">&mdash;</td><td>Util module declaration</td></tr>
+          <tr><td>src/util/consts.rs</td><td class="num">918</td><td class="num">87</td><td>Flag names, error strings, banner, separators (inline tests for string contracts)</td></tr>
+          <tr><td>src/util/utils.rs</td><td class="num">2,204</td><td class="num">174</td><td>Stack ops, master-record I/O, flock, filesystem helpers (inline unit tests)</td></tr>
+          <tr><td>src/model/mod.rs</td><td class="num">9</td><td class="num">&mdash;</td><td>Model module declaration</td></tr>
+          <tr><td>src/model/app.rs</td><td class="num">1,071</td><td class="num">6</td><td>Top-level dispatch &mdash; matches parsed flags to handlers (smoke tests)</td></tr>
+          <tr><td>src/model/state/mod.rs</td><td class="num">252</td><td class="num">&mdash;</td><td><code>State</code> struct &mdash; in-memory mirror of the master record</td></tr>
           <tr><td>src/model/state/tests.rs</td><td class="num">1,980</td><td class="num">181</td><td>State invariants &mdash; serialization round-trips, name uniqueness, edge cases</td></tr>
-          <tr><td>src/model/opts.rs (CLI def)</td><td class="num">258</td><td class="num">&mdash;</td><td>Production clap definition + cyberpunk help template</td></tr>
+          <tr><td>src/model/opts.rs (CLI def)</td><td class="num">259</td><td class="num">&mdash;</td><td>Production clap definition + cyberpunk help template</td></tr>
           <tr><td>src/model/opts.rs (tests)</td><td class="num">46,866</td><td class="num">4,449</td><td>Combinatorial flag parsing tests &mdash; long form, short form, value parsing, mutual exclusion</td></tr>
           <tr><td>src/model/apply_permutation_tests.rs</td><td class="num">1,531</td><td class="num">162</td><td>Stack mutation permutation suite &mdash; move/swap/sort/reverse correctness</td></tr>
           <tr><td>tests/integration.rs</td><td class="num">5,900</td><td class="num">530</td><td>End-to-end CLI tests &mdash; spawn the binary, pipe stdin, assert stdout/stderr/files</td></tr>
+          <tr><td>tests/edge_cases.rs</td><td class="num">428</td><td class="num">23</td><td>Edge-case CLI scenarios &mdash; malformed input, overflow, exotic UTF-8</td></tr>
           <tr><td>benches/benchmarks.rs</td><td class="num">144</td><td class="num">&mdash;</td><td>Criterion benchmarks &mdash; stack ops, master record round-trips</td></tr>
-          <tr class="total-row"><td>TOTAL Rust</td><td class="num">60,908</td><td class="num">5,322</td><td>+ 256 inline lib doc-tests (verified via <code>cargo test</code>) &rArr; <strong>5,578 total tests pass</strong></td></tr>
+          <tr class="total-row"><td>TOTAL Rust</td><td class="num">61,585</td><td class="num">5,612</td><td>All <code>cargo test</code> functions pass on every push to main</td></tr>
         </tbody>
       </table>
 
@@ -230,7 +231,8 @@
           <tr><td>Stack permutations</td><td>src/model/apply_permutation_tests.rs</td><td class="num">162</td><td>Move/swap/sort/reverse correctness across every starting permutation</td></tr>
           <tr><td>State invariants</td><td>src/model/state/tests.rs</td><td class="num">181</td><td>Serialization round-trips, name uniqueness, malformed-record recovery</td></tr>
           <tr><td>Integration</td><td>tests/integration.rs</td><td class="num">530</td><td>End-to-end &mdash; spawn binary, pipe stdin, assert stdout/stderr/exit/files</td></tr>
-          <tr><td>Doc + macro-expanded</td><td>(implicit)</td><td class="num">256</td><td>Inline doctests + macro-generated tests not visible to raw grep</td></tr>
+          <tr><td>Inline (consts + utils + app)</td><td>src/util + src/model/app.rs</td><td class="num">267</td><td>String contracts, stack op smoke tests, master-record I/O, flock</td></tr>
+          <tr><td>Edge cases</td><td>tests/edge_cases.rs</td><td class="num">23</td><td>Malformed input, overflow, exotic UTF-8 boundary conditions</td></tr>
           <tr class="total-row"><td>TOTAL</td><td>cargo test</td><td class="num">5,612</td><td>Wall-clock: ~3.4s (lib 0.35s + integration 3.01s); CI gate on every push to main</td></tr>
         </tbody>
       </table>
