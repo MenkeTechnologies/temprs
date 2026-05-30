@@ -67,6 +67,13 @@
 
 ## [0x02] INSTALLATION
 
+#### HOMEBREW TAP (RECOMMENDED)
+
+```sh
+brew tap MenkeTechnologies/menketech
+brew install temprs
+```
+
 #### DOWNLOADING PAYLOAD FROM CRATES.IO
 
 ```sh
