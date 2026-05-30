@@ -50,7 +50,7 @@ jobs:
             target: aarch64-unknown-linux-musl
             allow_failure: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
 
@@ -81,7 +81,7 @@ jobs:
             temprs tp
           cd ../../..
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: temprs-${{ matrix.target }}
           path: temprs-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
@@ -91,7 +91,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/download-artifact@v4
         with:
@@ -129,7 +129,7 @@ jobs:
             echo "${key}=${sum}" >> "$GITHUB_OUTPUT"
           done
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           repository: MenkeTechnologies/homebrew-menketech
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
