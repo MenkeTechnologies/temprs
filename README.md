@@ -93,8 +93,8 @@ cargo build --release
 #### ZSH COMPLETION // TAB-COMPLETE ALL THE THINGS
 
 ```sh
-# copy to a directory in your fpath
-cp completions/_tp /usr/local/share/zsh/site-functions/_tp
+# copy to a directory in your fpath (file is `_temprs`, provides #compdef for both `tp` and `temprs`)
+cp completions/_temprs /usr/local/share/zsh/site-functions/_temprs
 
 # or add the completions directory to fpath in your .zshrc
 fpath=(/path/to/temprs/completions $fpath)
