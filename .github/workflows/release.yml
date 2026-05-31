@@ -37,11 +37,14 @@ jobs:
           # --- Linux glibc native ---
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-          - os: ubuntu-24.04-arm
+          - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-            # GA arm64 runner since Aug 2025 (free for public repos).
-            # Allow failure: arm runners occasionally evict mid-build.
-            allow_failure: true
+            # Cross-compile from ubuntu-latest x86_64 via cross-rs
+            # Docker container — more reliable than ubuntu-24.04-arm
+            # native runners which occasionally evict mid-build.
+            # No allow_failure: this target must succeed so the
+            # Homebrew formula's on_linux/on_arm block emits.
+            use_cross: true
           # --- Linux musl static (portable across glibc/musl distros) ---
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
@@ -59,14 +62,34 @@ jobs:
           targets: ${{ matrix.target }}
 
       - name: Install musl tools
-        if: contains(matrix.target, 'musl')
+        if: contains(matrix.target, 'musl') && !matrix.use_cross
         run: sudo apt-get update && sudo apt-get install -y musl-tools
 
-      - uses: Swatinem/rust-cache@v2
+      - name: Install cross
+        if: matrix.use_cross
+        run: |
+          # Prefer the prebuilt binary release over `cargo install`
+          # to save ~5 min of compile time per cross-build runner.
+          CROSS_VER="v0.2.5"
+          curl -sSL -o /tmp/cross.tar.gz \
+            "https://github.com/cross-rs/cross/releases/download/${CROSS_VER}/cross-x86_64-unknown-linux-gnu.tar.gz"
+          tar -C /tmp -xzf /tmp/cross.tar.gz
+          sudo install -m 755 /tmp/cross /usr/local/bin/cross
 
-      - name: Build all binaries
+      - uses: Swatinem/rust-cache@v2
+        if: '!matrix.use_cross'
+
+      - name: Build all binaries (native)
+        if: '!matrix.use_cross'
         run: |
           cargo build --release --locked --target ${{ matrix.target }} \
+            --bin temprs \
+            --bin tp
+
+      - name: Build all binaries (cross)
+        if: matrix.use_cross
+        run: |
+          cross build --release --locked --target ${{ matrix.target }} \
             --bin temprs \
             --bin tp
 
