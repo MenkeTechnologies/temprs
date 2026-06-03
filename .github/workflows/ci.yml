@@ -108,3 +108,12 @@ jobs:
           path: |
             target/${{ matrix.target }}/release/temprs
             target/${{ matrix.target }}/release/tp
+
+  docs-gates:
+    name: Docs gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: bash tests/docs-target-blank-rel-noopener.sh
+      - run: bash tests/docs-no-http-links.sh
+      - run: bash tests/docs-no-inline-handlers.sh
