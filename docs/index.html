@@ -167,7 +167,7 @@
             <a href="https://docs.rs/temprs" target="_blank" rel="noopener noreferrer">docs.rs</a>
           </nav>
           <p class="docs-build-line">temprs v2.9.11 &middot; Two binaries (<code>tp</code> + <code>temprs</code>) &middot; Dual indexing (position + <code>@name</code>) &middot; Null-byte master record &middot; <code>flock</code>-protected, atomic writes &middot; 5,635 tests</p>
-          <p class="docs-build-line">4,736 production Rust lines &middot; 56,849 test Rust lines &middot; 272 commits &middot; 5 direct deps &middot; zsh completion + man page</p>
+          <p class="docs-build-line">4,736 production Rust lines &middot; 57,421 test Rust lines &middot; 274 commits &middot; 5 direct deps &middot; zsh completion + man page</p>
           <!-- prod/test/commits derived from: awk '/^#\[cfg\(test\)\]/{found=1; exit} 1' src/**/*.rs | wc -l; git rev-list --count main -->
         </div>
         <div class="tutorial-toolbar">
@@ -396,7 +396,7 @@ tp -c             <span class="comment"># drop everything</span></pre>
 
       <section class="tutorial-section">
         <h2>Development &amp; CI</h2>
-        <p>The repository ships with a GitHub Actions workflow at <code>.github/workflows/ci.yml</code> that runs <code>cargo check</code>, the full <code>cargo test</code> suite (<strong>5,635 tests</strong> &mdash; 5,082 unit + 553 integration), <code>cargo fmt --check</code>, <code>cargo clippy</code>, <code>cargo doc</code>, and a release build on every push to <code>main</code> and on every pull request. Criterion benchmarks live under <code>benches/benchmarks.rs</code> (<code>cargo bench</code>).</p>
+        <p>The repository ships with a GitHub Actions workflow at <code>.github/workflows/ci.yml</code> that runs <code>cargo check</code>, the full <code>cargo test</code> suite (<strong>5,635 tests</strong> &mdash; 5,059 unit + 576 integration), <code>cargo fmt --check</code>, <code>cargo clippy</code>, <code>cargo doc</code>, and a release build on every push to <code>main</code> and on every pull request. Criterion benchmarks live under <code>benches/benchmarks.rs</code> (<code>cargo bench</code>).</p>
         <p>For more detail on architecture, test breakdown, and module-level statistics, see the <a href="report.html">engineering report</a>.</p>
       </section>
 

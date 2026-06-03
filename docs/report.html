@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark light">
-  <meta name="description" content="temprs — Engineering report. Stack-based temporary file manager in Rust: 4,860 production Rust lines + 55,904 test Rust lines, 5,635 tests (5,048 unit + 547 integration), v2.9.11, 272 commits, 5 direct deps, two binaries (tp + temprs), zsh completion + man page.">
+  <meta name="description" content="temprs — Engineering report. Stack-based temporary file manager in Rust: 4,736 production Rust lines + 57,421 test Rust lines, 5,635 tests (5,059 unit + 576 integration), v2.9.11, 274 commits, 5 direct deps, two binaries (tp + temprs), zsh completion + man page.">
   <title>temprs &mdash; Engineering Report</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -92,26 +92,25 @@
       <!-- SECTION 1: EXECUTIVE SUMMARY           -->
       <!-- ═══════════════════════════════════════ -->
       <h2 class="tutorial-title"><span class="step-hash">&gt;_</span>EXECUTIVE SUMMARY</h2>
-      <p class="tutorial-subtitle">temprs is a single-binary stack-based temporary file manager written in Rust. The CLI is built on <code>clap</code>; persistence runs through a null-byte delimited master record with atomic renames and <code>flock</code>-protected exclusive access. Every operation that takes an <code>INDEX</code> also accepts a tag name (<code>@name</code>) &mdash; resolution falls through numeric parse to tag lookup. Two binaries (<code>tp</code> and <code>temprs</code>) ship from one Cargo target. <strong>4,736 production Rust lines + 56,849 test Rust lines + 5,635 tests (5,082 unit + 553 integration)</strong> back the surface: stack mutation (push, pop, shift, unshift, insert, remove, move, swap, duplicate, reverse, sort), inspection (head, tail, wc, size, path, info), transformation (find-and-replace, grep, concat, diff), and editor handoff. CI runs <code>check + test + fmt + clippy + doc + release build</code> on every push.</p>
+      <p class="tutorial-subtitle">temprs is a single-binary stack-based temporary file manager written in Rust. The CLI is built on <code>clap</code>; persistence runs through a null-byte delimited master record with atomic renames and <code>flock</code>-protected exclusive access. Every operation that takes an <code>INDEX</code> also accepts a tag name (<code>@name</code>) &mdash; resolution falls through numeric parse to tag lookup. Two binaries (<code>tp</code> and <code>temprs</code>) ship from one Cargo target. <strong>4,736 production Rust lines + 57,421 test Rust lines + 5,635 tests (5,059 unit + 576 integration)</strong> back the surface: stack mutation (push, pop, shift, unshift, insert, remove, move, swap, duplicate, reverse, sort), inspection (head, tail, wc, size, path, info), transformation (find-and-replace, grep, concat, diff), and editor handoff. CI runs <code>check + test + fmt + clippy + doc + release build</code> on every push.</p>
 
       <div class="stat-grid">
         <div class="stat-card"><div class="stat-val">4,736</div><div class="stat-label">Production Rust Lines</div></div>
-        <div class="stat-card"><div class="stat-val">56,849</div><div class="stat-label">Test Rust Lines</div></div>
         <div class="stat-card"><div class="stat-val accent">5,635</div><div class="stat-label">Tests (Verified Passing)</div></div>
         <div class="stat-card"><div class="stat-val green">2.9.11</div><div class="stat-label">Crates.io Version</div></div>
         <div class="stat-card"><div class="stat-val">2</div><div class="stat-label">Binaries (<code>tp</code>+<code>temprs</code>)</div></div>
         <div class="stat-card"><div class="stat-val">5</div><div class="stat-label">Direct Dependencies</div></div>
         <div class="stat-card"><div class="stat-val">95</div><div class="stat-label">Transitive Crates</div></div>
-        <div class="stat-card"><div class="stat-val">272</div><div class="stat-label">Git Commits</div></div>
+        <div class="stat-card"><div class="stat-val">274</div><div class="stat-label">Git Commits</div></div>
       </div>
 
       <div style="margin:1.2rem 0;">
-        <p style="font-size:11px;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:4px;font-family:'Orbitron',sans-serif;font-weight:700;">Source distribution &mdash; 60,908 Rust lines total</p>
+        <p style="font-size:11px;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:4px;font-family:'Orbitron',sans-serif;font-weight:700;">Source distribution &mdash; 62,157 Rust lines total</p>
         <div class="bar-wrap" style="height:26px;">
-          <div class="bar-fill cyan" style="width:8.0%;"></div>
-          <span class="bar-pct" style="font-size:12px;">4,860 production / 55,904 test &middot; 91.8% test code</span>
+          <div class="bar-fill cyan" style="width:7.6%;"></div>
+          <span class="bar-pct" style="font-size:12px;">4,736 production / 57,421 test &middot; 92.4% test code</span>
         </div>
-        <p style="font-size:10px;color:var(--text-muted);margin-top:4px;">Production source: <code>src/lib.rs</code>, <code>src/main.rs</code>, <code>src/util/{consts,utils,mod}.rs</code>, <code>src/model/{mod,app,state/mod}.rs</code>, and the CLI definition in <code>src/model/opts.rs</code> (lines 1&ndash;258). Test source: <code>tests/integration.rs</code> + inline test modules in <code>src/model/opts.rs</code>, <code>src/model/apply_permutation_tests.rs</code>, <code>src/model/state/tests.rs</code>.</p>
+        <p style="font-size:10px;color:var(--text-muted);margin-top:4px;">Production source: <code>src/lib.rs</code>, <code>src/main.rs</code>, <code>src/util/{consts,utils,mod}.rs</code>, <code>src/model/{mod,app,state/mod}.rs</code>, and the CLI definition in <code>src/model/opts.rs</code> (lines 1&ndash;259). Test source: <code>tests/integration.rs</code> + 4 contract test files + inline test modules in <code>src/model/opts.rs</code>, <code>src/model/apply_permutation_tests.rs</code>, <code>src/model/state/tests.rs</code>.</p>
       </div>
 
       <hr class="section-rule">
@@ -120,7 +119,7 @@
       <!-- SECTION 2: SOURCE LAYOUT               -->
       <!-- ═══════════════════════════════════════ -->
       <h2 class="tutorial-title"><span class="step-hash">~</span>SOURCE LAYOUT</h2>
-      <p class="tutorial-subtitle">Module-level breakdown of the Rust source tree. <code>opts.rs</code> dominates the line count because the inline test module holds 4,449 combinatorial CLI argument tests &mdash; the production CLI definition itself is the first 258 lines of that file.</p>
+      <p class="tutorial-subtitle">Module-level breakdown of the Rust source tree. <code>opts.rs</code> dominates the line count because the inline test module holds 4,449 combinatorial CLI argument tests &mdash; the production CLI definition itself is the first 259 lines of that file.</p>
 
       <table class="file-table">
         <thead>
@@ -146,13 +145,16 @@
           <tr><td>src/model/apply_permutation_tests.rs</td><td class="num">1,531</td><td class="num">162</td><td>Stack mutation permutation suite &mdash; move/swap/sort/reverse correctness</td></tr>
           <tr><td>tests/integration.rs</td><td class="num">5,900</td><td class="num">530</td><td>End-to-end CLI tests &mdash; spawn the binary, pipe stdin, assert stdout/stderr/files</td></tr>
           <tr><td>tests/edge_cases.rs</td><td class="num">428</td><td class="num">23</td><td>Edge-case CLI scenarios &mdash; malformed input, overflow, exotic UTF-8</td></tr>
+          <tr><td>tests/contract_input_output_master.rs</td><td class="num">267</td><td class="num">9</td><td>Master record input/output contract pins</td></tr>
+          <tr><td>tests/contract_algebra_round4.rs</td><td class="num">256</td><td class="num">6</td><td>Stack-algebra round-trip contract pins</td></tr>
+          <tr><td>tests/contract_name_invariants.rs</td><td class="num">193</td><td class="num">8</td><td>@name resolution invariants</td></tr>
           <tr><td>benches/benchmarks.rs</td><td class="num">144</td><td class="num">&mdash;</td><td>Criterion benchmarks &mdash; stack ops, master record round-trips</td></tr>
-          <tr class="total-row"><td>TOTAL Rust</td><td class="num">61,585</td><td class="num">5,635</td><td>All <code>cargo test</code> functions pass on every push to main</td></tr>
+          <tr class="total-row"><td>TOTAL Rust</td><td class="num">62,301</td><td class="num">5,635</td><td>All <code>cargo test</code> functions pass on every push to main</td></tr>
         </tbody>
       </table>
 
       <p style="font-size:11px;color:var(--text-muted);margin-top:0.5rem;">
-        Note: the test-attribute grep yields <code>4,449 + 162 + 181 + 547 = 5,339</code>; the live binary count from <code>cargo test</code> is <code>5,048 lib + 547 integration = 5,595</code>. The 256-test delta is accounted for by doc-tests and macro-expanded tests not visible to the raw grep.
+        Note: the test-attribute grep yields <code>4,449 + 162 + 181 + 174 + 87 + 6 + 530 + 23 + 9 + 6 + 8 = 5,635</code> across inline + tests/ files.
       </p>
 
       <hr class="section-rule">
