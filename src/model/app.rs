@@ -623,6 +623,14 @@ impl TempApp {
                 unreachable!()
             }
         };
+        // Reject negative / NaN / infinite before the `as u64` cast. Pre-fix,
+        // `--expire=-1` parsed as -1.0 → (-1.0 * 3600.0) as u64 saturates to 0
+        // → every file's age >= 0 → silent wipe of the entire stack. Same for
+        // NaN (NaN * 3600.0 = NaN; NaN as u64 = 0) and -∞.
+        if !hours.is_finite() || hours < 0.0 {
+            util_terminate_error(ERR_INVALID_IDX);
+            unreachable!()
+        }
         let cutoff_secs = (hours * 3600.0) as u64;
         let now = std::time::SystemTime::now();
         let mut removed = 0usize;
@@ -705,6 +713,20 @@ impl TempApp {
                 unreachable!()
             }
         };
+        // Pre-fix, `tp -c` did `remove_dir_all` on the parent of the master
+        // record file. With `TEMPRS_DIR=$HOME` set, that wiped $HOME. The
+        // safe contract: TEMPRS_DIR's basename must contain "temprs" (the
+        // default `~/.temprs` and any sane override). Anything else is
+        // refused — the user can manually delete if they really meant it.
+        let safe_name = parent
+            .file_name()
+            .and_then(|s| s.to_str())
+            .map(|s| s.to_ascii_lowercase().contains("temprs"))
+            .unwrap_or(false);
+        if !safe_name {
+            util_terminate_error(ERR_NO_FILE);
+            unreachable!()
+        }
         if let Err(_e) = remove_dir_all(&parent) {
             util_terminate_error(ERR_NO_FILE);
         }

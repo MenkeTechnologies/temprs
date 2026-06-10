@@ -19,7 +19,7 @@
 //! crate per cargo's convention.
 
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -42,7 +42,7 @@ fn setup_clean_env() -> PathBuf {
     dir
 }
 
-fn run_tp(dir: &PathBuf, args: &[&str]) -> std::process::Output {
+fn run_tp(dir: &Path, args: &[&str]) -> std::process::Output {
     Command::new(bin())
         .env("TEMPRS_DIR", dir)
         .args(args)
@@ -51,7 +51,7 @@ fn run_tp(dir: &PathBuf, args: &[&str]) -> std::process::Output {
         .expect("failed to execute tp")
 }
 
-fn run_tp_stdin(dir: &PathBuf, args: &[&str], input: &[u8]) -> std::process::Output {
+fn run_tp_stdin(dir: &Path, args: &[&str], input: &[u8]) -> std::process::Output {
     use std::io::Write;
     let mut child = Command::new(bin())
         .env("TEMPRS_DIR", dir)
@@ -75,7 +75,7 @@ fn tick() {
 /// `Vec<(content, Option<name>)>` so tests can assert the path/name pairings
 /// without going through `tp` itself (which pushes a stray empty file on
 /// `Stdio::null()` for state-setting flags like `-o`).
-fn read_master_pairs(dir: &PathBuf) -> Vec<(String, Option<String>)> {
+fn read_master_pairs(dir: &Path) -> Vec<(String, Option<String>)> {
     let master = dir.join("temprs-stack");
     let raw = fs::read_to_string(&master).expect("master record file should exist");
     let mut out = Vec::new();
