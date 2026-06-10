@@ -850,6 +850,15 @@ impl TempApp {
     }
 
     fn replace_in_tempfile(&mut self, stk_idx: String, pattern: String, replacement: String) {
+        // Pre-fix `pattern.is_empty()` was unchecked. Rust's `str::replace("", repl)`
+        // splices `repl` at every byte boundary (before/after every char +
+        // start + end), so a non-empty replacement with empty pattern produced
+        // a file of size O(content.len() * repl.len()) — silent data
+        // corruption + potential OOM on large temp files.
+        if pattern.is_empty() {
+            util_terminate_error(ERR_INVALID_IDX);
+            unreachable!()
+        }
         match self.resolve_idx(&stk_idx) {
             Some(idx) => {
                 let path = self.state.temp_file_stack()[idx].clone();
