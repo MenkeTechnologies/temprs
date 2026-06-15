@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark light">
-  <meta name="description" content="temprs — Engineering report. Stack-based temporary file manager in Rust: 4,736 production Rust lines + 57,421 test Rust lines, 5,635 tests (5,059 unit + 576 integration), v2.9.11, 280 commits, 5 direct deps, two binaries (tp + temprs), zsh completion + man page.">
+  <meta name="description" content="temprs — Engineering report. Stack-based temporary file manager in Rust: 4,767 production Rust lines + 57,945 test Rust lines, 5,644 tests (5,059 unit + 585 integration), v2.9.11, 287 commits, 5 direct deps, two binaries (tp + temprs), zsh completion + man page.">
   <title>temprs &mdash; Engineering Report</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -92,25 +92,25 @@
       <!-- SECTION 1: EXECUTIVE SUMMARY           -->
       <!-- ═══════════════════════════════════════ -->
       <h2 class="tutorial-title"><span class="step-hash">&gt;_</span>EXECUTIVE SUMMARY</h2>
-      <p class="tutorial-subtitle">temprs is a single-binary stack-based temporary file manager written in Rust. The CLI is built on <code>clap</code>; persistence runs through a null-byte delimited master record with atomic renames and <code>flock</code>-protected exclusive access. Every operation that takes an <code>INDEX</code> also accepts a tag name (<code>@name</code>) &mdash; resolution falls through numeric parse to tag lookup. Two binaries (<code>tp</code> and <code>temprs</code>) ship from one Cargo target. <strong>4,736 production Rust lines + 57,421 test Rust lines + 5,635 tests (5,059 unit + 576 integration)</strong> back the surface: stack mutation (push, pop, shift, unshift, insert, remove, move, swap, duplicate, reverse, sort), inspection (head, tail, wc, size, path, info), transformation (find-and-replace, grep, concat, diff), and editor handoff. CI runs <code>check + test + fmt + clippy + doc + release build</code> on every push.</p>
+      <p class="tutorial-subtitle">temprs is a single-binary stack-based temporary file manager written in Rust. The CLI is built on <code>clap</code>; persistence runs through a null-byte delimited master record with atomic renames and <code>flock</code>-protected exclusive access. Every operation that takes an <code>INDEX</code> also accepts a tag name (<code>@name</code>) &mdash; resolution falls through numeric parse to tag lookup. Two binaries (<code>tp</code> and <code>temprs</code>) ship from one Cargo target. <strong>4,767 production Rust lines + 57,945 test Rust lines + 5,644 tests (5,059 unit + 585 integration)</strong> back the surface: stack mutation (push, pop, shift, unshift, insert, remove, move, swap, duplicate, reverse, sort), inspection (head, tail, wc, size, path, info), transformation (find-and-replace, grep, concat, diff), and editor handoff. CI runs <code>check + test + fmt + clippy + doc + release build</code> on every push.</p>
 
       <div class="stat-grid">
-        <div class="stat-card"><div class="stat-val">4,736</div><div class="stat-label">Production Rust Lines</div></div>
-        <div class="stat-card"><div class="stat-val accent">5,635</div><div class="stat-label">Tests (Verified Passing)</div></div>
+        <div class="stat-card"><div class="stat-val">4,767</div><div class="stat-label">Production Rust Lines</div></div>
+        <div class="stat-card"><div class="stat-val accent">5,644</div><div class="stat-label">Tests (Verified Passing)</div></div>
         <div class="stat-card"><div class="stat-val green">2.9.11</div><div class="stat-label">Crates.io Version</div></div>
         <div class="stat-card"><div class="stat-val">2</div><div class="stat-label">Binaries (<code>tp</code>+<code>temprs</code>)</div></div>
         <div class="stat-card"><div class="stat-val">5</div><div class="stat-label">Direct Dependencies</div></div>
-        <div class="stat-card"><div class="stat-val">95</div><div class="stat-label">Transitive Crates</div></div>
-        <div class="stat-card"><div class="stat-val">280</div><div class="stat-label">Git Commits</div></div>
+        <div class="stat-card"><div class="stat-val">99</div><div class="stat-label">Transitive Crates</div></div>
+        <div class="stat-card"><div class="stat-val">287</div><div class="stat-label">Git Commits</div></div>
       </div>
 
       <div style="margin:1.2rem 0;">
-        <p style="font-size:11px;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:4px;font-family:'Orbitron',sans-serif;font-weight:700;">Source distribution &mdash; 62,157 Rust lines total</p>
+        <p style="font-size:11px;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:4px;font-family:'Orbitron',sans-serif;font-weight:700;">Source distribution &mdash; 62,712 Rust lines total</p>
         <div class="bar-wrap" style="height:26px;">
           <div class="bar-fill cyan" style="width:7.6%;"></div>
-          <span class="bar-pct" style="font-size:12px;">4,736 production / 57,421 test &middot; 92.4% test code</span>
+          <span class="bar-pct" style="font-size:12px;">4,767 production / 57,945 test &middot; 92.4% test code</span>
         </div>
-        <p style="font-size:10px;color:var(--text-muted);margin-top:4px;">Production source: <code>src/lib.rs</code>, <code>src/main.rs</code>, <code>src/util/{consts,utils,mod}.rs</code>, <code>src/model/{mod,app,state/mod}.rs</code>, and the CLI definition in <code>src/model/opts.rs</code> (lines 1&ndash;259). Test source: <code>tests/integration.rs</code> + 4 contract test files + inline test modules in <code>src/model/opts.rs</code>, <code>src/model/apply_permutation_tests.rs</code>, <code>src/model/state/tests.rs</code>.</p>
+        <p style="font-size:10px;color:var(--text-muted);margin-top:4px;">Production source: <code>src/lib.rs</code>, <code>src/main.rs</code>, <code>src/util/{consts,utils,mod}.rs</code>, <code>src/model/{mod,app,state/mod}.rs</code>, and the CLI definition in <code>src/model/opts.rs</code> (lines 1&ndash;259). Test source: <code>tests/integration.rs</code> + 7 contract/edge test files + inline test modules in <code>src/model/opts.rs</code>, <code>src/model/apply_permutation_tests.rs</code>, <code>src/model/state/tests.rs</code>.</p>
       </div>
 
       <hr class="section-rule">
@@ -137,7 +137,7 @@
           <tr><td>src/util/consts.rs</td><td class="num">918</td><td class="num">87</td><td>Flag names, error strings, banner, separators (inline tests for string contracts)</td></tr>
           <tr><td>src/util/utils.rs</td><td class="num">2,204</td><td class="num">174</td><td>Stack ops, master-record I/O, flock, filesystem helpers (inline unit tests)</td></tr>
           <tr><td>src/model/mod.rs</td><td class="num">9</td><td class="num">&mdash;</td><td>Model module declaration</td></tr>
-          <tr><td>src/model/app.rs</td><td class="num">1,071</td><td class="num">6</td><td>Top-level dispatch &mdash; matches parsed flags to handlers (smoke tests)</td></tr>
+          <tr><td>src/model/app.rs</td><td class="num">1,102</td><td class="num">6</td><td>Top-level dispatch &mdash; matches parsed flags to handlers (smoke tests)</td></tr>
           <tr><td>src/model/state/mod.rs</td><td class="num">252</td><td class="num">&mdash;</td><td><code>State</code> struct &mdash; in-memory mirror of the master record</td></tr>
           <tr><td>src/model/state/tests.rs</td><td class="num">1,980</td><td class="num">181</td><td>State invariants &mdash; serialization round-trips, name uniqueness, edge cases</td></tr>
           <tr><td>src/model/opts.rs (CLI def)</td><td class="num">259</td><td class="num">&mdash;</td><td>Production clap definition + cyberpunk help template</td></tr>
@@ -148,13 +148,16 @@
           <tr><td>tests/contract_input_output_master.rs</td><td class="num">267</td><td class="num">9</td><td>Master record input/output contract pins</td></tr>
           <tr><td>tests/contract_algebra_round4.rs</td><td class="num">256</td><td class="num">6</td><td>Stack-algebra round-trip contract pins</td></tr>
           <tr><td>tests/contract_name_invariants.rs</td><td class="num">193</td><td class="num">8</td><td>@name resolution invariants</td></tr>
+          <tr><td>tests/tag_alignment_after_mutation.rs</td><td class="num">214</td><td class="num">3</td><td>Name/path parallel-array sync across shift, pop, rev, remove</td></tr>
+          <tr><td>tests/master_record_tag_roundtrip.rs</td><td class="num">116</td><td class="num">3</td><td>Multi-tag master-record round-trip alignment</td></tr>
+          <tr><td>tests/expire_invalid_hours.rs</td><td class="num">194</td><td class="num">3</td><td><code>--expire</code> rejects negative / NaN / inf hours</td></tr>
           <tr><td>benches/benchmarks.rs</td><td class="num">144</td><td class="num">&mdash;</td><td>Criterion benchmarks &mdash; stack ops, master record round-trips</td></tr>
-          <tr class="total-row"><td>TOTAL Rust</td><td class="num">62,301</td><td class="num">5,635</td><td>All <code>cargo test</code> functions pass on every push to main</td></tr>
+          <tr class="total-row"><td>TOTAL Rust</td><td class="num">62,856</td><td class="num">5,644</td><td>All <code>cargo test</code> functions pass on every push to main</td></tr>
         </tbody>
       </table>
 
       <p style="font-size:11px;color:var(--text-muted);margin-top:0.5rem;">
-        Note: the test-attribute grep yields <code>4,449 + 162 + 181 + 174 + 87 + 6 + 530 + 23 + 9 + 6 + 8 = 5,635</code> across inline + tests/ files.
+        Note: the test-attribute grep yields <code>4,449 + 162 + 181 + 174 + 87 + 6 + 530 + 23 + 9 + 6 + 8 + 3 + 3 + 3 = 5,644</code> across inline + tests/ files.
       </p>
 
       <hr class="section-rule">
@@ -163,7 +166,7 @@
       <!-- SECTION 3: DEPENDENCIES                -->
       <!-- ═══════════════════════════════════════ -->
       <h2 class="tutorial-title"><span class="step-hash">$</span>DEPENDENCIES</h2>
-      <p class="tutorial-subtitle">Five direct runtime dependencies, one dev dependency. The lock file resolves to 95 transitive crates. Selection criteria: foundational, audit-friendly, durable &mdash; no flavor-of-the-month wrappers.</p>
+      <p class="tutorial-subtitle">Five direct runtime dependencies, one dev dependency. The lock file resolves to 99 transitive crates. Selection criteria: foundational, audit-friendly, durable &mdash; no flavor-of-the-month wrappers.</p>
 
       <table class="file-table">
         <thead>
@@ -222,7 +225,7 @@
       <!-- SECTION 6: TEST POSTURE                -->
       <!-- ═══════════════════════════════════════ -->
       <h2 class="tutorial-title"><span class="step-hash">!</span>TEST POSTURE</h2>
-      <p class="tutorial-subtitle">Five test suites cover three layers: argument parsing, in-memory state invariants, and end-to-end CLI behavior. Aggregate: <strong>5,635 tests pass</strong> in <code>cargo test</code>, all green in CI.</p>
+      <p class="tutorial-subtitle">Test suites cover three layers: argument parsing, in-memory state invariants, and end-to-end CLI behavior. Aggregate: <strong>5,644 tests pass</strong> in <code>cargo test</code>, all green in CI.</p>
 
       <table class="file-table">
         <thead>
@@ -235,7 +238,8 @@
           <tr><td>Integration</td><td>tests/integration.rs</td><td class="num">530</td><td>End-to-end &mdash; spawn binary, pipe stdin, assert stdout/stderr/exit/files</td></tr>
           <tr><td>Inline (consts + utils + app)</td><td>src/util + src/model/app.rs</td><td class="num">267</td><td>String contracts, stack op smoke tests, master-record I/O, flock</td></tr>
           <tr><td>Edge cases</td><td>tests/edge_cases.rs</td><td class="num">23</td><td>Malformed input, overflow, exotic UTF-8 boundary conditions</td></tr>
-          <tr class="total-row"><td>TOTAL</td><td>cargo test</td><td class="num">5,635</td><td>Wall-clock: ~3.4s (lib 0.35s + integration 3.01s); CI gate on every push to main</td></tr>
+          <tr><td>Contract pins</td><td>tests/contract_*.rs + tag/master/expire</td><td class="num">32</td><td>Master-record I/O, stack-algebra, @name invariants, parallel-array alignment, --expire input validation</td></tr>
+          <tr class="total-row"><td>TOTAL</td><td>cargo test</td><td class="num">5,644</td><td>Wall-clock: ~3.4s (lib 0.35s + integration 3.01s); CI gate on every push to main</td></tr>
         </tbody>
       </table>
 
@@ -262,16 +266,16 @@
       <!-- SECTION 8: VERSION HISTORY             -->
       <!-- ═══════════════════════════════════════ -->
       <h2 class="tutorial-title"><span class="step-hash">v</span>VERSION HISTORY</h2>
-      <p class="tutorial-subtitle">Current crate: <code>temprs 2.9.11</code>. 280 commits on <code>main</code>. Last five commits:</p>
+      <p class="tutorial-subtitle">Current crate: <code>temprs 2.9.11</code>. 287 commits on <code>main</code>. Last five commits:</p>
 
       <table class="file-table">
         <thead><tr><th>Hash</th><th>Subject</th></tr></thead>
         <tbody>
-          <tr><td>ea612191bb</td><td>bp: v2.9.10 — refresh release artifacts (formula↔matrix sync)</td></tr>
-          <tr><td>03a0df52b2</td><td>ci(release): drop allow_failure on aarch64-unknown-linux-gnu — switch to cross-rs</td></tr>
-          <tr><td>7fc9838b3f</td><td>ci(release): restore actions/{checkout,upload-artifact}@v6 — match meta-tree dominant version</td></tr>
-          <tr><td>286ec03f0b</td><td>ci(release): expand matrix 3 → 6 targets — +aarch64-linux-gnu, +x86_64/aarch64-linux-musl static</td></tr>
-          <tr><td>6b5a91e149</td><td>docs(install): fix zsh completion filename — _tp → _temprs</td></tr>
+          <tr><td>4938e65dcb</td><td>tests: master-record: parallel-array alignment across multi-tag round-trips</td></tr>
+          <tr><td>d0f25ce2a7</td><td>docs: refresh stale counts — CI job list adds Docs gates + Polish gates</td></tr>
+          <tr><td>fc68a897e3</td><td>fix(replace): reject empty pattern in replace_in_tempfile</td></tr>
+          <tr><td>18d960253c</td><td>fix(security): expire_tempfiles rejects negative/NaN/inf + clear_all refuses non-temprs dir</td></tr>
+          <tr><td>2d03d92a71</td><td>tests: tag_alignment_after_mutation: pin name/path vec sync across shift, pop, rev, remove</td></tr>
         </tbody>
       </table>
 
