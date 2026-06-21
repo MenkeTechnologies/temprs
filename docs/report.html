@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark light">
-  <meta name="description" content="temprs — Engineering report. Stack-based temporary file manager in Rust: 4,767 production Rust lines + 57,945 test Rust lines, 5,644 tests (5,059 unit + 585 integration), v2.9.11, 287 commits, 5 direct deps, two binaries (tp + temprs), zsh completion + man page.">
+  <meta name="description" content="temprs — Engineering report. Stack-based temporary file manager in Rust: 4,767 production Rust lines + 57,945 test Rust lines, 5,644 tests (5,059 unit + 585 integration), v2.9.11, 289 commits, 5 direct deps, two binaries (tp + temprs), zsh completion + two man pages.">
   <title>temprs &mdash; Engineering Report</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -101,7 +101,7 @@
         <div class="stat-card"><div class="stat-val">2</div><div class="stat-label">Binaries (<code>tp</code>+<code>temprs</code>)</div></div>
         <div class="stat-card"><div class="stat-val">5</div><div class="stat-label">Direct Dependencies</div></div>
         <div class="stat-card"><div class="stat-val">99</div><div class="stat-label">Transitive Crates</div></div>
-        <div class="stat-card"><div class="stat-val">287</div><div class="stat-label">Git Commits</div></div>
+        <div class="stat-card"><div class="stat-val">289</div><div class="stat-label">Git Commits</div></div>
       </div>
 
       <div style="margin:1.2rem 0;">
@@ -176,8 +176,8 @@
           <tr><td>clap</td><td>4.6</td><td>CLI parser</td><td>De facto standard for Rust CLIs; derives long/short, mutual exclusion, value validation, custom help template</td></tr>
           <tr><td>fs2</td><td>0.4</td><td>File locking</td><td><code>FileExt::lock_exclusive</code> / <code>unlock</code> &mdash; the master record's concurrency guard</td></tr>
           <tr><td>log</td><td>0.4</td><td>Logging facade</td><td>Decouples library logging from the binary's choice of backend</td></tr>
-          <tr><td>env_logger</td><td>0.11</td><td>Log backend (env-driven)</td><td><code>RUST_LOG=temprs=debug</code> opt-in tracing without recompile</td></tr>
-          <tr><td>simple_logger</td><td>5.2</td><td>Log backend (zero-config)</td><td>Default-on logger for users who don't set <code>RUST_LOG</code></td></tr>
+          <tr><td>simple_logger</td><td>5.2</td><td>Log backend (active)</td><td>The runtime logger: <code>State::new</code> calls <code>simple_logger::init_with_level(Info)</code> &mdash; zero-config, on by default</td></tr>
+          <tr><td>env_logger</td><td>0.11</td><td>Log backend (declared)</td><td>Declared in <code>Cargo.toml</code> for an env-driven backend; the binary's default init path uses <code>simple_logger</code></td></tr>
           <tr><td>criterion (dev)</td><td>0.8</td><td>Benchmark harness</td><td>Statistical benchmarking with regression detection &mdash; gated to <code>[dev-dependencies]</code></td></tr>
         </tbody>
       </table>
@@ -193,10 +193,28 @@
       <div class="mapping-grid">
         <div class="mapping-card"><h4>Field delimiter</h4><p><code>\0</code> separates fields within a record (filename, optional tag).</p></div>
         <div class="mapping-card"><h4>Record delimiter</h4><p><code>\0\0</code> separates records. Stack order = file order.</p></div>
-        <div class="mapping-card"><h4>Atomic writes</h4><p>Write to <code>master.tmp</code>, <code>rename()</code> to <code>master</code>. A crash leaves the previous master intact.</p></div>
-        <div class="mapping-card"><h4>Exclusive locking</h4><p><code>fs2::FileExt::lock_exclusive</code> wraps every read-modify-write. Concurrent shells serialize.</p></div>
+        <div class="mapping-card"><h4>Atomic writes</h4><p>Write to <code>temprs-stack.tmp</code>, <code>rename()</code> to <code>temprs-stack</code>. A crash leaves the previous master intact.</p></div>
+        <div class="mapping-card"><h4>Exclusive locking</h4><p><code>fs2::FileExt::lock_exclusive</code> on <code>temprs-stack.lock</code> wraps every read-modify-write. Concurrent shells serialize.</p></div>
         <div class="mapping-card"><h4>Auto-recovery</h4><p>Empty or malformed records on read are silently skipped and dropped on the next write.</p></div>
-        <div class="mapping-card"><h4>Storage root</h4><p><code>$TMPDIR/temprs</code> by default; override with <code>TEMPRS_DIR</code>. Master record lives alongside the tempfiles themselves.</p></div>
+        <div class="mapping-card"><h4>Storage root</h4><p><code>$TMPDIR/temprs</code> by default; override with <code>TEMPRS_DIR</code>. The master record (<code>temprs-stack</code>) lives alongside the <code>tempfile&lt;timestamp&gt;</code> payloads.</p></div>
+        <div class="mapping-card"><h4>Purge safety</h4><p><code>tp -c</code> refuses to clear unless the directory basename contains <code>temprs</code> &mdash; a guard against <code>TEMPRS_DIR=$HOME</code> wiping unrelated files.</p></div>
+      </div>
+
+      <hr class="section-rule">
+
+      <!-- ═══════════════════════════════════════ -->
+      <!-- SECTION 4b: DISPATCH & RESOLUTION      -->
+      <!-- ═══════════════════════════════════════ -->
+      <h2 class="tutorial-title"><span class="step-hash">%</span>DISPATCH &amp; RESOLUTION</h2>
+      <p class="tutorial-subtitle">One code path drives both binaries. <code>main()</code> constructs a <code>TempApp</code> and calls <code>run()</code>; <code>run()</code> reads the parsed <code>clap</code> matches and dispatches each flag in turn. Index/name resolution is a single fall-through function shared by every operation that takes an <code>INDEX</code>.</p>
+
+      <div class="mapping-grid">
+        <div class="mapping-card"><h4>Entry point</h4><p><code>src/main.rs</code> &mdash; <code>TempApp::new()</code> then <code>app.run()</code>. <code>tp</code> and <code>temprs</code> are the same binary built from one target.</p></div>
+        <div class="mapping-card"><h4>Startup (<code>State::new</code>)</h4><p>Init logger (<code>simple_logger</code>, Info), resolve <code>TEMPRS_DIR</code> (default <code>$TMPDIR/temprs</code>), create the directory if absent, then take an exclusive <code>flock</code> on <code>temprs-stack.lock</code>.</p></div>
+        <div class="mapping-card"><h4>CLI definition</h4><p><code>src/model/opts.rs</code> (lines 1&ndash;259) &mdash; the <code>clap</code> <code>Command</code> with grouped cyberpunk help template, short + long forms, value names, and <code>allow_hyphen_values</code> so negative indices parse.</p></div>
+        <div class="mapping-card"><h4>Dispatch</h4><p><code>TempApp::run</code> in <code>src/model/app.rs</code> &mdash; a flat sequence of <code>get_flag</code> / <code>get_one</code> / <code>get_many</code> checks, each calling the matching handler.</p></div>
+        <div class="mapping-card"><h4>Index/name resolution</h4><p><code>resolve_idx</code> &mdash; <code>parse::&lt;i32&gt;()</code> first (negatives mapped via <code>util_transform_idx</code>), then a name lookup by <code>position()</code> over the parallel names vector. Unresolved arguments terminate with <em>Invalid specified index</em>.</p></div>
+        <div class="mapping-card"><h4>Parallel arrays</h4><p>The stack is two aligned vectors &mdash; file paths and optional tags &mdash; kept in sync across every mutation. <code>tests/tag_alignment_after_mutation.rs</code> pins that sync across shift, pop, rev, and remove.</p></div>
       </div>
 
       <hr class="section-rule">
@@ -208,7 +226,7 @@
       <p class="tutorial-subtitle">Grouped by behavior. Every operation that takes <code>INDEX</code> also accepts a tag name &mdash; the resolver tries numeric parse first, then falls through to tag lookup. Negative indices count from top of stack.</p>
 
       <div class="feature-grid">
-        <div class="feature-card"><h4>I/O</h4><p>Push stdin or load a file; read by index or tag; verbose mode also tees to stdout.</p><ul><li><code>tp</code> &mdash; push stdin to top</li><li><code>tp FILE</code> &mdash; load file to top</li><li><code>tp -i N</code> &mdash; write stdin into N</li><li><code>tp -o N</code> &mdash; read N to stdout</li><li><code>tp -A N</code> &mdash; append stdin to N</li><li><code>tp -v</code> &mdash; verbose (also tee to stdout)</li></ul></div>
+        <div class="feature-card"><h4>I/O</h4><p>Push stdin or load a file; read by index or tag; verbose mode also tees to stdout.</p><ul><li><code>tp</code> &mdash; push stdin to top</li><li><code>tp FILE</code> &mdash; load file to top</li><li><code>tp -i N</code> &mdash; write stdin into N</li><li><code>tp -o N</code> &mdash; read N to stdout</li><li><code>tp -A N</code> &mdash; append stdin to N</li><li><code>tp -v</code> &mdash; verbose (also tee to stdout)</li><li><code>tp -q</code> &mdash; quiet (suppress create output)</li></ul></div>
         <div class="feature-card"><h4>Stack mutation</h4><p>Position-based operations with the full Perl/Ruby array vocabulary.</p><ul><li><code>-p</code> pop, <code>-u</code> unshift, <code>-s</code> shift</li><li><code>-a N</code> insert at N, <code>-r N</code> remove</li><li><code>-M src dst</code> move</li><li><code>-S a b</code> swap</li><li><code>-x N</code> duplicate to top</li></ul></div>
         <div class="feature-card"><h4>Bulk</h4><p>Whole-stack transforms and housekeeping.</p><ul><li><code>--rev</code> reverse</li><li><code>--sort name|size|mtime</code></li><li><code>-c</code> purge all</li><li><code>--expire HOURS</code> purge by mtime (fractional)</li></ul></div>
         <div class="feature-card"><h4>Listing</h4><p>Five list modes; pick the verbosity you need.</p><ul><li><code>-l</code> names only</li><li><code>-L</code> names + contents</li><li><code>-n</code> numbered names</li><li><code>-N</code> numbered + contents</li><li><code>-k</code> stack size</li></ul></div>
@@ -254,7 +272,7 @@
       <div class="mapping-grid">
         <div class="mapping-card"><h4>Binaries</h4><p><code>tp</code> &mdash; short form. <code>temprs</code> &mdash; long form. Identical builds from one Cargo target; LTO + <code>panic=abort</code> + <code>strip=true</code> + <code>codegen-units=1</code> for release.</p></div>
         <div class="mapping-card"><h4>zsh completion</h4><p><code>completions/_temprs</code> &mdash; dynamic resolution of stack indices, filenames, and <code>@name</code> tags. Tab-completion sees the live stack, not a static word list.</p></div>
-        <div class="mapping-card"><h4>man page</h4><p><code>man/temprs.1</code> &mdash; 320-line groff manual; install to <code>$MANPATH/man1/</code> for <code>man tp</code>.</p></div>
+        <div class="mapping-card"><h4>man pages</h4><p>Two groff manuals under <code>man/man1/</code>: <code>temprs.1</code> (320 lines, short reference, <code>man temprs</code>) and <code>temprsall.1</code> (653 lines, full manual, <code>man temprsall</code>). Install to a directory on <code>$MANPATH</code>.</p></div>
         <div class="mapping-card"><h4>Library crate</h4><p><code>temprs</code> is also published as a library (<code>src/lib.rs</code>) &mdash; downstream crates can <code>use temprs::*</code> for state, dispatch, and stack ops without forking the binary.</p></div>
         <div class="mapping-card"><h4>CI workflow</h4><p><code>.github/workflows/ci.yml</code> runs check + test + fmt + clippy + doc + release build on every push to <code>main</code> and every pull request. Runnable manually via workflow dispatch.</p></div>
         <div class="mapping-card"><h4>Benchmarks</h4><p><code>benches/benchmarks.rs</code> &mdash; criterion harness over stack ops and master-record round-trips; run with <code>cargo bench</code>.</p></div>
@@ -266,16 +284,16 @@
       <!-- SECTION 8: VERSION HISTORY             -->
       <!-- ═══════════════════════════════════════ -->
       <h2 class="tutorial-title"><span class="step-hash">v</span>VERSION HISTORY</h2>
-      <p class="tutorial-subtitle">Current crate: <code>temprs 2.9.11</code>. 287 commits on <code>main</code>. Last five commits:</p>
+      <p class="tutorial-subtitle">Current crate: <code>temprs 2.9.11</code>. 289 commits on <code>main</code>. Last five commits:</p>
 
       <table class="file-table">
         <thead><tr><th>Hash</th><th>Subject</th></tr></thead>
         <tbody>
+          <tr><td>8443bc0305</td><td>docs: reconcile stale references and counts with current code</td></tr>
+          <tr><td>d1d80f31a7</td><td>docs: refresh engineering report/index HTML stats to current source of truth</td></tr>
           <tr><td>4938e65dcb</td><td>tests: master-record: parallel-array alignment across multi-tag round-trips</td></tr>
           <tr><td>d0f25ce2a7</td><td>docs: refresh stale counts — CI job list adds Docs gates + Polish gates</td></tr>
           <tr><td>fc68a897e3</td><td>fix(replace): reject empty pattern in replace_in_tempfile</td></tr>
-          <tr><td>18d960253c</td><td>fix(security): expire_tempfiles rejects negative/NaN/inf + clear_all refuses non-temprs dir</td></tr>
-          <tr><td>2d03d92a71</td><td>tests: tag_alignment_after_mutation: pin name/path vec sync across shift, pop, rev, remove</td></tr>
         </tbody>
       </table>
 

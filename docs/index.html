@@ -167,8 +167,8 @@
             <a href="https://docs.rs/temprs" target="_blank" rel="noopener noreferrer">docs.rs</a>
           </nav>
           <p class="docs-build-line">temprs v2.9.11 &middot; Two binaries (<code>tp</code> + <code>temprs</code>) &middot; Dual indexing (position + <code>@name</code>) &middot; Null-byte master record &middot; <code>flock</code>-protected, atomic writes &middot; 5,644 tests</p>
-          <p class="docs-build-line">4,767 production Rust lines &middot; 57,945 test Rust lines &middot; 287 commits &middot; 5 direct deps &middot; zsh completion + man page</p>
-          <!-- prod/test/commits derived from: awk '/^#\[cfg\(test\)\]/{found=1; exit} 1' src/**/*.rs | wc -l; git rev-list --count main -->
+          <p class="docs-build-line">4,767 production Rust lines &middot; 57,945 test Rust lines &middot; 289 commits &middot; 5 direct deps &middot; zsh completion + two man pages</p>
+          <!-- prod = file-level: src/{lib,main}.rs + src/util/{consts,utils,mod}.rs + src/model/{mod,app,state/mod}.rs + opts.rs CLI def (1-259) = 4,767; test = remaining inline test modules + tests/ = 57,945 (benches excluded); commits = git rev-list --count main = 289 -->
         </div>
         <div class="tutorial-toolbar">
           <button type="button" class="btn btn-secondary" id="btnTheme" title="Toggle light/dark">Theme</button>
@@ -217,7 +217,7 @@ tp -o 1 | head -5
 # tag a tempfile so you can recall it by name
 ps aux | tp -w procs
 tp -o procs | grep firefox</pre>
-        <p>Full install + usage live in the <a href="https://github.com/MenkeTechnologies/temprs#readme">README</a>; the man page is shipped at <code>man/temprs.1</code>.</p>
+        <p>Full install + usage live in the <a href="https://github.com/MenkeTechnologies/temprs#readme">README</a>; two man pages are shipped under <code>man/man1/</code> &mdash; a short reference (<code>temprs.1</code>, <code>man temprs</code>) and a full manual (<code>temprsall.1</code>, <code>man temprsall</code>).</p>
       </section>
 
       <hr class="section-rule">
@@ -231,7 +231,7 @@ tp -o procs | grep firefox</pre>
  │  INDEX 2   ▓▓  ...                  │
  │  INDEX 1   ▓▓  BOTTOM OF STACK      │
  └─────────────────────────────────────┘</div>
-        <p>Files live in <code>$TMPDIR/temprs/</code> (override with <code>TEMPRS_DIR</code>). The master record (<code>master</code>) maps index → filename → optional tag. Stack position is reconstructed from the master on every invocation, so multiple shells share one canonical view.</p>
+        <p>Files live in <code>$TMPDIR/temprs/</code> (override with <code>TEMPRS_DIR</code>). The master record (<code>temprs-stack</code>) maps each stack position to its filename and optional tag; the individual payloads are <code>tempfile&lt;timestamp&gt;</code> files alongside it. Writes go through <code>temprs-stack.tmp</code> and are atomically renamed, with a <code>temprs-stack.lock</code> guarding concurrent access. Stack position is reconstructed from the master on every invocation, so multiple shells share one canonical view.</p>
       </section>
 
       <hr class="section-rule">
@@ -262,7 +262,7 @@ tp --replace procs old new</pre>
       <section class="tutorial-section">
         <h2>Operations &mdash; full surface</h2>
         <div class="cat-grid">
-          <div class="cat-card"><h4>I/O</h4><p><code>tp</code> (push stdin), <code>tp FILE</code> (load file), <code>tp -i N</code> (write into N), <code>tp -o N</code> (read N to stdout), <code>tp -v</code> (verbose = also write to stdout), <code>tp -A N</code> (append to N).</p></div>
+          <div class="cat-card"><h4>I/O</h4><p><code>tp</code> (push stdin), <code>tp FILE</code> (load file), <code>tp -i N</code> (write into N), <code>tp -o N</code> (read N to stdout), <code>tp -v</code> (verbose = also write to stdout), <code>tp -q</code> (quiet = suppress create output), <code>tp -A N</code> (append to N).</p></div>
           <div class="cat-card"><h4>Stack mutation</h4><p><code>-p</code> pop, <code>-u</code> unshift, <code>-s</code> shift, <code>-a N</code> insert at N, <code>-r N</code> remove, <code>-M src dst</code> move, <code>-S a b</code> swap, <code>-x N</code> duplicate to top.</p></div>
           <div class="cat-card"><h4>Bulk</h4><p><code>--rev</code> reverse the stack, <code>--sort name|size|mtime</code> sort, <code>-c</code> purge all, <code>--expire HOURS</code> purge by mtime (fractional hours OK: <code>0.5</code>).</p></div>
           <div class="cat-card"><h4>Listing</h4><p><code>-l</code> list, <code>-L</code> list with contents, <code>-n</code> numbered, <code>-N</code> numbered with contents, <code>-k</code> count, <code>-d</code> show temprs directory, <code>-m</code> show master file.</p></div>
@@ -290,13 +290,14 @@ tp --replace procs old new</pre>
             <tr><td>-u, --unshift</td><td>&nbsp;</td><td>Push to bottom (stdin in, no stdout)</td></tr>
             <tr><td>-s, --shift</td><td>&nbsp;</td><td>Shift from bottom</td></tr>
             <tr><td>-A, --append</td><td>INDEX</td><td>Append stdin to tempfile at INDEX</td></tr>
-            <tr><td>-v, --verbose</td><td>&nbsp;</td><td>Also echo data to stdout on write</td></tr>
-            <tr><td>-w, --write-name</td><td>NAME</td><td>Tag new tempfile with NAME</td></tr>
+            <tr><td>-v, --verbose</td><td>&nbsp;</td><td>Also echo data to stdout on write (repeatable; raises verbosity level)</td></tr>
+            <tr><td>-q, --quiet</td><td>&nbsp;</td><td>Suppress output when creating a tempfile</td></tr>
+            <tr><td>-w, --name</td><td>NAME</td><td>Tag new tempfile with NAME</td></tr>
             <tr><td>-R, --rename</td><td>SRC NAME</td><td>Rename tag (SRC = index or current name)</td></tr>
-            <tr><td>-l, --list</td><td>&nbsp;</td><td>List stack</td></tr>
-            <tr><td>-L</td><td>&nbsp;</td><td>List stack with contents</td></tr>
-            <tr><td>-n</td><td>&nbsp;</td><td>List stack numbered</td></tr>
-            <tr><td>-N</td><td>&nbsp;</td><td>List stack numbered with contents</td></tr>
+            <tr><td>-l, --list-files</td><td>&nbsp;</td><td>List stack</td></tr>
+            <tr><td>-L, --list-contents</td><td>&nbsp;</td><td>List stack with contents</td></tr>
+            <tr><td>-n, --list-files-numbered</td><td>&nbsp;</td><td>List stack numbered</td></tr>
+            <tr><td>-N, --list-contents-numbered</td><td>&nbsp;</td><td>List stack numbered with contents</td></tr>
             <tr><td>-k, --count</td><td>&nbsp;</td><td>Print stack size</td></tr>
             <tr><td>-d, --dir</td><td>&nbsp;</td><td>Print temprs directory</td></tr>
             <tr><td>-m, --master</td><td>&nbsp;</td><td>Print master record path</td></tr>
@@ -311,7 +312,7 @@ tp --replace procs old new</pre>
             <tr><td>--path</td><td>INDEX</td><td>Filesystem path of INDEX (for <code>cat "$(tp --path 1)"</code>)</td></tr>
             <tr><td>-g, --grep</td><td>PATTERN</td><td>Grep all tempfiles (exit 0 on match, 1 on none)</td></tr>
             <tr><td>--replace</td><td>INDEX PAT REPL</td><td>Replace PAT with REPL in INDEX, print replacement count</td></tr>
-            <tr><td>-C, --concat</td><td>INDEX...</td><td>Concatenate listed tempfiles to stdout</td></tr>
+            <tr><td>-C, --cat</td><td>INDEX...</td><td>Concatenate listed tempfiles to stdout</td></tr>
             <tr><td>-D, --diff</td><td>A B</td><td>Unified diff of two tempfiles</td></tr>
             <tr><td>-M, --move</td><td>SRC DST</td><td>Move tempfile from SRC to DST position</td></tr>
             <tr><td>-S, --swap</td><td>A B</td><td>Swap two tempfiles</td></tr>
@@ -342,7 +343,7 @@ tp --replace procs old new</pre>
         <table class="flag-table">
           <thead><tr><th>Variable</th><th>Effect</th></tr></thead>
           <tbody>
-            <tr><td>TEMPRS_DIR</td><td>Override the tempfile + master record directory. Default: <code>$TMPDIR/temprs</code> (or <code>/tmp/temprs</code> if <code>$TMPDIR</code> is unset).</td></tr>
+            <tr><td>TEMPRS_DIR</td><td>Override the tempfile + master record directory. Default: <code>$TMPDIR/temprs</code> (or <code>/tmp/temprs</code> if <code>$TMPDIR</code> is unset). The directory is created on first use. <code>tp -c</code> only purges when the directory basename contains <code>temprs</code>, so keep that substring in any custom path.</td></tr>
             <tr><td>EDITOR</td><td>Used by <code>tp -e INDEX</code>. Falls back to <code>vi</code>.</td></tr>
           </tbody>
         </table>
@@ -359,7 +360,7 @@ cp completions/_temprs /usr/local/share/zsh/site-functions/_tp
 # or extend fpath in .zshrc
 fpath=(/path/to/temprs/completions $fpath)
 autoload -Uz compinit &amp;&amp; compinit</pre>
-        <p>A groff man page is shipped at <code>man/temprs.1</code> &mdash; install to <code>$MANPATH/man1/</code> for <code>man tp</code>.</p>
+        <p>Two groff man pages are shipped under <code>man/man1/</code> &mdash; <code>temprs.1</code> (short reference) and <code>temprsall.1</code> (full manual). Install to a directory on <code>$MANPATH</code> for <code>man temprs</code> and <code>man temprsall</code>.</p>
       </section>
 
       <hr class="section-rule">
@@ -390,6 +391,40 @@ tp -o cfg | curl -X PUT --data-binary @- api/v1/config
 tp --expire 24    <span class="comment"># drop anything older than a day</span>
 tp --expire 0.5   <span class="comment"># drop anything older than 30 minutes</span>
 tp -c             <span class="comment"># drop everything</span></pre>
+      </section>
+
+      <hr class="section-rule">
+
+      <section class="tutorial-section">
+        <h2>Exit codes &amp; scripting</h2>
+        <p>A few operations are designed to be used in shell conditionals &mdash; they set the exit status, not just print output:</p>
+        <ul>
+          <li><code>tp -g PATTERN</code> &mdash; exits <code>0</code> if any tempfile matches, <code>1</code> if none. Use it as a guard: <code>tp -g needle &amp;&amp; echo found</code>.</li>
+          <li><code>tp -D a b</code> &mdash; unified diff; exits <code>0</code> when the two tempfiles are identical, <code>1</code> when they differ.</li>
+          <li><code>tp --replace N PAT REPL</code> &mdash; performs the in-place edit and prints the number of replacements made, so a script can branch on whether anything changed.</li>
+          <li><code>tp --path N</code> &mdash; prints the raw filesystem path with no decoration, intended for command substitution: <code>cat "$(tp --path 1)"</code>.</li>
+        </ul>
+      </section>
+
+      <hr class="section-rule">
+
+      <section class="tutorial-section">
+        <h2>Troubleshooting</h2>
+        <p>Errors are written to stderr in a terse form. The messages map directly to the constants in <code>src/util/consts.rs</code>:</p>
+        <table class="flag-table">
+          <thead><tr><th>Message</th><th>Cause</th></tr></thead>
+          <tbody>
+            <tr><td>Invalid specified index</td><td>The index is out of range (<code>0</code>, or beyond <code>±stack_size</code>), or a <code>@name</code> that does not resolve. Positive range is <code>1..stack_size</code>, negative range is <code>-stack_size..-1</code>; index <code>0</code> is never valid.</td></tr>
+            <tr><td>Invalid or duplicate name</td><td>A tag (<code>-w</code> / <code>-R</code>) collides with an existing name. Names must be unique across the stack.</td></tr>
+            <tr><td>Name must not contain null bytes</td><td>Tag names are stored in the null-byte-delimited master record, so they cannot themselves contain <code>\0</code>.</td></tr>
+            <tr><td>No such file / Could not read file</td><td>A <code>FILE</code> argument does not exist or cannot be read.</td></tr>
+            <tr><td>Could not open editor</td><td><code>tp -e</code> could not launch <code>$EDITOR</code> (or its <code>vi</code> fallback).</td></tr>
+            <tr><td>Could not acquire lock on master record</td><td>The <code>flock</code> on <code>temprs-stack.lock</code> could not be taken &mdash; usually a permissions issue on the temprs directory.</td></tr>
+            <tr><td>Could not write master record</td><td>The atomic write of the master record failed (disk full, permissions).</td></tr>
+          </tbody>
+        </table>
+        <p><strong>Custom directory safety.</strong> <code>tp -c</code> (purge all) refuses to operate unless the basename of the temprs directory contains the string <code>temprs</code>. This guards against an accidental <code>TEMPRS_DIR=$HOME</code> wiping unrelated files. Keep <code>temprs</code> in any custom directory name.</p>
+        <p>If the stack ever looks inconsistent, inspect the raw store: <code>tp -d</code> prints the temprs directory and <code>tp -m</code> prints the master record path. Empty or malformed records are skipped on read and cleaned up on the next write, so a single bad record self-heals.</p>
       </section>
 
       <hr class="section-rule">
