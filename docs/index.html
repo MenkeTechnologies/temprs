@@ -167,8 +167,8 @@
             <a href="https://docs.rs/temprs" target="_blank" rel="noopener noreferrer">docs.rs</a>
           </nav>
           <p class="docs-build-line">temprs v2.9.11 &middot; Two binaries (<code>tp</code> + <code>temprs</code>) &middot; Dual indexing (position + <code>@name</code>) &middot; Null-byte master record &middot; <code>flock</code>-protected, atomic writes &middot; 5,644 tests</p>
-          <p class="docs-build-line">4,767 production Rust lines &middot; 57,945 test Rust lines &middot; 289 commits &middot; 5 direct deps &middot; zsh completion + two man pages</p>
-          <!-- prod = file-level: src/{lib,main}.rs + src/util/{consts,utils,mod}.rs + src/model/{mod,app,state/mod}.rs + opts.rs CLI def (1-259) = 4,767; test = remaining inline test modules + tests/ = 57,945 (benches excluded); commits = git rev-list --count main = 289 -->
+          <p class="docs-build-line">4,767 production Rust lines &middot; 57,945 test Rust lines &middot; 290 commits &middot; 5 direct deps &middot; zsh completion + two man pages</p>
+          <!-- prod = file-level: src/{lib,main}.rs + src/util/{consts,utils,mod}.rs + src/model/{mod,app,state/mod}.rs + opts.rs CLI def (1-259) = 4,767; test = remaining inline test modules + tests/ = 57,945 (benches excluded); commits = git rev-list --count main = 290 -->
         </div>
         <div class="tutorial-toolbar">
           <button type="button" class="btn btn-secondary" id="btnTheme" title="Toggle light/dark">Theme</button>
@@ -314,7 +314,7 @@ tp --replace procs old new</pre>
             <tr><td>--replace</td><td>INDEX PAT REPL</td><td>Replace PAT with REPL in INDEX, print replacement count</td></tr>
             <tr><td>-C, --cat</td><td>INDEX...</td><td>Concatenate listed tempfiles to stdout</td></tr>
             <tr><td>-D, --diff</td><td>A B</td><td>Unified diff of two tempfiles</td></tr>
-            <tr><td>-M, --move</td><td>SRC DST</td><td>Move tempfile from SRC to DST position</td></tr>
+            <tr><td>-M, --mv</td><td>FROM TO</td><td>Move tempfile from FROM to TO position</td></tr>
             <tr><td>-S, --swap</td><td>A B</td><td>Swap two tempfiles</td></tr>
             <tr><td>-x, --dup</td><td>INDEX</td><td>Duplicate INDEX onto top of stack</td></tr>
             <tr><td>--rev</td><td>&nbsp;</td><td>Reverse the entire stack</td></tr>
