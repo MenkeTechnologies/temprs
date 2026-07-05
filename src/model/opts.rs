@@ -33,7 +33,7 @@ const AFTER: &str = concat!(
     "\x1b[36m  ── SYSTEM ─────────────────────────────────────────\x1b[0m\n",
     "\x1b[35m  v",
     env!("CARGO_PKG_VERSION"),
-    " \x1b[0m// \x1b[33m(c) Jacob Menke and contributors\x1b[0m\n",
+    " \x1b[0m// \x1b[33m(c) MenkeTechnologies\x1b[0m\n",
     "\x1b[35m  The stack is vast and infinite.\x1b[0m\n",
     "\x1b[33m  >>> JACK IN. PUSH YOUR DATA. OWN YOUR TEMP FILES. <<<\x1b[0m\n",
     "\x1b[36m ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░\x1b[0m"
