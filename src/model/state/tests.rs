@@ -1750,7 +1750,7 @@ fn temp_file_names_mut_extend_from_slice() {
 fn holding_buffer_mut_clear_via_truncate() {
     let mut s = make_state();
     s.set_holding_buffer("truncate me".to_string());
-    s.holding_buffer_mut().truncate(0);
+    s.holding_buffer_mut().clear();
     assert!(s.holding_buffer().is_empty());
 }
 
