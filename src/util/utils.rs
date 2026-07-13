@@ -335,6 +335,129 @@ pub fn util_time_ms() -> String {
     }
 }
 
+/// `util_time_secs` — epoch seconds now; terminates on clock error.
+pub fn util_time_secs() -> u64 {
+    match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+        Ok(d) => d.as_secs(),
+        Err(_) => {
+            util_terminate_error(ERR_CLOCK);
+            unreachable!()
+        }
+    }
+}
+
+static TOKEN_COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// `util_gen_token` — unique lease token: `<pid>-<epoch_nanos>-<seq>` in hex.
+/// The per-process monotonic counter guarantees uniqueness across concurrent
+/// leases in one process; the pid + nanos make collisions across processes
+/// effectively impossible. Contains no `\0` / `\t`, so it is safe both in the
+/// `path\ttoken` print and in the null-delimited inflight record.
+pub fn util_gen_token() -> String {
+    let nanos = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    let seq = TOKEN_COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+    format!("{:x}-{:x}-{:x}", std::process::id(), nanos, seq)
+}
+
+/// `InflightRec` — a leased tempfile awaiting `--ack` / `--nack`.
+/// `deadline` is absolute epoch seconds; a reaper returns the file to the
+/// stack once `now >= deadline`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InflightRec {
+    /// physical tempfile path (re-pointed, never copied)
+    pub path: PathBuf,
+    /// optional name tag carried over from the stack entry
+    pub name: Option<String>,
+    /// lease token handed to the worker
+    pub token: String,
+    /// absolute epoch-second expiry deadline
+    pub deadline: u64,
+}
+
+/// `util_file_to_inflight` — parse the inflight sidecar record.
+/// Same delimiter discipline as the master record (`\0` fields, `\0\0`
+/// records). Each record is `path\0token\0deadline[\0name]` — the optional
+/// name tag is last and omitted when absent, so no empty middle field can
+/// form a spurious `\0\0` record boundary. Malformed or truncated records are
+/// skipped, mirroring the master-record parser.
+pub fn util_file_to_inflight(path: &Path) -> Vec<InflightRec> {
+    let data = match read_to_string(path) {
+        Ok(s) => s,
+        Err(_) => return Vec::new(),
+    };
+    let mut recs = Vec::new();
+    if data.is_empty() {
+        return recs;
+    }
+    for (rec_num, record) in data.split(MASTER_RECORD_DELIM).enumerate() {
+        if record.trim().is_empty() {
+            continue;
+        }
+        let fields: Vec<&str> = record.split(MASTER_FIELD_DELIM).collect();
+        if fields.len() < 3 || fields[0].is_empty() {
+            warn!("skipping malformed inflight record {}", rec_num + 1);
+            continue;
+        }
+        let deadline = match fields[2].parse::<u64>() {
+            Ok(d) => d,
+            Err(_) => {
+                warn!("skipping inflight record {} with bad deadline", rec_num + 1);
+                continue;
+            }
+        };
+        recs.push(InflightRec {
+            path: PathBuf::from(fields[0]),
+            name: fields
+                .get(3)
+                .filter(|s| !s.is_empty())
+                .map(|s| s.to_string()),
+            token: fields[1].to_string(),
+            deadline,
+        });
+    }
+    recs
+}
+
+/// `util_inflight_to_file` — atomically write the inflight sidecar record.
+/// Writes to a sibling `.tmp` then `rename`s, identical to the master-record
+/// write path so a crash mid-write cannot corrupt the queue state.
+pub fn util_inflight_to_file(recs: &[InflightRec], out: &Path) {
+    let records: Vec<String> = recs
+        .iter()
+        .map(|r| {
+            let mut rec = String::new();
+            rec.push_str(&util_path_to_string(&r.path));
+            rec.push(MASTER_FIELD_DELIM);
+            rec.push_str(&r.token);
+            rec.push(MASTER_FIELD_DELIM);
+            rec.push_str(&r.deadline.to_string());
+            if let Some(name) = &r.name {
+                if !name.is_empty() {
+                    rec.push(MASTER_FIELD_DELIM);
+                    rec.push_str(name);
+                }
+            }
+            rec
+        })
+        .collect();
+    let buf = if records.is_empty() {
+        String::new()
+    } else {
+        let mut s = records.join(MASTER_RECORD_DELIM);
+        s.push_str(MASTER_RECORD_DELIM);
+        s
+    };
+    let tmp = out.with_extension("tmp");
+    util_overwrite_file(&tmp, &buf);
+    if rename(&tmp, out).is_err() {
+        util_terminate_error(ERR_INFLIGHT_WRITE);
+    }
+    debug!("atomic write inflight record '{}'", util_path_to_string(out));
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

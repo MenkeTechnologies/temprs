@@ -118,6 +118,24 @@ pub const ERR_EDITOR: &str = "Could not open editor";
 pub const ERR_MASTER_WRITE: &str = "Could not write master record";
 /// `ERR_MASTER_LOCK` — "Could not acquire lock on master record"
 pub const ERR_MASTER_LOCK: &str = "Could not acquire lock on master record";
+/// `LEASE` — "lease"
+pub const LEASE: &str = "lease";
+/// `ACK` — "ack"
+pub const ACK: &str = "ack";
+/// `NACK` — "nack"
+pub const NACK: &str = "nack";
+/// `LEASE_TTL` — "lease_ttl"
+pub const LEASE_TTL: &str = "lease_ttl";
+/// `INFLIGHT_RECORD_FILENAME` — "temprs-inflight"
+pub const INFLIGHT_RECORD_FILENAME: &str = "temprs-inflight";
+/// `DEFAULT_LEASE_TTL_SECS` — 300 (5 minutes)
+pub const DEFAULT_LEASE_TTL_SECS: u64 = 300;
+/// `ERR_NO_LEASE` — "No such lease token"
+pub const ERR_NO_LEASE: &str = "No such lease token";
+/// `ERR_EMPTY_STACK` — "Stack is empty"
+pub const ERR_EMPTY_STACK: &str = "Stack is empty";
+/// `ERR_INFLIGHT_WRITE` — "Could not write inflight record"
+pub const ERR_INFLIGHT_WRITE: &str = "Could not write inflight record";
 
 #[cfg(test)]
 mod tests {
@@ -264,6 +282,10 @@ mod tests {
             SORT,
             REPLACE,
             PATH,
+            LEASE,
+            ACK,
+            NACK,
+            LEASE_TTL,
         ];
         let mut sorted = flags.clone();
         sorted.sort();
@@ -312,6 +334,10 @@ mod tests {
             SORT,
             REPLACE,
             PATH,
+            LEASE,
+            ACK,
+            NACK,
+            LEASE_TTL,
         ];
         for f in flags {
             assert_eq!(f, f.to_lowercase(), "flag '{}' should be lowercase", f);
@@ -566,6 +592,10 @@ mod tests {
             SORT,
             REPLACE,
             PATH,
+            LEASE,
+            ACK,
+            NACK,
+            LEASE_TTL,
         ];
         for f in flags {
             assert!(!f.contains(' '), "flag '{}' should not contain spaces", f);
@@ -615,6 +645,10 @@ mod tests {
             SORT,
             REPLACE,
             PATH,
+            LEASE,
+            ACK,
+            NACK,
+            LEASE_TTL,
         ];
         for f in flags {
             assert!(!f.is_empty(), "flag constant should not be empty");
@@ -664,6 +698,10 @@ mod tests {
             SORT,
             REPLACE,
             PATH,
+            LEASE,
+            ACK,
+            NACK,
+            LEASE_TTL,
         ];
         for f in flags {
             assert!(f.is_ascii(), "flag '{}' should be ASCII", f);
@@ -713,8 +751,12 @@ mod tests {
             SORT,
             REPLACE,
             PATH,
+            LEASE,
+            ACK,
+            NACK,
+            LEASE_TTL,
         ];
-        assert_eq!(flags.len(), 38);
+        assert_eq!(flags.len(), 42);
     }
 
     // ── naming conventions ──────────────────────────────

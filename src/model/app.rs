@@ -114,7 +114,7 @@ impl TempApp {
         debug!("file stack {}", master_file.display());
         debug!("found '{}' temp files on stack", temp_file_stack.len());
 
-        let state = TempState::new(
+        let mut state = TempState::new(
             out_file,
             master_file,
             temprs_dir,
@@ -124,10 +124,23 @@ impl TempApp {
             String::new(),
         );
 
-        Self {
+        // Startup dead-file sweep for inflight leases: drop any record whose
+        // physical tempfile no longer exists (already ack'd or removed),
+        // mirroring the master-record sweep above.
+        let inflight: Vec<InflightRec> = util_file_to_inflight(&state.inflight_record_file())
+            .into_iter()
+            .filter(|r| r.path.exists())
+            .collect();
+        debug!("found '{}' inflight leases", inflight.len());
+        state.set_inflight(inflight);
+
+        let mut app = Self {
             state,
             _lock_file: lock_file,
-        }
+        };
+        // Return any expired leases to the stack for at-least-once redelivery.
+        app.reap_expired();
+        app
     }
 
     /// `state` — see implementation for the contract.
@@ -417,6 +430,25 @@ impl TempApp {
         }
         if let Some(f) = matches.get_one::<String>(PATH) {
             self.path_tempfile(f.clone());
+        }
+        if matches.get_flag(LEASE) {
+            let ttl = match matches.get_one::<String>(LEASE_TTL) {
+                Some(s) => match s.parse::<u64>() {
+                    Ok(v) => v,
+                    Err(_) => {
+                        util_terminate_error(ERR_INVALID_IDX);
+                        unreachable!()
+                    }
+                },
+                None => DEFAULT_LEASE_TTL_SECS,
+            };
+            self.lease_item(ttl);
+        }
+        if let Some(t) = matches.get_one::<String>(ACK) {
+            self.ack_item(t.clone());
+        }
+        if let Some(t) = matches.get_one::<String>(NACK) {
+            self.nack_item(t.clone());
         }
         if matches.get_flag(SHIFT) {
             self.remove_at_idx(1.to_string())
@@ -1022,6 +1054,63 @@ impl TempApp {
             }
             None => util_terminate_error(ERR_INVALID_IDX),
         }
+    }
+
+    /// `lease_item` — atomically move the bottom stack item into an inflight
+    /// lease with a generated token and `ttl_secs` deadline, then print
+    /// `path\ttoken`. The file is re-pointed, never copied.
+    fn lease_item(&mut self, ttl_secs: u64) {
+        if self.state().temp_file_stack().is_empty() {
+            util_terminate_error(ERR_EMPTY_STACK);
+        }
+        let token = util_gen_token();
+        let deadline = util_time_secs().saturating_add(ttl_secs);
+        match self.state().lease(token.clone(), deadline) {
+            Some(path) => {
+                self.state().write_master();
+                self.state().write_inflight();
+                println!("{}\t{}", util_path_to_string(&path), token);
+                exit(0)
+            }
+            None => util_terminate_error(ERR_EMPTY_STACK),
+        }
+    }
+
+    /// `ack_item` — acknowledge a lease: delete the leased file and drop the
+    /// inflight record.
+    fn ack_item(&mut self, token: String) {
+        match self.state().ack(&token) {
+            Some(path) => {
+                util_remove_file(&path);
+                self.state().write_inflight();
+                exit(0)
+            }
+            None => util_terminate_error(ERR_NO_LEASE),
+        }
+    }
+
+    /// `nack_item` — return a leased file to the bottom of the stack for
+    /// redelivery and drop the inflight record.
+    fn nack_item(&mut self, token: String) {
+        if self.state().nack(&token) {
+            self.state().write_master();
+            self.state().write_inflight();
+            exit(0)
+        } else {
+            util_terminate_error(ERR_NO_LEASE)
+        }
+    }
+
+    /// `reap_expired` — startup sweep: return every expired lease to the stack
+    /// (worker crash ⇒ redelivery) and persist the surviving inflight set.
+    fn reap_expired(&mut self) {
+        let now = util_time_secs();
+        let reaped = self.state().reap_expired(now);
+        if reaped > 0 {
+            debug!("reaped {} expired lease(s) back onto the stack", reaped);
+            self.state().write_master();
+        }
+        self.state().write_inflight();
     }
 
     fn remove_at_idx(&mut self, stk_idx: String) {

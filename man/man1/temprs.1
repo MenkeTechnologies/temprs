@@ -194,6 +194,32 @@ Purge all tempfiles from the stack.
 Purge tempfiles older than
 .I HOURS
 hours.
+.SS Work queue
+The stack doubles as a daemonless, broker-free, at-least-once work queue.
+.TP
+.BR \-\-lease " [" \fB\-\-lease\-ttl\fR " " \fISECS\fR "]"
+Atomically move the bottom item of the stack into an inflight lease record
+with a generated token and an expiry deadline, then print
+.I path
+and
+.I token
+separated by a tab. The file is re-pointed, never copied. The deadline
+defaults to 300 seconds and may be set with
+.BR \-\-lease\-ttl .
+Any lease whose deadline has passed is automatically returned to the stack on
+the next
+.B temprs
+invocation, so a crashed worker results in redelivery rather than lost work.
+.TP
+.BR \-\-ack " " \fITOKEN\fR
+Acknowledge the lease identified by
+.IR TOKEN :
+delete the leased file and drop its inflight record.
+.TP
+.BR \-\-nack " " \fITOKEN\fR
+Return the lease identified by
+.I TOKEN
+to the bottom of the stack for redelivery and drop its inflight record.
 .SS Tagging
 .TP
 .BR \-w ", " \-\-name " " \fINAME\fR
@@ -250,6 +276,15 @@ lock at
 Corrupt or empty records are silently skipped and cleaned up on the next
 write.
 .TP
+.I $TEMPRS_DIR/temprs-inflight
+Inflight lease sidecar record. Holds items moved out of the stack by
+.BR \-\-lease ,
+each as
+.IR "path, token, deadline" ", and optional name tag,"
+using the same null-byte delimited, atomically written, flock-protected
+format as the master record. Expired leases are swept back onto the stack on
+the next invocation.
+.TP
 .I $TEMPRS_DIR/temp-*
 Individual tempfiles created by
 .BR temprs .
@@ -300,6 +335,17 @@ Expire tempfiles older than 24 hours:
 .RS 4
 .nf
 tp --expire 24
+.fi
+.RE
+.PP
+Drain the stack as a work queue with at-least-once delivery:
+.PP
+.RS 4
+.nf
+while read -r path token < <(tp --lease); do
+    [ -z "$path" ] && break
+    if process "$path"; then tp --ack "$token"; else tp --nack "$token"; fi
+done
 .fi
 .RE
 .SH EXIT STATUS

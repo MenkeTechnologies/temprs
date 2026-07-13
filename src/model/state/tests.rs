@@ -1,7 +1,9 @@
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use crate::util::utils::{util_file_to_paths_and_names, util_time_ms};
+use crate::util::utils::{
+    InflightRec, util_file_to_inflight, util_file_to_paths_and_names, util_time_ms,
+};
 
 use super::*;
 
@@ -1977,4 +1979,146 @@ fn name_set_unicode() {
     let mut s = make_state();
     s.set_name(Some("タグ".to_string()));
     assert_eq!(s.name(), &Some("タグ".to_string()));
+}
+
+// ── lease / ack / nack / reap work-queue semantics ──────────
+
+// A lease takes the BOTTOM of the stack (index 0), the same end `--shift`
+// consumes, and parks it in an inflight record. `--ack` then deletes the
+// physical file. Worker success ⇒ the file is gone and nothing is redelivered.
+#[test]
+fn lease_then_ack_removes_file() {
+    let dir = state_test_tmp_dir();
+    let f0 = dir.join("bottom");
+    let f1 = dir.join("top");
+    std::fs::write(&f0, "bottom").unwrap();
+    std::fs::write(&f1, "top").unwrap();
+
+    let mut s = make_state();
+    s.set_temp_file_stack(vec![f0.clone(), f1.clone()]);
+    s.set_temp_file_names(vec![None, None]);
+
+    let leased = s.lease("tok-ack".to_string(), u64::MAX);
+    assert_eq!(leased, Some(f0.clone()), "lease consumes the bottom item");
+    assert_eq!(
+        s.temp_file_stack(),
+        &vec![f1.clone()],
+        "leased item leaves the stack"
+    );
+    assert_eq!(s.inflight().len(), 1, "leased item is now inflight");
+
+    let acked = s.ack("tok-ack");
+    assert_eq!(acked, Some(f0.clone()), "ack yields the leased path");
+    std::fs::remove_file(acked.unwrap()).unwrap();
+    assert!(!f0.exists(), "ack + delete removes the physical file");
+    assert!(s.inflight().is_empty(), "ack drops the inflight record");
+
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+// Worker crash ⇒ the lease deadline passes with no ack. `reap_expired`
+// returns the file to the stack for at-least-once redelivery.
+#[test]
+fn lease_expiry_redelivers_to_stack() {
+    let mut s = make_state();
+    s.set_temp_file_stack(vec![PathBuf::from("/tmp/temprs/q0"), PathBuf::from("/tmp/temprs/q1")]);
+    s.set_temp_file_names(vec![Some("job".to_string()), None]);
+
+    let leased = s.lease("tok-exp".to_string(), 1_000);
+    assert_eq!(leased, Some(PathBuf::from("/tmp/temprs/q0")));
+    assert_eq!(s.temp_file_stack().len(), 1);
+    assert_eq!(s.inflight().len(), 1);
+
+    // Not yet past the deadline: nothing is reaped.
+    assert_eq!(s.reap_expired(500), 0, "unexpired lease stays inflight");
+    assert_eq!(s.inflight().len(), 1);
+
+    // Past the deadline: the lease is redelivered to the bottom of the stack.
+    assert_eq!(s.reap_expired(2_000), 1, "expired lease is reaped");
+    assert!(s.inflight().is_empty());
+    assert_eq!(
+        s.temp_file_stack()[0],
+        PathBuf::from("/tmp/temprs/q0"),
+        "redelivered file returns to the bottom of the stack"
+    );
+    assert_eq!(
+        s.temp_file_names()[0],
+        Some("job".to_string()),
+        "name tag survives redelivery"
+    );
+}
+
+// `--nack` explicitly returns a leased file to the stack without waiting for
+// the deadline; an unknown token is a no-op reported to the caller.
+#[test]
+fn nack_returns_lease_to_stack() {
+    let mut s = make_state();
+    s.set_temp_file_stack(vec![PathBuf::from("/tmp/a"), PathBuf::from("/tmp/b")]);
+    s.set_temp_file_names(vec![None, Some("named".to_string())]);
+
+    let leased = s.lease("tok-nack".to_string(), 9_999);
+    assert_eq!(leased, Some(PathBuf::from("/tmp/a")));
+    assert!(s.nack("tok-nack"), "nack of a live token succeeds");
+    assert!(s.inflight().is_empty());
+    assert_eq!(
+        s.temp_file_stack()[0],
+        PathBuf::from("/tmp/a"),
+        "nack returns the file to the bottom of the stack"
+    );
+    assert!(!s.nack("no-such-token"), "nack of an unknown token fails");
+}
+
+#[test]
+fn lease_on_empty_stack_returns_none() {
+    let mut s = make_state();
+    s.set_temp_file_stack(vec![]);
+    s.set_temp_file_names(vec![]);
+    assert!(s.lease("t".to_string(), 1).is_none());
+    assert!(s.inflight().is_empty());
+}
+
+// Every generated token is distinct — no two leases can collide, so ack/nack
+// always address exactly one inflight record. Leasing 500 items with freshly
+// generated tokens must leave 500 distinct tokens across the inflight set.
+#[test]
+fn lease_tokens_are_unique() {
+    use std::collections::HashSet;
+    let mut s = make_state();
+    s.set_temp_file_stack(vec![PathBuf::from("/tmp/x"); 500]);
+    s.set_temp_file_names(vec![None; 500]);
+    for _ in 0..500 {
+        let tok = crate::util::utils::util_gen_token();
+        s.lease(tok, u64::MAX);
+    }
+    let tokens: HashSet<&String> = s.inflight().iter().map(|r| &r.token).collect();
+    assert_eq!(tokens.len(), 500, "all lease tokens must be unique");
+}
+
+// The inflight sidecar round-trips through its atomic file writer with the
+// same null-delimited discipline as the master record.
+#[test]
+fn inflight_record_round_trip() {
+    let dir = state_test_tmp_dir();
+    let mut s = make_state();
+    s.set_temprs_dir(dir.clone());
+    let recs = vec![
+        InflightRec {
+            path: PathBuf::from("/tmp/temprs/one"),
+            name: Some("tag".to_string()),
+            token: "aa-bb-0".to_string(),
+            deadline: 1_700_000_000,
+        },
+        InflightRec {
+            path: PathBuf::from("/tmp/temprs/two"),
+            name: None,
+            token: "aa-bb-1".to_string(),
+            deadline: 1_700_000_600,
+        },
+    ];
+    s.set_inflight(recs.clone());
+    s.write_inflight();
+
+    let loaded = util_file_to_inflight(&s.inflight_record_file());
+    assert_eq!(loaded, recs, "inflight records survive write→read");
+    std::fs::remove_dir_all(&dir).unwrap();
 }

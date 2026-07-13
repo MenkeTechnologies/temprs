@@ -255,6 +255,22 @@ pub fn parse_opts() -> Command {
             .value_name("INDEX")
             .allow_hyphen_values(true)
             .help("\x1b[32m//\x1b[0m Print file path of tempfile at INDEX"))
+        .arg(Arg::new(LEASE)
+            .long("lease")
+            .action(ArgAction::SetTrue)
+            .help("\x1b[32m//\x1b[0m Lease the bottom item: print path<TAB>token, move to inflight"))
+        .arg(Arg::new(LEASE_TTL)
+            .long("lease-ttl")
+            .value_name("SECS")
+            .help("\x1b[32m//\x1b[0m Lease deadline in seconds (with --lease)"))
+        .arg(Arg::new(ACK)
+            .long("ack")
+            .value_name("TOKEN")
+            .help("\x1b[32m//\x1b[0m Acknowledge lease TOKEN: delete the leased file"))
+        .arg(Arg::new(NACK)
+            .long("nack")
+            .value_name("TOKEN")
+            .help("\x1b[32m//\x1b[0m Return leased TOKEN to the stack for redelivery"))
 }
 
 #[cfg(test)]
@@ -679,7 +695,7 @@ mod tests {
             .get_arguments()
             .filter(|a| a.get_id() != "help" && a.get_id() != "version")
             .count();
-        assert_eq!(custom_count, 38);
+        assert_eq!(custom_count, 42);
     }
 
     // ── flag mutual independence ────────────────────────

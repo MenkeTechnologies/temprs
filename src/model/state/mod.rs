@@ -1,6 +1,9 @@
 use std::path::PathBuf;
 
-use crate::util::utils::{util_path_to_string, util_paths_and_names_to_file};
+use crate::util::consts::INFLIGHT_RECORD_FILENAME;
+use crate::util::utils::{
+    InflightRec, util_inflight_to_file, util_path_to_string, util_paths_and_names_to_file,
+};
 
 #[cfg(test)]
 mod tests;
@@ -22,6 +25,7 @@ pub struct TempState {
     name: Option<String>,
     silent: bool,
     verbose: u32,
+    inflight: Vec<InflightRec>,
 }
 
 impl TempState {
@@ -102,6 +106,11 @@ impl TempState {
     /// `set_temp_file_names` — see implementation for the contract.
     pub fn set_temp_file_names(&mut self, names: Vec<Option<String>>) {
         self.temp_file_names = names;
+    }
+
+    /// `set_inflight` — replace the inflight (leased) record set.
+    pub fn set_inflight(&mut self, inflight: Vec<InflightRec>) {
+        self.inflight = inflight;
     }
 }
 
@@ -196,6 +205,16 @@ impl TempState {
     pub fn temp_file_names_mut(&mut self) -> &mut Vec<Option<String>> {
         &mut self.temp_file_names
     }
+
+    /// `inflight` — the leased records awaiting ack/nack.
+    pub fn inflight(&self) -> &Vec<InflightRec> {
+        &self.inflight
+    }
+
+    /// `inflight_mut` — mutable access to the leased records.
+    pub fn inflight_mut(&mut self) -> &mut Vec<InflightRec> {
+        &mut self.inflight
+    }
 }
 
 impl TempState {
@@ -225,6 +244,7 @@ impl TempState {
             name: None,
             silent: false,
             verbose: 0,
+            inflight: Vec::new(),
         }
     }
 }
@@ -248,5 +268,76 @@ impl TempState {
             &self.temp_file_names,
             &self.master_record_file,
         );
+    }
+
+    /// `inflight_record_file` — path of the inflight sidecar (`temprs-inflight`)
+    /// alongside the master record in the temprs directory.
+    pub fn inflight_record_file(&self) -> PathBuf {
+        self.temprs_dir.join(INFLIGHT_RECORD_FILENAME)
+    }
+
+    /// `write_inflight` — atomically persist the inflight record set.
+    pub fn write_inflight(&self) {
+        util_inflight_to_file(&self.inflight, &self.inflight_record_file());
+    }
+
+    /// `lease` — move the bottom stack item into an inflight record with the
+    /// given `token` and absolute-epoch `deadline`. Returns the leased path, or
+    /// `None` if the stack is empty. The file is re-pointed, never copied.
+    /// In-memory only; the caller persists master + inflight.
+    pub fn lease(&mut self, token: String, deadline: u64) -> Option<PathBuf> {
+        if self.temp_file_stack.is_empty() {
+            return None;
+        }
+        let path = self.temp_file_stack.remove(0);
+        let name = self.temp_file_names.remove(0);
+        self.inflight.push(InflightRec {
+            path: path.clone(),
+            name,
+            token,
+            deadline,
+        });
+        Some(path)
+    }
+
+    /// `ack` — remove the inflight record for `token` and return its path so the
+    /// caller can delete the physical file. `None` if the token is unknown.
+    pub fn ack(&mut self, token: &str) -> Option<PathBuf> {
+        let pos = self.inflight.iter().position(|r| r.token == token)?;
+        Some(self.inflight.remove(pos).path)
+    }
+
+    /// `nack` — return the leased file for `token` to the bottom of the stack
+    /// for redelivery. Returns `false` if the token is unknown.
+    pub fn nack(&mut self, token: &str) -> bool {
+        match self.inflight.iter().position(|r| r.token == token) {
+            Some(pos) => {
+                let rec = self.inflight.remove(pos);
+                self.temp_file_stack.insert(0, rec.path);
+                self.temp_file_names.insert(0, rec.name);
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// `reap_expired` — return every lease whose `deadline <= now` to the bottom
+    /// of the stack (at-least-once redelivery on worker crash). Returns how many
+    /// were reaped. In-memory only; the caller persists.
+    pub fn reap_expired(&mut self, now: u64) -> usize {
+        let mut expired: Vec<InflightRec> = Vec::new();
+        self.inflight.retain(|r| {
+            let live = r.deadline > now;
+            if !live {
+                expired.push(r.clone());
+            }
+            live
+        });
+        let reaped = expired.len();
+        for rec in expired {
+            self.temp_file_stack.insert(0, rec.path);
+            self.temp_file_names.insert(0, rec.name);
+        }
+        reaped
     }
 }

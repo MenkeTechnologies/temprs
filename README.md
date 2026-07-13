@@ -358,6 +358,35 @@ tp --sort size
 tp --sort mtime
 ```
 
+#### WORK QUEUE // LEASE / ACK / NACK
+
+The stack doubles as a daemonless, broker-free, at-least-once work queue.
+`--lease` atomically moves the bottom item into an inflight sidecar record with
+a generated token and expiry deadline, then prints `path<TAB>token`. Files are
+re-pointed, never copied. A worker acks on success, nacks to requeue, and any
+lease whose deadline passes is auto-returned to the stack on the next `tp`
+invocation — so a crashed worker means redelivery, not lost work.
+
+```sh
+# lease the bottom item: prints "path<TAB>token", moves it to inflight
+read -r path token < <(tp --lease)
+
+# lease with a custom deadline (seconds; default 300)
+tp --lease --lease-ttl 30
+
+# acknowledge success: delete the leased file and drop the inflight record
+tp --ack "$token"
+
+# negative-ack: return the leased file to the stack for redelivery
+tp --nack "$token"
+
+# a simple worker loop draining the queue
+while read -r path token < <(tp --lease); do
+  [ -z "$path" ] && break
+  if process "$path"; then tp --ack "$token"; else tp --nack "$token"; fi
+done
+```
+
 ---
 
 ## [0x04] ENVIRONMENT
@@ -381,6 +410,7 @@ The master record is hardened against corruption and concurrent access:
 - **Atomic writes** // data is written to a temp file and atomically renamed — no partial writes on crash
 - **Exclusive file locking** // `flock`-based locking prevents concurrent access corruption from multiple shells or scripts
 - **Auto-recovery** // corrupt or empty records in the master file are silently skipped and cleaned up on next write
+- **Inflight leases** // `--lease` moves an item to the `temprs-inflight` sidecar (same atomic-write + `flock` discipline) with a token and deadline; expired leases are swept back onto the stack on the next invocation for at-least-once delivery
 
 ---
 
