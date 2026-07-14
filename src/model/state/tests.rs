@@ -2021,7 +2021,10 @@ fn lease_then_ack_removes_file() {
 #[test]
 fn lease_expiry_redelivers_to_stack() {
     let mut s = make_state();
-    s.set_temp_file_stack(vec![PathBuf::from("/tmp/temprs/q0"), PathBuf::from("/tmp/temprs/q1")]);
+    s.set_temp_file_stack(vec![
+        PathBuf::from("/tmp/temprs/q0"),
+        PathBuf::from("/tmp/temprs/q1"),
+    ]);
     s.set_temp_file_names(vec![Some("job".to_string()), None]);
 
     let leased = s.lease("tok-exp".to_string(), 1_000);

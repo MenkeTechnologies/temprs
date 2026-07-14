@@ -434,11 +434,11 @@ pub fn util_inflight_to_file(recs: &[InflightRec], out: &Path) {
             rec.push_str(&r.token);
             rec.push(MASTER_FIELD_DELIM);
             rec.push_str(&r.deadline.to_string());
-            if let Some(name) = &r.name {
-                if !name.is_empty() {
-                    rec.push(MASTER_FIELD_DELIM);
-                    rec.push_str(name);
-                }
+            if let Some(name) = &r.name
+                && !name.is_empty()
+            {
+                rec.push(MASTER_FIELD_DELIM);
+                rec.push_str(name);
             }
             rec
         })
@@ -455,7 +455,10 @@ pub fn util_inflight_to_file(recs: &[InflightRec], out: &Path) {
     if rename(&tmp, out).is_err() {
         util_terminate_error(ERR_INFLIGHT_WRITE);
     }
-    debug!("atomic write inflight record '{}'", util_path_to_string(out));
+    debug!(
+        "atomic write inflight record '{}'",
+        util_path_to_string(out)
+    );
 }
 
 #[cfg(test)]
