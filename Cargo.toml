@@ -26,9 +26,9 @@ strip = true
 codegen-units = 1
 opt-level = 3
 
-[[bin]]
-name = "tp"
-path = "src/main.rs"
+# `tp` is the short name; it lives in `src/bin/tp.rs`, which cargo discovers
+# without a declaration. Pointing a second [[bin]] at `src/main.rs` made cargo
+# warn on every build and every `cargo doc`.
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
