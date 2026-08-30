@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark light">
-  <meta name="description" content="temprs — Engineering report. Stack-based temporary file manager in Rust: 5,115 production Rust lines + 58,108 test Rust lines, 5,650 tests (5,059 unit + 585 integration), v2.9.13, 304 commits, 5 direct deps, two binaries (tp + temprs), zsh completion + two man pages.">
+  <meta name="description" content="temprs — Engineering report. Stack-based temporary file manager in Rust: 5,131 production Rust lines + 58,092 test Rust lines, 5,650 tests (5,059 unit + 585 integration), v2.9.13, 304 commits, 5 direct deps, two binaries (tp + temprs), zsh completion + two man pages.">
   <title>temprs &mdash; Engineering Report</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -92,10 +92,10 @@
       <!-- SECTION 1: EXECUTIVE SUMMARY           -->
       <!-- ═══════════════════════════════════════ -->
       <h2 class="tutorial-title"><span class="step-hash">&gt;_</span>EXECUTIVE SUMMARY</h2>
-      <p class="tutorial-subtitle">temprs is a single-binary stack-based temporary file manager written in Rust. The CLI is built on <code>clap</code>; persistence runs through a null-byte delimited master record with atomic renames and <code>flock</code>-protected exclusive access. Every operation that takes an <code>INDEX</code> also accepts a tag name (<code>@name</code>) &mdash; resolution falls through numeric parse to tag lookup. Two binaries (<code>tp</code> and <code>temprs</code>) ship from one Cargo target. <strong>5,115 production Rust lines + 58,108 test Rust lines + 5,650 tests (5,059 unit + 585 integration)</strong> back the surface: stack mutation (push, pop, shift, unshift, insert, remove, move, swap, duplicate, reverse, sort), inspection (head, tail, wc, size, path, info), transformation (find-and-replace, grep, concat, diff), and editor handoff. CI runs <code>check + test + fmt + clippy + doc + release build</code> on every push.</p>
+      <p class="tutorial-subtitle">temprs is a single-binary stack-based temporary file manager written in Rust. The CLI is built on <code>clap</code>; persistence runs through a null-byte delimited master record with atomic renames and <code>flock</code>-protected exclusive access. Every operation that takes an <code>INDEX</code> also accepts a tag name (<code>@name</code>) &mdash; resolution falls through numeric parse to tag lookup. Two binaries (<code>tp</code> and <code>temprs</code>) ship from one Cargo target. <strong>5,131 production Rust lines + 58,092 test Rust lines + 5,650 tests (5,059 unit + 585 integration)</strong> back the surface: stack mutation (push, pop, shift, unshift, insert, remove, move, swap, duplicate, reverse, sort), inspection (head, tail, wc, size, path, info), transformation (find-and-replace, grep, concat, diff), and editor handoff. CI runs <code>check + test + fmt + clippy + doc + release build</code> on every push.</p>
 
       <div class="stat-grid">
-        <div class="stat-card"><div class="stat-val">5,115</div><div class="stat-label">Production Rust Lines</div></div>
+        <div class="stat-card"><div class="stat-val">5,131</div><div class="stat-label">Production Rust Lines</div></div>
         <div class="stat-card"><div class="stat-val accent">5,650</div><div class="stat-label">Tests (Verified Passing)</div></div>
         <div class="stat-card"><div class="stat-val green">2.9.13</div><div class="stat-label">Crates.io Version</div></div>
         <div class="stat-card"><div class="stat-val">2</div><div class="stat-label">Binaries (<code>tp</code>+<code>temprs</code>)</div></div>
@@ -108,9 +108,9 @@
         <p style="font-size:11px;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:4px;font-family:'Orbitron',sans-serif;font-weight:700;">Source distribution &mdash; 63,223 Rust lines total</p>
         <div class="bar-wrap" style="height:26px;">
           <div class="bar-fill cyan" style="width:8.1%;"></div>
-          <span class="bar-pct" style="font-size:12px;">5,115 production / 58,108 test &middot; 91.9% test code</span>
+          <span class="bar-pct" style="font-size:12px;">5,131 production / 58,092 test &middot; 91.9% test code</span>
         </div>
-        <p style="font-size:10px;color:var(--text-muted);margin-top:4px;">Production source: <code>src/lib.rs</code>, <code>src/main.rs</code>, <code>src/util/{consts,utils,mod}.rs</code>, <code>src/model/{mod,app,state/mod}.rs</code>, and the CLI definition in <code>src/model/opts.rs</code> (lines 1&ndash;259). Test source: <code>tests/integration.rs</code> + 7 contract/edge test files + inline test modules in <code>src/model/opts.rs</code>, <code>src/model/apply_permutation_tests.rs</code>, <code>src/model/state/tests.rs</code>.</p>
+        <p style="font-size:10px;color:var(--text-muted);margin-top:4px;">Production source: <code>src/lib.rs</code>, <code>src/main.rs</code>, <code>src/util/{consts,utils,mod}.rs</code>, <code>src/model/{mod,app,state/mod}.rs</code>, and the CLI definition in <code>src/model/opts.rs</code> (lines 1&ndash;275). Test source: <code>tests/integration.rs</code> + 7 contract/edge test files + inline test modules in <code>src/model/opts.rs</code>, <code>src/model/apply_permutation_tests.rs</code>, <code>src/model/state/tests.rs</code>.</p>
       </div>
 
       <hr class="section-rule">
@@ -211,7 +211,7 @@
       <div class="mapping-grid">
         <div class="mapping-card"><h4>Entry point</h4><p><code>src/main.rs</code> &mdash; <code>TempApp::new()</code> then <code>app.run()</code>. <code>tp</code> and <code>temprs</code> are the same binary built from one target.</p></div>
         <div class="mapping-card"><h4>Startup (<code>State::new</code>)</h4><p>Init logger (<code>simple_logger</code>, Info), resolve <code>TEMPRS_DIR</code> (default <code>$TMPDIR/temprs</code>), create the directory if absent, then take an exclusive <code>flock</code> on <code>temprs-stack.lock</code>.</p></div>
-        <div class="mapping-card"><h4>CLI definition</h4><p><code>src/model/opts.rs</code> (lines 1&ndash;259) &mdash; the <code>clap</code> <code>Command</code> with grouped cyberpunk help template, short + long forms, value names, and <code>allow_hyphen_values</code> so negative indices parse.</p></div>
+        <div class="mapping-card"><h4>CLI definition</h4><p><code>src/model/opts.rs</code> (lines 1&ndash;275) &mdash; the <code>clap</code> <code>Command</code> with grouped cyberpunk help template, short + long forms, value names, and <code>allow_hyphen_values</code> so negative indices parse.</p></div>
         <div class="mapping-card"><h4>Dispatch</h4><p><code>TempApp::run</code> in <code>src/model/app.rs</code> &mdash; a flat sequence of <code>get_flag</code> / <code>get_one</code> / <code>get_many</code> checks, each calling the matching handler.</p></div>
         <div class="mapping-card"><h4>Index/name resolution</h4><p><code>resolve_idx</code> &mdash; <code>parse::&lt;i32&gt;()</code> first (negatives mapped via <code>util_transform_idx</code>), then a name lookup by <code>position()</code> over the parallel names vector. Unresolved arguments terminate with <em>Invalid specified index</em>.</p></div>
         <div class="mapping-card"><h4>Parallel arrays</h4><p>The stack is two aligned vectors &mdash; file paths and optional tags &mdash; kept in sync across every mutation. <code>tests/tag_alignment_after_mutation.rs</code> pins that sync across shift, pop, rev, and remove.</p></div>
