@@ -684,7 +684,7 @@ dependencies = [
 
 [[package]]
 name = "temprs"
-version = "2.9.17"
+version = "2.9.20"
 dependencies = [
  "clap",
  "criterion",
