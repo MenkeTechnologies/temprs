@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark light">
-  <meta name="description" content="temprs — Engineering report. Stack-based temporary file manager in Rust: 5,131 production Rust lines + 58,092 test Rust lines, 5,650 tests (5,059 unit + 585 integration), v2.9.14, 304 commits, 5 direct deps, two binaries (tp + temprs), zsh completion + two man pages.">
+  <meta name="description" content="temprs — Engineering report. Stack-based temporary file manager in Rust: 5,131 production Rust lines + 58,092 test Rust lines, 5,650 tests (5,065 unit + 585 integration), v2.9.20, 328 commits, 5 direct deps, two binaries (tp + temprs), zsh completion + two man pages.">
   <title>temprs &mdash; Engineering Report</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -75,7 +75,7 @@
             <a href="https://crates.io/crates/temprs" target="_blank" rel="noopener noreferrer">crates.io</a>
           </nav>
           <p style="margin:0.35rem 0 0;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);letter-spacing:0.03em;opacity:0.75;">
-            Stack-based temporary file manager in Rust &middot; v2.9.14 &middot; clap CLI &middot; <code>fs2</code> flock-protected master record &middot; null-byte delimited storage &middot; atomic renames
+            Stack-based temporary file manager in Rust &middot; v2.9.20 &middot; clap CLI &middot; <code>fs2</code> flock-protected master record &middot; null-byte delimited storage &middot; atomic renames
           </p>
         </div>
         <div class="tutorial-toolbar">
@@ -92,7 +92,7 @@
       <!-- SECTION 1: EXECUTIVE SUMMARY           -->
       <!-- ═══════════════════════════════════════ -->
       <h2 class="tutorial-title"><span class="step-hash">&gt;_</span>EXECUTIVE SUMMARY</h2>
-      <p class="tutorial-subtitle">temprs is a single-binary stack-based temporary file manager written in Rust. The CLI is built on <code>clap</code>; persistence runs through a null-byte delimited master record with atomic renames and <code>flock</code>-protected exclusive access. Every operation that takes an <code>INDEX</code> also accepts a tag name (<code>@name</code>) &mdash; resolution falls through numeric parse to tag lookup. Two binaries (<code>tp</code> and <code>temprs</code>) ship from one Cargo target. <strong>5,131 production Rust lines + 58,092 test Rust lines + 5,650 tests (5,059 unit + 585 integration)</strong> back the surface: stack mutation (push, pop, shift, unshift, insert, remove, move, swap, duplicate, reverse, sort), inspection (head, tail, wc, size, path, info), transformation (find-and-replace, grep, concat, diff), and editor handoff. CI runs <code>check + test + fmt + clippy + doc + release build</code> on every push.</p>
+      <p class="tutorial-subtitle">temprs is a single-binary stack-based temporary file manager written in Rust. The CLI is built on <code>clap</code>; persistence runs through a null-byte delimited master record with atomic renames and <code>flock</code>-protected exclusive access. Every operation that takes an <code>INDEX</code> also accepts a tag name (<code>@name</code>) &mdash; resolution falls through numeric parse to tag lookup. Two binaries (<code>tp</code> and <code>temprs</code>) ship from one Cargo target. <strong>5,131 production Rust lines + 58,092 test Rust lines + 5,650 tests (5,065 unit + 585 integration)</strong> back the surface: stack mutation (push, pop, shift, unshift, insert, remove, move, swap, duplicate, reverse, sort), inspection (head, tail, wc, size, path, info), transformation (find-and-replace, grep, concat, diff), and editor handoff. CI runs <code>check + test + fmt + clippy + doc + release build</code> on every push.</p>
 
       <div class="stat-grid">
         <div class="stat-card"><div class="stat-val">5,131</div><div class="stat-label">Production Rust Lines</div></div>
