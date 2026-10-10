@@ -394,7 +394,7 @@ sessions until the tempfile is removed.
 .SH "8a. MISCELLANEOUS"
 .TP
 .BR \-q ", " \-\-quiet
-Suppress output when creating a tempfile.
+Accepted for compatibility; currently has no effect.
 .TP
 .BR \-v ", " \-\-verbose
 Enable debug logging and also write pushed input to standard output.
@@ -672,7 +672,7 @@ tp \-\-tail config 5
 .fi
 .RE
 .PP
-Quiet push (no stdout):
+Push with the accepted\-but\-inert \fB\-q\fR flag:
 .RS
 .nf
 ls | tp \-q

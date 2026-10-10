@@ -262,7 +262,7 @@ tp --replace procs old new</pre>
       <section class="tutorial-section">
         <h2>Operations &mdash; full surface</h2>
         <div class="cat-grid">
-          <div class="cat-card"><h4>I/O</h4><p><code>tp</code> (push stdin), <code>tp FILE</code> (load file), <code>tp -i N</code> (write into N), <code>tp -o N</code> (read N to stdout), <code>tp -v</code> (verbose = also write to stdout), <code>tp -q</code> (quiet = suppress create output), <code>tp -A N</code> (append to N).</p></div>
+          <div class="cat-card"><h4>I/O</h4><p><code>tp</code> (push stdin), <code>tp FILE</code> (load file), <code>tp -i N</code> (write into N), <code>tp -o N</code> (read N to stdout), <code>tp -v</code> (verbose = also write to stdout), <code>tp -q</code> (accepted; currently no effect), <code>tp -A N</code> (append to N).</p></div>
           <div class="cat-card"><h4>Stack mutation</h4><p><code>-p</code> pop, <code>-u</code> unshift, <code>-s</code> shift, <code>-a N</code> insert at N, <code>-r N</code> remove, <code>-M src dst</code> move, <code>-S a b</code> swap, <code>-x N</code> duplicate to top.</p></div>
           <div class="cat-card"><h4>Bulk</h4><p><code>--rev</code> reverse the stack, <code>--sort name|size|mtime</code> sort, <code>-c</code> purge all, <code>--expire HOURS</code> purge by mtime (fractional hours OK: <code>0.5</code>).</p></div>
           <div class="cat-card"><h4>Listing</h4><p><code>-l</code> list, <code>-L</code> list with contents, <code>-n</code> numbered, <code>-N</code> numbered with contents, <code>-k</code> count, <code>-d</code> show temprs directory, <code>-m</code> show master file.</p></div>
@@ -291,7 +291,7 @@ tp --replace procs old new</pre>
             <tr><td>-s, --shift</td><td>&nbsp;</td><td>Shift from bottom</td></tr>
             <tr><td>-A, --append</td><td>INDEX</td><td>Append stdin to tempfile at INDEX</td></tr>
             <tr><td>-v, --verbose</td><td>&nbsp;</td><td>Also echo data to stdout on write (repeatable; raises verbosity level)</td></tr>
-            <tr><td>-q, --quiet</td><td>&nbsp;</td><td>Suppress output when creating a tempfile</td></tr>
+            <tr><td>-q, --quiet</td><td>&nbsp;</td><td>Accepted for compatibility; currently has no effect</td></tr>
             <tr><td>-w, --name</td><td>NAME</td><td>Tag new tempfile with NAME</td></tr>
             <tr><td>-R, --rename</td><td>SRC NAME</td><td>Rename tag (SRC = index or current name)</td></tr>
             <tr><td>-l, --list-files</td><td>&nbsp;</td><td>List stack</td></tr>
