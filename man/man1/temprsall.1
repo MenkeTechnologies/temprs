@@ -391,6 +391,19 @@ to
 .PP
 Name tags are persisted in the master record and survive across
 sessions until the tempfile is removed.
+.SH "8a. MISCELLANEOUS"
+.TP
+.BR \-q ", " \-\-quiet
+Suppress output when creating a tempfile.
+.TP
+.BR \-v ", " \-\-verbose
+Enable debug logging and also write pushed input to standard output.
+.TP
+.BR \-h ", " \-\-help
+Print help and exit.
+.TP
+.BR \-V ", " \-\-version
+Print version and exit.
 .SH "9.  DATA INTEGRITY"
 The master record is hardened against corruption and concurrent
 access:
@@ -412,8 +425,8 @@ A
 .BR flock (2)
 exclusive lock on
 .I $TEMPRS_DIR/temprs-stack.lock
-serializes concurrent writers from multiple shells / scripts.  Readers
-take a shared lock.
+serializes concurrent invocations from multiple shells / scripts; it is
+held for the duration of each invocation.
 .TP
 .B Auto-recovery
 Corrupt or empty records in the master file are silently skipped and
@@ -457,7 +470,7 @@ name tag, using the same null-byte delimited, atomically written,
 flock-protected format as the master record.  Expired leases are swept back
 onto the stack on the next invocation.
 .TP
-.I $TEMPRS_DIR/temp-*
+.I $TEMPRS_DIR/tempfile*
 Individual tempfiles created by
 .BR temprs .
 .TP

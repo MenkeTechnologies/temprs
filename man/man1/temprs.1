@@ -240,7 +240,7 @@ to
 Suppress output when creating a tempfile.
 .TP
 .BR \-v ", " \-\-verbose
-Increase verbosity. May be repeated to raise the log level.
+Enable debug logging and also write pushed input to standard output.
 .TP
 .BR \-h ", " \-\-help
 Print help and exit.
@@ -285,7 +285,7 @@ using the same null-byte delimited, atomically written, flock-protected
 format as the master record. Expired leases are swept back onto the stack on
 the next invocation.
 .TP
-.I $TEMPRS_DIR/temp-*
+.I $TEMPRS_DIR/tempfile*
 Individual tempfiles created by
 .BR temprs .
 .SH EXAMPLES
