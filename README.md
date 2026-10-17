@@ -209,6 +209,15 @@ tp -N
 
 # print the number of files on the stack
 tp -k
+
+# print the temprs directory
+tp -d
+
+# print the master record file path
+tp -m
+
+# suppress output when creating a tempfile
+CMD | tp -q
 ```
 
 #### EDITOR INTEGRATION // DIRECT ACCESS
@@ -395,6 +404,8 @@ done
 # override the default temp directory (default: $TMPDIR/temprs)
 export TEMPRS_DIR=/path/to/custom/dir
 ```
+
+`tp -c` removes the whole directory and refuses to run unless its basename contains `temprs`.
 
 ---
 
